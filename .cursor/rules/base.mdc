@@ -1,0 +1,408 @@
+Description: Core project rules and patterns for Pigeon AI development
+
+---
+
+# Pigeon AI - Core Development Rules
+
+## Project Context
+
+Pigeon AI is a 7-day sprint project building a WhatsApp-like messaging app with AI features for remote team professionals. The MVP deadline is 24 hours from project start.
+
+**Critical Success Factors**:
+1. **Reliability over features** - A simple, rock-solid messaging app is better than feature-rich but flaky
+2. **Test early and often** - Use real devices, simulate poor networks
+3. **Time-box ruthlessly** - 24 hours is tight; prioritize core functionality
+
+## Development Priorities (In Order)
+
+1. **Core Messaging Reliability**
+   - Real-time message delivery (<1 second latency)
+   - Zero message loss (even through crashes)
+   - Offline support (queue and sync)
+   - Optimistic UI updates
+
+2. **Essential Features**
+   - One-on-one chat
+   - Group chat (3+ users)
+   - Online/offline indicators
+   - Message read receipts
+   - Image sharing
+
+3. **AI Features**
+   - Start with simplest implementations
+   - Dedicated AI chat interface (not contextual UI for MVP)
+   - 5 required + 1 advanced feature
+
+4. **Push Notifications**
+   - Foreground notifications minimum for MVP
+   - Background notifications nice-to-have
+
+## Tech Stack Decisions (Fixed)
+
+- **Platform**: iOS (Swift + SwiftUI)
+- **Backend**: Firebase (Firestore, Auth, Cloud Functions, FCM, Storage)
+- **AI**: OpenAI (GPT-4 + GPT-3.5) via AI SDK by Vercel
+- **Local Storage**: SwiftData
+- **Architecture**: MVVM with Repository pattern
+
+## Code Quality Standards
+
+### Swift/SwiftUI Conventions
+
+```swift
+// Use async/await for async operations
+func sendMessage(_ content: String) async throws -> Message {
+    // Implementation
+}
+
+// Use @MainActor for UI updates
+@MainActor
+class ChatViewModel: ObservableObject {
+    @Published var messages: [Message] = []
+}
+
+// Use descriptive variable names
+let unsentMessageCount = 5  // ✅ Good
+let cnt = 5  // ❌ Bad
+
+// Use guard for early returns
+guard let user = Auth.auth().currentUser else {
+    throw AppError.notAuthenticated
+}
+```
+
+### Naming Conventions
+
+- **ViewModels**: `ChatViewModel`, `AuthViewModel`, `ConversationListViewModel`
+- **Views**: `ChatView`, `LoginView`, `MessageBubbleView`
+- **Models**: `Message`, `Conversation`, `User`
+- **Services**: `FirestoreService`, `LocalDatabaseService`, `AIService`
+- **Repositories**: `MessageRepository`, `ConversationRepository`
+
+### File Organization
+
+```
+PigeonAI/
+├── App/
+│   ├── PigeonAIApp.swift
+│   └── AppDelegate.swift
+├── Models/
+│   ├── Message.swift
+│   ├── Conversation.swift
+│   └── User.swift
+├── Views/
+│   ├── Auth/
+│   │   ├── LoginView.swift
+│   │   └── SignupView.swift
+│   ├── Chat/
+│   │   ├── ChatView.swift
+│   │   ├── ChatListView.swift
+│   │   └── MessageBubbleView.swift
+│   └── AI/
+│       └── AIAssistantView.swift
+├── ViewModels/
+│   ├── ChatViewModel.swift
+│   ├── AuthViewModel.swift
+│   └── AIViewModel.swift
+├── Services/
+│   ├── FirestoreService.swift
+│   ├── LocalDatabaseService.swift
+│   ├── NetworkMonitor.swift
+│   └── AIService.swift
+├── Repositories/
+│   └── MessageRepository.swift
+└── Utilities/
+    ├── Extensions/
+    └── Constants.swift
+```
+
+## Critical Implementation Patterns
+
+### 1. Optimistic UI Updates (Always Use)
+
+```swift
+func sendMessage(_ content: String) async {
+    // 1. Create local message with "sending" status
+    let localMessage = createLocalMessage(content: content, status: .sending)
+    
+    // 2. Save to local DB
+    localDatabase.insert(localMessage)
+    
+    // 3. Update UI immediately
+    messages.append(localMessage)
+    
+    // 4. Send to server
+    do {
+        let serverMessage = try await firestoreService.sendMessage(localMessage)
+        updateMessage(localMessage.id, with: serverMessage, status: .sent)
+    } catch {
+        updateMessage(localMessage.id, status: .failed)
+    }
+}
+```
+
+### 2. Offline Queue (Essential)
+
+All message-sending operations must:
+1. Save to local database first
+2. Queue if offline
+3. Process queue when connectivity returns
+
+### 3. Error Handling (User-Friendly)
+
+```swift
+enum AppError: LocalizedError {
+    case networkError
+    case authenticationFailed
+    case messageFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .networkError:
+            return "No connection. Message will send when you're back online."
+        case .authenticationFailed:
+            return "Please log in again."
+        case .messageFailed:
+            return "Failed to send. Tap to retry."
+        }
+    }
+}
+```
+
+### 4. Firestore Real-Time Listeners (Memory Management)
+
+```swift
+class FirestoreService {
+    private var listeners: [String: ListenerRegistration] = [:]
+    
+    func startListening(conversationId: String, onUpdate: @escaping ([Message]) -> Void) {
+        let listener = db.collection("conversations/\(conversationId)/messages")
+            .order(by: "timestamp")
+            .addSnapshotListener { snapshot, error in
+                // Handle updates
+            }
+        listeners[conversationId] = listener
+    }
+    
+    // IMPORTANT: Always stop listeners to avoid memory leaks
+    func stopListening(conversationId: String) {
+        listeners[conversationId]?.remove()
+        listeners.removeValue(forKey: conversationId)
+    }
+}
+
+// In ViewModel
+func onDisappear() {
+    firestoreService.stopListening(conversationId: conversationId)
+}
+```
+
+## Testing Requirements
+
+### Manual Testing (Priority)
+
+**Critical Tests (Must Pass for MVP)**:
+1. ✅ Two devices: Send message from A → appears on B within 1 second
+2. ✅ Offline test: Device A offline → B sends message → A comes online → message appears
+3. ✅ Force quit: Send message → force quit app → reopen → message was sent
+4. ✅ Poor network: Enable Network Link Conditioner (3G) → messages still deliver
+5. ✅ Rapid-fire: Send 20 messages quickly → all appear in order
+6. ✅ Group chat: 3 users → message sent → all receive
+7. ✅ AI features: Test all 6 features → responses within 10 seconds
+
+### Testing Setup
+
+```swift
+// Create test accounts
+let testUsers = [
+    "alice@test.com",
+    "bob@test.com", 
+    "carol@test.com"
+]
+
+// Use Network Link Conditioner in Xcode
+// Settings: 3G, 50% packet loss, 200ms latency
+```
+
+## Performance Guidelines
+
+### Message Loading
+
+```swift
+// Load messages in batches (pagination)
+func loadMessages() async {
+    // 1. Load last 50 messages initially
+    let recentMessages = try await repository.getRecentMessages(limit: 50)
+    
+    // 2. Load more on scroll
+    func loadMoreMessages() async {
+        let olderMessages = try await repository.getMessagesBefore(
+            timestamp: messages.first?.timestamp,
+            limit: 50
+        )
+    }
+}
+```
+
+### Image Optimization
+
+```swift
+func uploadImage(_ image: UIImage) async throws -> URL {
+    // 1. Compress before upload
+    guard let compressed = image.jpegData(compressionQuality: 0.7),
+          compressed.count < 1_000_000 else { // Max 1MB
+        throw AppError.imageTooLarge
+    }
+    
+    // 2. Upload to Firebase Storage
+    let url = try await storage.upload(compressed)
+    return url
+}
+```
+
+## AI Feature Guidelines
+
+### Cost Management
+
+```swift
+// Use GPT-3.5 for simple tasks (10x cheaper)
+func extractActionItems() async throws -> [ActionItem] {
+    return try await openAI.chat(
+        model: "gpt-3.5-turbo",  // Cheaper
+        messages: messages
+    )
+}
+
+// Use GPT-4 only for complex reasoning
+func generateProactiveSuggestions() async throws -> [Suggestion] {
+    return try await openAI.chat(
+        model: "gpt-4-turbo",  // More expensive but better quality
+        messages: messages
+    )
+}
+
+// Cache AI responses (1 hour TTL)
+let cacheKey = "summary_\(conversationId)_\(lastMessageTimestamp)"
+if let cached = cache.get(cacheKey) {
+    return cached
+}
+```
+
+### RAG Pipeline (Simple MVP Implementation)
+
+```typescript
+// Cloud Function
+export const aiSummarize = functions.https.onCall(async (data, context) => {
+  const { conversationId } = data;
+  
+  // 1. Retrieve last 100 messages (simple approach for MVP)
+  const messages = await getRecentMessages(conversationId, 100);
+  
+  // 2. Format for AI
+  const context = messages.map(m => `${m.senderName}: ${m.content}`).join('\n');
+  
+  // 3. Call OpenAI
+  const summary = await openai.chat({
+    model: 'gpt-4-turbo',
+    messages: [
+      { role: 'system', content: 'Summarize this conversation concisely.' },
+      { role: 'user', content: context }
+    ]
+  });
+  
+  return { summary: summary.content };
+});
+```
+
+## Security Rules
+
+### Firestore Security (Must Implement)
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only read/write their own profile
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == userId;
+    }
+    
+    // Only participants can read conversations
+    match /conversations/{conversationId} {
+      allow read: if request.auth.uid in resource.data.participants;
+      allow create: if request.auth.uid in request.resource.data.participants;
+      
+      match /messages/{messageId} {
+        allow read: if request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow create: if request.auth.uid == request.resource.data.senderId;
+      }
+    }
+  }
+}
+```
+
+### API Key Security (Critical)
+
+- ❌ NEVER put OpenAI API key in iOS app
+- ✅ ALWAYS call AI from Cloud Functions
+- ✅ Store API keys in Cloud Functions environment variables
+
+```bash
+# Set API key in Cloud Functions
+firebase functions:config:set openai.key="sk-..."
+```
+
+## Common Pitfalls to Avoid
+
+1. **Not testing on real devices** - Simulator doesn't accurately represent push notifications, networking, performance
+2. **Forgetting to stop Firestore listeners** - Causes memory leaks and excessive Firestore reads
+3. **Not handling offline scenarios** - App must work offline, queue operations
+4. **Using client-side timestamps** - Always use server timestamp for message ordering
+5. **Exposing API keys** - Keep them in backend only
+6. **Over-engineering for MVP** - Simple working solution > complex perfect solution
+7. **Ignoring message delivery failures** - Must retry and show clear status to user
+8. **Loading all messages at once** - Use pagination (50 messages at a time)
+9. **Not compressing images** - Large images cause slow uploads and high storage costs
+10. **Skipping error handling** - Every async operation can fail; handle gracefully
+
+## When You're Behind Schedule
+
+If running behind, prioritize in this order:
+
+1. **Keep**: Core one-on-one messaging (must be rock-solid)
+2. **Keep**: Message persistence and offline support
+3. **Keep**: At least 3 AI features (summarization, action items, search)
+4. **Reduce**: Group chat → simple implementation, skip admin features
+5. **Reduce**: Push notifications → foreground only, skip background
+6. **Reduce**: AI features → 3 core features instead of 6
+7. **Skip**: Advanced UI polish (basic polish is fine)
+8. **Skip**: Animations (smooth scrolling is enough)
+
+## Deployment Checklist
+
+- [ ] Firebase services enabled (Auth, Firestore, FCM, Storage)
+- [ ] Cloud Functions deployed: `firebase deploy --only functions`
+- [ ] Firestore security rules deployed: `firebase deploy --only firestore:rules`
+- [ ] iOS app archived in Xcode
+- [ ] TestFlight submission started (by hour 18-20)
+- [ ] README with setup instructions
+- [ ] Test accounts created and documented
+- [ ] GoogleService-Info.plist NOT committed to Git (add to .gitignore)
+
+## Cost Monitoring
+
+- [ ] Firebase budget alert set ($50)
+- [ ] OpenAI usage monitored (aim for <$20 during MVP)
+- [ ] Firestore reads tracked (real-time listeners can be expensive)
+
+## Emergency Contacts & Resources
+
+- **Firebase iOS Quickstart**: https://firebase.google.com/docs/ios/setup
+- **OpenAI API Docs**: https://platform.openai.com/docs
+- **SwiftUI Tutorials**: https://developer.apple.com/tutorials/swiftui
+- **AI SDK by Vercel**: https://sdk.vercel.ai/docs
+
+---
+
+**Remember**: The goal is a functional, reliable MVP in 24 hours. Quality over quantity. Test early and often. Ship something people would actually use.
