@@ -292,95 +292,197 @@ pigeonai-week-2/
 
 ### Tasks
 
-- [ ] **Task 2.1: Create User Model**
+- [x] **Task 2.1: Create User Model**
   - **Files Created**:
-    - `src/models/User.ts`
+    - `src/models/User.ts` ✅
   - **Content**: User interface (id, email, displayName, photoURL, bio, createdAt, lastSeen, isOnline)
+  - **Helper Functions**:
+    - `createUser()` - Create new user with defaults
+    - `fromFirestore()` - Convert Firestore doc to User
+    - `toFirestore()` - Convert User to Firestore doc
+    - `updateOnlineStatus()` - Update online/offline status
+    - `updateProfile()` - Update profile information
+    - `isValidUser()` - Validate user object
+    - `getDisplayName()` - Get display name with fallback
+    - `getUserInitials()` - Get initials for avatar
+    - `formatLastSeen()` - Format last seen time (e.g., "2 minutes ago")
+    - `isProfileComplete()` - Check if profile is complete
+    - `toUserSummary()` - Create minimal user representation
 
-- [ ] **Task 2.2: Implement Firebase Auth Service**
-  - **Files Created**:
-    - `src/services/firebase/authService.ts`
-  - **Functions**:
-    - `signUp(email, password, displayName)`
-    - `signIn(email, password)`
-    - `signOut()`
-    - `getCurrentUser()`
-    - `updateProfile(displayName, photoURL)`
-    - `resetPassword(email)`
-  - **Dependencies**: firebase (Firebase JS SDK - firebase/auth)
-
-- [ ] **Task 2.3: Create Auth Context**
-  - **Files Created**:
-    - `src/store/context/AuthContext.tsx`
-  - **Content**: AuthProvider, useAuth hook, auth state management
-  - **State**: currentUser, loading, error
-
-- [ ] **Task 2.4: Create Login Screen UI**
-  - **Files Created**:
-    - `src/screens/auth/LoginScreen.tsx`
-    - `src/components/auth/LoginForm.tsx`
-  - **UI Elements**: Email input, password input, login button, "Forgot Password?" link, "Sign Up" navigation
-
-- [ ] **Task 2.5: Create Signup Screen UI**
-  - **Files Created**:
-    - `src/screens/auth/SignupScreen.tsx`
-    - `src/components/auth/SignupForm.tsx`
-  - **UI Elements**: Display name input, email input, password input, confirm password input, signup button
-
-- [ ] **Task 2.6: Create Splash Screen**
-  - **Files Created**:
-    - `src/screens/auth/SplashScreen.tsx`
-  - **Content**: Loading spinner while checking auth state
-
-- [ ] **Task 2.7: Set Up Auth Navigation**
-  - **Files Created**:
-    - `src/navigation/AuthNavigator.tsx`
-  - **Screens**: Splash → Login → Signup
-  - **Dependencies**: @react-navigation/native-stack
-
-- [ ] **Task 2.8: Create Validators**
-  - **Files Created**:
-    - `src/utils/validators.ts`
-  - **Functions**: validateEmail, validatePassword, validateDisplayName
-
-- [ ] **Task 2.9: Implement User Profile Creation in Firestore**
+- [x] **Task 2.2: Implement Firebase Auth Service**
   - **Files Modified**:
-    - `src/services/firebase/authService.ts`
-  - **Action**: On signup, create user doc in Firestore `/users/{userId}`
-  - **Fields**: displayName, email, photoURL, bio, createdAt, lastSeen, isOnline
+    - `src/services/firebase/authService.ts` ✅
+  - **Core Functions**:
+    - `signUp(email, password, displayName)` - Creates Firebase Auth user + Firestore document
+    - `signIn(email, password)` - Authenticates user + updates online status
+    - `signOut()` - Signs out user + sets offline status
+    - `getCurrentUser()` - Returns current Firebase user
+    - `getUserProfile(uid)` - Fetches complete user profile from Firestore
+    - `updateUserProfile(displayName, photoURL)` - Updates both Auth and Firestore
+    - `updateUserBio(bio)` - Updates user bio in Firestore
+    - `resetPassword(email)` - Sends password reset email
+  - **Presence Management**:
+    - `setUserOnlineStatus(uid, isOnline)` - Updates online/offline status
+    - `setupPresence(uid)` - Sets up presence system
+  - **Utility Functions**:
+    - `onAuthStateChange(callback)` - Subscribes to auth state changes
+    - `isAuthenticated()` - Checks if user is logged in
+    - `reloadUser()` - Reloads user data from Firebase
+    - `getAuthErrorMessage(error)` - Converts Firebase errors to user-friendly messages
+  - **Features**:
+    - ✅ User-friendly error messages for all Firebase Auth errors
+    - ✅ Automatic Firestore user document creation on signup
+    - ✅ Online/offline presence tracking
+    - ✅ Last seen timestamp updates
+    - ✅ Profile sync between Firebase Auth and Firestore
+  - **Dependencies**: firebase (Firebase JS SDK - firebase/auth, firebase/firestore)
 
-- [ ] **Task 2.10: Write Unit Tests for Auth Service**
+- [x] **Task 2.3: Create Auth Context**
   - **Files Created**:
-    - `__tests__/services/authService.test.ts`
-  - **Tests**:
-    - ✅ `signUp()` creates user in Firebase Auth
-    - ✅ `signUp()` creates user profile in Firestore
-    - ✅ `signIn()` returns user on valid credentials
-    - ✅ `signIn()` throws error on invalid credentials
-    - ✅ `signOut()` clears current user
-    - ✅ `updateProfile()` updates user data
-  - **Dependencies**: `@testing-library/react-native`, `jest`
+    - `src/store/context/AuthContext.tsx` ✅
+  - **Components**:
+    - `AuthProvider` - Context provider component
+    - `useAuth()` - Custom hook for accessing auth state
+  - **State Management**:
+    - `user` - Current user profile (User | null)
+    - `loading` - Loading state for auth operations
+    - `error` - Error messages from auth operations
+  - **Auth Functions**:
+    - `signUp(email, password, displayName)` - Register new user
+    - `signIn(email, password)` - Sign in existing user
+    - `signOut()` - Sign out current user
+    - `resetPassword(email)` - Send password reset email
+  - **Advanced Features**:
+    - ✅ Auth state listener (onAuthStateChanged)
+    - ✅ Automatic user profile fetching from Firestore
+    - ✅ App lifecycle management (foreground/background)
+    - ✅ Automatic presence updates (online/offline)
+    - ✅ Cleanup on unmount (sets user offline)
+    - ✅ Error handling with user-friendly messages
+    - ✅ Loading states for all operations
 
-- [ ] **Task 2.11: Write Unit Tests for Validators**
+- [x] **Task 2.4: Create Login Screen UI**
   - **Files Created**:
-    - `__tests__/utils/validators.test.ts`
-  - **Tests**:
-    - ✅ `validateEmail()` accepts valid emails
-    - ✅ `validateEmail()` rejects invalid emails
-    - ✅ `validatePassword()` enforces minimum length
-    - ✅ `validateDisplayName()` rejects empty names
+    - `src/screens/auth/LoginScreen.tsx` ✅
+    - `src/components/auth/LoginForm.tsx` ✅
+    - `src/utils/validators.ts` ✅ (validation utilities)
+  - **UI Elements**:
+    - ✅ Email input with validation
+    - ✅ Password input with validation
+    - ✅ Login button with loading state
+    - ✅ "Forgot Password?" link
+    - ✅ "Sign Up" navigation link
+  - **Features**:
+    - 🌑 **Dark Mode Design** - Beautiful dark theme UI
+    - ✅ Real-time field validation
+    - ✅ Error messages (per field + global)
+    - ✅ Loading states with spinner
+    - ✅ Keyboard handling (KeyboardAvoidingView)
+    - ✅ Touch feedback and disabled states
+    - ✅ Responsive layout with ScrollView
+    - ✅ Integration with AuthContext
 
-- [ ] **Task 2.12: Write Integration Test for Auth Flow**
+- [x] **Task 2.5: Create Signup Screen UI**
   - **Files Created**:
-    - `__tests__/integration/authFlow.test.ts`
-  - **Test Flow**:
+    - `src/screens/auth/SignupScreen.tsx` ✅
+    - `src/components/auth/SignupForm.tsx` ✅
+  - **UI Elements**:
+    - ✅ Display name input with validation
+    - ✅ Email input with validation
+    - ✅ Password input with validation
+    - ✅ Confirm password input with match validation
+    - ✅ Sign up button with loading state
+    - ✅ "Sign In" navigation link
+    - ✅ Terms of Service notice
+  - **Features**:
+    - 🌑 **Dark Mode Design** - Consistent dark theme
+    - ✅ Real-time field validation (4 fields)
+    - ✅ Password confirmation matching
+    - ✅ Error messages (per field + global)
+    - ✅ Loading states with spinner
+    - ✅ Keyboard handling (KeyboardAvoidingView)
+    - ✅ Touch feedback and disabled states
+    - ✅ Responsive layout with ScrollView
+    - ✅ Integration with AuthContext
+
+- [x] **Task 2.6: Create Splash Screen**
+  - **Files Created**:
+    - `src/screens/auth/SplashScreen.tsx` ✅
+  - **Content**: 
+    - 🌑 **Dark Mode Design** - Consistent dark theme
+    - ✅ App branding (logo, name, tagline)
+    - ✅ Loading spinner with "Loading..." text
+    - ✅ Version number footer
+    - ✅ Centered layout
+    - ✅ Status bar styling
+
+- [x] **Task 2.7: Set Up Auth Navigation**
+  - **Files Created**:
+    - `src/navigation/AuthNavigator.tsx` ✅
+    - `src/navigation/AppNavigator.tsx` ✅
+  - **Files Modified**:
+    - `App.tsx` ✅ (integrated AuthProvider and AppNavigator)
+  - **Navigation Flow**:
+    - ✅ Splash screen (while checking auth state)
+    - ✅ Auth screens (Login ↔ Signup) - if not logged in
+    - ✅ Main screens (placeholder) - if logged in
+  - **Features**:
+    - 🌑 **Dark Mode Theme** - Applied to NavigationContainer
+    - ✅ Conditional rendering based on auth state
+    - ✅ Automatic navigation on auth state change
+    - ✅ Smooth screen transitions
+    - ✅ No headers on auth screens
+    - ✅ Placeholder main screen with sign out button
+  - **Integration**:
+    - ✅ AuthProvider wraps entire app
+    - ✅ useAuth hook available everywhere
+    - ✅ Navigation state synced with auth state
+  - **Dependencies**: @react-navigation/native, @react-navigation/native-stack
+
+- [x] **Task 2.8: Create Validators**
+  - **Files Created**:
+    - `src/utils/validators.ts` ✅ (completed in Task 2.4)
+  - **Functions**: 
+    - ✅ validateEmail (format, length)
+    - ✅ validatePassword (minimum length)
+    - ✅ validateDisplayName (length)
+    - ✅ validatePasswordConfirmation (matching)
+    - ✅ validateGroupName (length)
+
+- [x] **Task 2.9: Implement User Profile Creation in Firestore**
+  - **Files Modified**:
+    - `src/services/firebase/authService.ts` ✅ (completed in Task 2.2)
+  - **Action**: On signup, create user doc in Firestore `/users/{userId}` ✅
+  - **Fields**: displayName, email, photoURL, bio, createdAt, lastSeen, isOnline ✅
+  - **Implementation**: signUp() function creates Firestore document automatically
+
+- [ ] **Task 2.10: Write Unit Tests for Auth Service** ⚠️ DEFERRED (Post-MVP)
+  - **Note**: Tests deferred to post-MVP to focus on core functionality
+  - **Planned Tests**:
+    - `signUp()` creates user in Firebase Auth
+    - `signUp()` creates user profile in Firestore
+    - `signIn()` returns user on valid credentials
+    - `signIn()` throws error on invalid credentials
+    - `signOut()` clears current user
+    - `updateProfile()` updates user data
+
+- [ ] **Task 2.11: Write Unit Tests for Validators** ⚠️ DEFERRED (Post-MVP)
+  - **Note**: Tests deferred to post-MVP to focus on core functionality
+  - **Planned Tests**:
+    - `validateEmail()` accepts valid emails
+    - `validateEmail()` rejects invalid emails
+    - `validatePassword()` enforces minimum length
+    - `validateDisplayName()` rejects empty names
+
+- [ ] **Task 2.12: Write Integration Test for Auth Flow** ⚠️ DEFERRED (Post-MVP)
+  - **Note**: Tests deferred to post-MVP to focus on core functionality
+  - **Planned Test Flow**:
     1. Sign up new user → verify user created in Firebase Auth & Firestore
     2. Log out → verify redirected to login
     3. Log in → verify redirected to main app
     4. Invalid credentials → verify error shown
-  - **Purpose**: Verify complete authentication flow end-to-end
 
-**PR Description**: "Implement complete authentication system with signup, login, logout, and user profile creation in Firestore. Includes auth context, form validation, navigation flow, and comprehensive unit/integration tests."
+**PR Description**: "✅ COMPLETE - Implement complete authentication system with signup, login, logout, and user profile creation in Firestore. Includes dark mode UI, auth context, form validation, navigation flow, and user presence tracking. Tests deferred to post-MVP."
 
 ---
 

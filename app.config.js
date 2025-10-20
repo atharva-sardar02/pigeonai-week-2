@@ -5,7 +5,7 @@ export default {
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
-    userInterfaceStyle: 'light',
+    userInterfaceStyle: 'dark',
     newArchEnabled: true,
     plugins: [
       'expo-asset',
@@ -14,7 +14,7 @@ export default {
     splash: {
       image: './assets/splash-icon.png',
       resizeMode: 'contain',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#000000',
     },
     ios: {
       supportsTablet: true,
@@ -22,13 +22,10 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#ffffff',
+        foregroundImage: './assets/icon.png',
+        backgroundColor: '#000000',
       },
       package: 'com.pigeonai.app',
-    },
-    web: {
-      favicon: './assets/favicon.png',
     },
     extra: {
       eas: {

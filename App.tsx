@@ -1,31 +1,25 @@
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from './src/store/context/AuthContext';
+import { AppNavigator } from './src/navigation/AppNavigator';
 
+/**
+ * Main App Component
+ * 
+ * Wraps the entire app with:
+ * - SafeAreaProvider (for safe area handling)
+ * - AuthProvider (for global auth state)
+ * - AppNavigator (for navigation)
+ */
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Pigeon AI</Text>
-      <Text style={styles.subtitle}>Real-time Messaging App</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <StatusBar style="light" />
+        <AppNavigator />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-});
 

@@ -1,22 +1,74 @@
 // App-wide constants
 
-// Colors
+// Colors (Dark Mode Theme - Matching Pigeon Icon)
 export const COLORS = {
-  primary: '#007AFF',
+  // Primary Brand Colors (Matching the pigeon icon gradient)
+  primary: '#4A9FF5',        // Bright blue from pigeon
+  primaryDark: '#2563EB',    // Darker blue from pigeon
+  primaryLight: '#60C5F5',   // Light cyan blue from pigeon
   secondary: '#5856D6',
+  
+  // Status Colors
   success: '#34C759',
   warning: '#FF9500',
   error: '#FF3B30',
-  background: '#FFFFFF',
-  backgroundSecondary: '#F2F2F7',
-  text: '#000000',
-  textSecondary: '#8E8E93',
-  border: '#C6C6C8',
+  info: '#4A9FF5',               // Matching pigeon blue
+  
+  // Background Colors (Dark Mode)
+  background: '#000000',
+  backgroundSecondary: '#1C1C1E',
+  backgroundTertiary: '#2C2C2E',
+  
+  // Text Colors (Dark Mode)
+  text: '#FFFFFF',
+  textSecondary: '#A1A1A6',
+  textTertiary: '#636366',
+  textPlaceholder: '#48484A',
+  
+  // Border Colors
+  border: '#38383A',
+  borderLight: '#48484A',
+  borderFocus: '#4A9FF5',        // Matching pigeon blue
+  
+  // Input Colors
+  inputBackground: '#1C1C1E',
+  inputBorder: '#38383A',
+  inputFocus: '#4A9FF5',         // Matching pigeon blue
+  inputText: '#FFFFFF',
+  inputPlaceholder: '#8E8E93',
+  
+  // Button Colors
+  buttonPrimary: '#4A9FF5',      // Matching pigeon blue
+  buttonPrimaryText: '#FFFFFF',
+  buttonSecondary: '#2C2C2E',
+  buttonSecondaryText: '#4A9FF5', // Matching pigeon blue
+  buttonDisabled: '#3A3A3C',
+  buttonDisabledText: '#636366',
+  
   // Message bubble colors
-  sentBubble: '#007AFF',
-  receivedBubble: '#E5E5EA',
+  sentBubble: '#4A9FF5',         // Matching pigeon blue
+  receivedBubble: '#2C2C2E',
   sentText: '#FFFFFF',
-  receivedText: '#000000',
+  receivedText: '#FFFFFF',
+  
+  // Status Indicators
+  online: '#34C759',
+  offline: '#8E8E93',
+  typing: '#4A9FF5',             // Matching pigeon blue
+  
+  // Card/Surface Colors
+  card: '#1C1C1E',
+  cardHover: '#2C2C2E',
+  
+  // Overlay Colors
+  overlay: 'rgba(0, 0, 0, 0.7)',
+  overlayLight: 'rgba(0, 0, 0, 0.5)',
+};
+
+// Additional UI constants updated for dark mode
+export const THEME = {
+  mode: 'dark',
+  name: 'Pigeon Dark',
 };
 
 // Sizes
