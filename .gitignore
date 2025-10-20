@@ -44,4 +44,7 @@ Thumbs.db
 # Firebase (we'll use .env instead)
 google-services.json
 GoogleService-Info.plist
+.firebase/
+firebase-debug.log
+firestore-debug.log
 

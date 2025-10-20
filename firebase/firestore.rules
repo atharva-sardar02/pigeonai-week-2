@@ -1,0 +1,157 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================================================
+    // HELPER FUNCTIONS
+    // ============================================================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user is the owner
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Check if user is in a list of participants
+    function isParticipant(participants) {
+      return isAuthenticated() && request.auth.uid in participants;
+    }
+    
+    // Check if user is an admin
+    function isAdmin(adminIds) {
+      return isAuthenticated() && request.auth.uid in adminIds;
+    }
+    
+    // Validate required fields exist
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    // ============================================================================
+    // USER PROFILES
+    // ============================================================================
+    
+    match /users/{userId} {
+      // Anyone authenticated can read any user profile (for displaying names, avatars)
+      allow read: if isAuthenticated();
+      
+      // Users can only create/update their own profile
+      allow create: if isOwner(userId) 
+                    && hasRequiredFields(['uid', 'email', 'displayName', 'createdAt', 'isOnline']);
+      
+      allow update: if isOwner(userId);
+      
+      // Users can delete their own profile
+      allow delete: if isOwner(userId);
+    }
+    
+    // ============================================================================
+    // CONVERSATIONS
+    // ============================================================================
+    
+    match /conversations/{conversationId} {
+      // Users can read conversations they are part of
+      allow read: if isAuthenticated() 
+                  && request.auth.uid in resource.data.participants;
+      
+      // Users can create conversations if they are in the participants list
+      allow create: if isAuthenticated() 
+                    && request.auth.uid in request.resource.data.participants
+                    && hasRequiredFields(['type', 'participants', 'unreadCount', 'createdAt', 'updatedAt'])
+                    && request.resource.data.participants.size() >= 2;
+      
+      // Users can update conversations they are part of
+      // (for updating lastMessage, lastMessageTime, unreadCount)
+      allow update: if isAuthenticated() 
+                    && request.auth.uid in resource.data.participants;
+      
+      // Only admins can delete group conversations
+      // DM conversations can be deleted by either participant
+      allow delete: if isAuthenticated() 
+                    && (
+                      (resource.data.type == 'dm' && request.auth.uid in resource.data.participants)
+                      || (resource.data.type == 'group' && request.auth.uid in resource.data.get('adminIds', []))
+                    );
+      
+      // ============================================================================
+      // MESSAGES (subcollection)
+      // ============================================================================
+      
+      match /messages/{messageId} {
+        // Users can read messages in conversations they are part of
+        allow read: if isAuthenticated() 
+                    && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        
+        // Users can create messages in conversations they are part of
+        // and only as themselves (senderId must match their uid)
+        allow create: if isAuthenticated() 
+                      && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+                      && request.resource.data.senderId == request.auth.uid
+                      && hasRequiredFields(['senderId', 'content', 'timestamp', 'status', 'type']);
+        
+        // Users can update messages to mark as read or update status
+        // Only for messages in conversations they are part of
+        allow update: if isAuthenticated() 
+                      && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        
+        // Users can delete their own messages
+        allow delete: if isAuthenticated() 
+                      && resource.data.senderId == request.auth.uid;
+      }
+      
+      // ============================================================================
+      // TYPING INDICATORS (subcollection)
+      // ============================================================================
+      
+      match /typing/{userId} {
+        // Users can read typing indicators in conversations they are part of
+        allow read: if isAuthenticated() 
+                    && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        
+        // Users can only write their own typing indicator
+        allow write: if isOwner(userId) 
+                     && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+      }
+    }
+    
+    // ============================================================================
+    // GROUPS (optional - for future group management)
+    // ============================================================================
+    
+    match /groups/{groupId} {
+      // Users can read groups they are members of
+      allow read: if isAuthenticated() 
+                  && request.auth.uid in resource.data.memberIds;
+      
+      // Only authenticated users can create groups
+      allow create: if isAuthenticated() 
+                    && request.auth.uid in request.resource.data.memberIds
+                    && request.auth.uid in request.resource.data.adminIds
+                    && hasRequiredFields(['name', 'adminIds', 'memberIds', 'createdAt', 'createdBy']);
+      
+      // Only admins can update group details
+      allow update: if isAuthenticated() 
+                    && request.auth.uid in resource.data.adminIds;
+      
+      // Only admins can delete groups
+      allow delete: if isAuthenticated() 
+                    && request.auth.uid in resource.data.adminIds;
+    }
+    
+    // ============================================================================
+    // DEFAULT DENY
+    // ============================================================================
+    
+    // Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+

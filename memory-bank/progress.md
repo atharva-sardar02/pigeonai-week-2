@@ -58,13 +58,64 @@
   - TypeScript 5.9.2
   - Firebase JS SDK 12.4.0
 
+### PR #2: Authentication System (COMPLETE ✅)
+- [x] User Model created with 11 helper functions
+- [x] Firebase Auth Service implemented (13 functions)
+  - signup, signin, signout, resetPassword
+  - User profile management
+  - Presence tracking (online/offline status)
+  - User-friendly error messages
+- [x] Auth Context created (AuthProvider + useAuth hook)
+  - Auth state listener
+  - Automatic profile fetching
+  - App lifecycle management
+  - Presence updates
+- [x] Login Screen UI (Dark mode)
+  - Email/password inputs with validation
+  - Loading states and error handling
+  - "Forgot Password?" link
+- [x] Signup Screen UI (Dark mode)
+  - Display name, email, password, confirm password
+  - Real-time validation
+  - Terms of Service notice
+- [x] Splash Screen with branding
+- [x] Auth Navigation setup (Login/Signup stack)
+- [x] App Navigator with conditional rendering
+- [x] Form validators (email, password, display name)
+- [x] SafeAreaView integration
+- [x] Custom pigeon icon integrated
+- [x] UI refined (colors, spacing)
+
+### PR #3: Core Messaging Infrastructure - Data Layer (IN PROGRESS 🔄)
+- [x] Task 3.1: Message Model
+  - 18 helper functions for message management
+  - Firestore conversion functions
+  - Status checks and formatting utilities
+- [x] Task 3.2: Conversation Model
+  - 21 helper functions for conversation management
+  - Participant and unread count management
+  - Formatting and filtering utilities
+- [ ] Task 3.3: Firestore Service
+- [ ] Task 3.4: Local Database (SQLite)
+- [ ] Task 3.5: Chat Context
+- [ ] Task 3.6: useMessages Hook
+- [ ] Task 3.7: useConversations Hook
+- [ ] Task 3.8: Firestore Security Rules
+- [ ] Task 3.9: Deploy Firestore Rules
+
 ---
 
 ## What's In Progress 🟡
 
 ### Current Status
 - ✅ PR #1 Complete (Project Setup & Configuration)
-- 🎯 **Next**: Begin PR #2 (Authentication System)
+- ✅ PR #2 Complete (Authentication System)
+- 🎯 **Current**: PR #3 (Core Messaging Infrastructure - Data Layer)
+  - ✅ Task 3.1: Message Model (18 helper functions)
+  - ✅ Task 3.2: Conversation Model (21 helper functions)
+  - 🔄 Task 3.3: Firestore Service (Next)
+  - ⏳ Task 3.4: Local Database (SQLite)
+  - ⏳ Task 3.5: Chat Context
 
 ---
 

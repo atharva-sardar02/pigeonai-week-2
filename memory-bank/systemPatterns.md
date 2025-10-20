@@ -1,8 +1,20 @@
 # System Patterns: Pigeon AI
 
+**Last Updated**: October 20, 2025 - PR #3 Data Models Created
+
 ## Architecture Overview
 
 Pigeon AI follows a **client-server architecture** with **real-time sync** and **serverless backend**.
+
+### Current Implementation Status
+- ✅ **PR #1**: Project Setup & Configuration
+- ✅ **PR #2**: Authentication System (User model, Auth service, Auth UI)
+- 🔄 **PR #3**: Core Messaging Infrastructure - Data Layer
+  - ✅ Message Model (18 helper functions)
+  - ✅ Conversation Model (21 helper functions)
+  - 🔄 Firestore Service (In Progress)
+
+---
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -37,6 +49,95 @@ Pigeon AI follows a **client-server architecture** with **real-time sync** and *
                      │ (Push Notifs)  │   │                │
                      └────────────────┘   └────────────────┘
 ```
+
+## Implemented Data Models (PR #3)
+
+### Message Model (`src/models/Message.ts`)
+
+**Purpose**: Encapsulate message data with rich helper functions for business logic.
+
+**Key Functions Implemented**:
+- **Create & Convert**: `createMessage()`, `fromFirestore()`, `toFirestore()`
+- **Status Management**: `updateStatus()`, `markAsRead()`, `isReadBy()`
+- **Status Checks**: `isRead()`, `isDelivered()`, `isSent()`, `isSending()`, `isFailed()`
+- **Utilities**: `formatTimestamp()`, `getMessagePreview()`, `isOwnMessage()`, `groupMessagesByDate()`
+
+**Pattern**: Pure functions that operate on Message objects (immutable transforms).
+
+**Example Usage**:
+```typescript
+import * as MessageModel from '../models/Message';
+
+// Create a new message
+const newMessage = MessageModel.createMessage(
+  currentUserId,
+  conversationId,
+  'Hello world!',
+  'text'
+);
+
+// Convert for Firestore
+const firestoreData = MessageModel.toFirestore(newMessage);
+await firestore.collection('messages').add(firestoreData);
+
+// Format for display
+const timestamp = MessageModel.formatTimestamp(message.timestamp); // "2:30 PM"
+const preview = MessageModel.getMessagePreview(message, 50); // "Hello world!"
+```
+
+### Conversation Model (`src/models/Conversation.ts`)
+
+**Purpose**: Manage conversation state, participants, and unread counts.
+
+**Key Functions Implemented**:
+- **Create & Convert**: `createConversation()`, `fromFirestore()`, `toFirestore()`
+- **Message Updates**: `updateLastMessage()`
+- **Unread Management**: `incrementUnreadCount()`, `resetUnreadCount()`, `getUnreadCount()`
+- **Participant Management**: `addParticipant()`, `removeParticipant()`, `isParticipant()`, `isAdmin()`
+- **Type Checks**: `isGroup()`, `isDM()`, `hasUnreadMessages()`
+- **Utilities**: `formatLastMessageTime()`, `getDisplayName()`, `sortConversationsByTime()`, `filterUnread()`
+
+**Pattern**: Immutable updates - each function returns a new Conversation object.
+
+**Example Usage**:
+```typescript
+import * as ConversationModel from '../models/Conversation';
+
+// Create a new DM conversation
+const newConvo = ConversationModel.createConversation(
+  [userId1, userId2],
+  'dm'
+);
+
+// Update last message
+const updated = ConversationModel.updateLastMessage(
+  conversation,
+  'Hey there!',
+  new Date()
+);
+
+// Increment unread count for a user
+const withUnread = ConversationModel.incrementUnreadCount(updated, userId2);
+
+// Get display name
+const name = ConversationModel.getDisplayName(
+  conversation,
+  currentUserId,
+  (id) => getUserDisplayName(id)
+); // "John Doe" or "Work Group"
+
+// Sort conversations by time
+const sorted = ConversationModel.sortConversationsByTime(conversations);
+```
+
+**Why This Pattern Works**:
+- **Type Safety**: TypeScript ensures all fields are handled correctly
+- **Testability**: Pure functions are easy to unit test
+- **Reusability**: Helper functions used across components
+- **Firestore Integration**: Automatic timestamp conversion between JS Date and Firestore Timestamp
+- **Immutability**: No side effects, predictable behavior
+
+---
 
 ## Core Design Patterns
 

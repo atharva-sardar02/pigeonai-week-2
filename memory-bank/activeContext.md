@@ -1,8 +1,8 @@
 # Active Context: Pigeon AI
 
-**Last Updated**: October 20, 2025 - PR #1 Complete  
-**Current Phase**: Development - PR #2 Ready  
-**Status**: ✅ Project Setup Complete, Authentication System Next
+**Last Updated**: October 20, 2025 - PR #2 Complete, PR #3 In Progress  
+**Current Phase**: Development - Core Messaging Infrastructure  
+**Status**: ✅ Auth Complete, Building Data Layer
 
 ---
 
@@ -10,35 +10,120 @@
 
 ### What We're Doing Right Now
 - ✅ **PR #1 COMPLETE**: Project setup finished, app running on Expo Go
-- ✅ **Firebase Configured**: Web app registered, Firestore + Auth enabled
-- ✅ **Expo SDK 54**: Latest versions of all packages installed
-- 🎯 **Next**: PR #2 - Authentication System (Login, Signup, User Profiles)
+- ✅ **PR #2 COMPLETE**: Authentication system fully functional with dark mode UI
+- ✅ **PR #3 Tasks 3.1-3.2 COMPLETE**: Message and Conversation models created
+- 🎯 **Current**: PR #3 - Core Messaging Infrastructure (Data Layer)
 
-### Immediate Next Steps (PR #2 - Authentication)
+### Immediate Next Steps (PR #3 - Messaging Data Layer)
 
-1. **Create Authentication UI** (2-3 hours)
-   - Build Login screen with email/password inputs
-   - Build Signup screen with display name input
-   - Create Auth Context for state management
-   - Implement form validation
-   - Add loading states and error handling
-   - Test authentication flow on physical device
+1. **✅ COMPLETE: Message & Conversation Models** 
+   - Message model with 18 helper functions
+   - Conversation model with 21 helper functions
+   - Full Firestore integration (timestamp conversion)
+   - Formatting utilities for timestamps
+   - Validation and sorting functions
 
-2. **Basic Authentication** (2-3 hours)
-   - Implement login screen UI (React Native)
-   - Implement signup screen UI
-   - Integrate Firebase Authentication
-   - Set up navigation (Auth stack vs Main stack)
-   - Set up user profile model
-   - Test authentication flow on physical device
+2. **🎯 NEXT: Firestore Service** (Task 3.3)
+   - Implement `createConversation(participantIds, type)`
+   - Implement `sendMessage(conversationId, message)`
+   - Implement `getMessages(conversationId, limit)`
+   - Implement `listenToMessages(conversationId, callback)`
+   - Implement `listenToConversations(userId, callback)`
+   - Implement `updateMessageStatus(messageId, status)`
+   - Implement `markMessageAsRead(messageId, userId)`
 
-3. **Core Messaging Foundation** (3-5 hours)
-   - Create message data models (local SQLite + Firestore)
-   - Build chat list screen
-   - Build chat screen with FlatList
-   - Implement send message functionality
-   - Set up Firestore onSnapshot listeners for real-time updates
-   - Implement optimistic UI updates
+3. **Local Database Setup** (Task 3.4)
+   - Set up SQLite with expo-sqlite
+   - Create message and conversation tables
+   - Implement insert, update, delete, fetch operations
+   - Implement offline queue
+
+4. **Chat Context** (Task 3.5)
+   - Create ChatContext provider
+   - Manage conversations and messages state
+   - Implement loadConversations, selectConversation, sendMessage
+
+---
+
+## Key Learnings from PR #2 (Authentication System)
+
+### UI/UX Insights
+1. **Dark Mode First**: Users expect dark mode in messaging apps
+   - Consistent color palette defined in constants
+   - All screens designed with dark theme from start
+   - Reduces eye strain, modern aesthetic
+
+2. **Form Validation UX**: Real-time validation improves experience
+   - Validate on blur, not on every keystroke (less annoying)
+   - Show field-level errors clearly
+   - Disable submit button when form invalid
+   - Show loading states during async operations
+
+3. **SafeAreaView Migration**: Deprecated `react-native` SafeAreaView
+   - Use `react-native-safe-area-context` instead
+   - Wrap entire app with `SafeAreaProvider`
+   - Prevents content from overlapping notches/safe areas
+
+4. **Icon Integration**: Custom branding matters even in MVP
+   - Icon used on splash, login, signup screens
+   - Color palette extracted from icon for consistency
+   - Visual identity established early
+
+5. **Spacing Refinement**: Small spacing tweaks have big impact
+   - Reduced gaps between related elements
+   - "Forgot password?" close to password field
+   - "Sign up" link close to button
+   - Improved visual hierarchy
+
+### Technical Learnings
+1. **Auth Persistence**: Firebase Auth needs explicit persistence
+   - Use `initializeAuth` with `getReactNativePersistence(AsyncStorage)`
+   - Without this, users logged out on app restart
+   - Critical for mobile apps
+
+2. **Presence Tracking**: Online/offline status requires careful management
+   - Set online on app foreground
+   - Set offline on app background/unmount
+   - Update lastSeen timestamp
+   - Use app state listener (`AppState.addEventListener`)
+
+3. **Navigation Theme**: React Navigation needs explicit fonts
+   - Must configure `fonts` in `NavigationContainer` theme
+   - Use system fonts to avoid font loading issues
+   - Set `dark: true` for dark mode
+
+4. **Error Handling**: User-friendly errors are essential
+   - Convert Firebase error codes to readable messages
+   - "User not found" → "No account found with this email"
+   - "wrong-password" → "Incorrect password"
+   - Improves user experience significantly
+
+### Files Created (PR #2)
+- `src/models/User.ts` (11 functions)
+- `src/services/firebase/authService.ts` (13 functions)
+- `src/store/context/AuthContext.tsx` (AuthProvider + useAuth)
+- `src/screens/auth/LoginScreen.tsx`
+- `src/screens/auth/SignupScreen.tsx`
+- `src/screens/auth/SplashScreen.tsx`
+- `src/components/auth/LoginForm.tsx`
+- `src/components/auth/SignupForm.tsx`
+- `src/utils/validators.ts` (5 validation functions)
+- `src/navigation/AuthNavigator.tsx`
+- `src/navigation/AppNavigator.tsx`
+
+### What Worked Well
+- Dark mode design looks professional
+- Form validation prevents bad inputs
+- Auth flow is smooth and intuitive
+- Presence tracking ready for messaging features
+- Context pattern makes auth state globally accessible
+
+### What to Improve (Post-MVP)
+- Add "Remember me" option
+- Add social auth (Google, Apple)
+- Add email verification flow
+- Add profile picture upload
+- Add password strength indicator
 
 ---
 

@@ -494,78 +494,276 @@ pigeonai-week-2/
 
 ### Tasks
 
-- [ ] **Task 3.1: Create Message Model**
+- [x] **Task 3.1: Create Message Model**
   - **Files Created**:
-    - `src/models/Message.ts`
-  - **Content**: Message interface
-    - id, senderId, conversationId, content, timestamp, status (sending/sent/delivered/read), type (text/image), imageUrl, readBy
+    - `src/models/Message.ts` ✅
+  - **Message Interface**: id, senderId, conversationId, content, timestamp, status, type, imageUrl, readBy
+  - **Helper Functions**:
+    - `createMessage()` - Create new message with defaults
+    - `fromFirestore()` - Convert Firestore doc to Message
+    - `toFirestore()` - Convert Message to Firestore doc
+    - `updateStatus()` - Update message status
+    - `markAsRead()` - Mark message as read by user
+    - `isReadBy()` - Check if read by specific user
+    - `isRead()`, `isDelivered()`, `isSent()`, `isSending()`, `isFailed()` - Status checks
+    - `getReadByCount()` - Count users who read the message
+    - `isImageMessage()`, `isTextMessage()` - Type checks
+    - `formatTimestamp()` - Format timestamp (e.g., "2:30 PM", "Yesterday")
+    - `getMessagePreview()` - Get truncated preview for conversation list
+    - `isOwnMessage()` - Check if message is from current user
+    - `isValidMessage()` - Validate message object
+    - `sortMessagesByTimestamp()` - Sort messages by time
+    - `groupMessagesByDate()` - Group messages by date
 
-- [ ] **Task 3.2: Create Conversation Model**
+- [x] **Task 3.2: Create Conversation Model**
   - **Files Created**:
-    - `src/models/Conversation.ts`
-  - **Content**: Conversation interface
-    - id, type (dm/group), participants, lastMessage, lastMessageTime, unreadCount, createdAt, updatedAt
+    - `src/models/Conversation.ts` ✅
+  - **Conversation Interface**: id, type, participants, lastMessage, lastMessageTime, unreadCount, createdAt, updatedAt, groupName, groupIcon, adminIds
+  - **Helper Functions**:
+    - `createConversation()` - Create new conversation with defaults
+    - `fromFirestore()` - Convert Firestore doc to Conversation
+    - `toFirestore()` - Convert Conversation to Firestore doc
+    - `updateLastMessage()` - Update last message info
+    - `incrementUnreadCount()` - Increment unread count for user
+    - `resetUnreadCount()` - Reset unread count for user
+    - `addParticipant()`, `removeParticipant()` - Manage participants
+    - `isGroup()`, `isDM()` - Type checks
+    - `getUnreadCount()` - Get unread count for user
+    - `hasUnreadMessages()` - Check if has unread messages
+    - `getParticipantCount()` - Get participant count
+    - `getOtherParticipantId()` - Get other participant in DM
+    - `isParticipant()`, `isAdmin()` - Check user roles
+    - `formatLastMessageTime()` - Format time (e.g., "2:30 PM", "Yesterday")
+    - `getDisplayName()` - Get conversation display name
+    - `isValidConversation()` - Validate conversation object
+    - `sortConversationsByTime()` - Sort conversations by time
+    - `filterByType()`, `filterUnread()` - Filter conversations
+    - `getTotalUnreadCount()` - Get total unread count across all conversations
 
-- [ ] **Task 3.3: Implement Firestore Service**
+- [x] **Task 3.3: Implement Firestore Service**
   - **Files Created**:
-    - `src/services/firebase/firestoreService.ts`
-  - **Functions**:
-    - `createConversation(participantIds, type)`
-    - `getConversations(userId)`
-    - `getConversation(conversationId)`
-    - `sendMessage(conversationId, message)`
-    - `getMessages(conversationId, limit)`
-    - `listenToMessages(conversationId, callback)`
-    - `listenToConversations(userId, callback)`
-    - `updateMessageStatus(messageId, status)`
-    - `markMessageAsRead(messageId, userId)`
+    - `src/services/firebase/firestoreService.ts` ✅
+  - **Conversation Functions**:
+    - `createConversation(participantIds, type, groupName, groupIcon, adminIds)` - Create new conversation
+    - `getConversation(conversationId)` - Get single conversation by ID
+    - `getConversations(userId)` - Get all conversations for user
+    - `listenToConversations(userId, callback, onError)` - Real-time listener for conversations
+    - `findOrCreateDMConversation(userId1, userId2)` - Find or create DM between two users
+    - `updateConversationLastMessage(conversationId, lastMessage, lastMessageTime)` - Update last message
+    - `incrementUnreadCount(conversationId, userId)` - Increment unread count
+    - `resetUnreadCount(conversationId, userId)` - Reset unread count to 0
+  - **Message Functions**:
+    - `sendMessage(conversationId, senderId, content, type, imageUrl)` - Send message
+    - `getMessages(conversationId, limit)` - Get messages with pagination
+    - `listenToMessages(conversationId, callback, onError)` - Real-time listener for messages
+    - `updateMessageStatus(conversationId, messageId, status)` - Update message status
+    - `markMessageAsRead(conversationId, messageId, userId)` - Mark single message as read
+    - `markAllMessagesAsRead(conversationId, userId)` - Mark all messages as read
+    - `deleteMessage(conversationId, messageId)` - Soft delete message
+  - **Typing Indicators**:
+    - `setTypingIndicator(conversationId, userId, isTyping)` - Set typing status
+    - `listenToTypingIndicators(conversationId, callback, onError)` - Listen to typing status
+  - **Utility Functions**:
+    - `conversationExists(conversationId)` - Check if conversation exists
+    - `getParticipantCount(conversationId)` - Get participant count
+  - **Features**:
+    - ✅ Full integration with Message and Conversation models
+    - ✅ Firestore timestamp conversion handled automatically
+    - ✅ Real-time listeners with error handling
+    - ✅ Batch operations for marking multiple messages as read
+    - ✅ Typing indicator support
+    - ✅ Unsubscribe functions returned for cleanup
+    - ✅ Comprehensive error handling with user-friendly messages
 
-- [ ] **Task 3.4: Set Up Local Database (SQLite)**
+- [x] **Task 3.4: Set Up Local Database (SQLite)**
   - **Files Created**:
-    - `src/services/database/sqliteService.ts`
-    - `src/services/database/localDatabase.ts`
-  - **Functions**:
-    - `initDatabase()`
-    - `insertMessage(message)`
-    - `updateMessage(messageId, updates)`
-    - `getMessages(conversationId, limit, offset)`
-    - `deleteMessage(messageId)`
-    - `insertConversation(conversation)`
-    - `updateConversation(conversationId, updates)`
-    - `getConversations()`
-  - **Tables**:
-    - `messages` (id, senderId, conversationId, content, timestamp, status, type, imageUrl, synced)
-    - `conversations` (id, type, participants, lastMessage, lastMessageTime, unreadCount, updatedAt)
+    - `src/services/database/sqliteService.ts` ✅
+    - `src/services/database/localDatabase.ts` ✅
+  - **SQLite Service (Low-Level Operations)**:
+    - `openDatabase()` - Open or create database
+    - `closeDatabase()` - Close database connection
+    - `executeQuery(sql, params)` - Execute SQL query
+    - `executeQueryAll(sql, params)` - Execute query and return all rows
+    - `executeQueryFirst(sql, params)` - Execute query and return first row
+    - `executeTransaction(operations)` - Execute multiple operations in transaction
+    - `dropAllTables()` - Drop all tables (dev/testing)
+    - `getDatabaseStats()` - Get database statistics
+  - **Message Operations**:
+    - `insertMessage(message, synced)` - Insert message into local DB
+    - `updateMessage(messageId, updates)` - Update message fields
+    - `getMessages(conversationId, limit, offset)` - Get messages with pagination
+    - `getMessage(messageId)` - Get single message by ID
+    - `deleteMessage(messageId)` - Delete message from local DB
+    - `getUnsyncedMessages()` - Get messages not yet synced to Firestore
+    - `markMessageAsSynced(messageId)` - Mark message as synced
+    - `deleteOldMessages(daysToKeep)` - Cleanup old messages (default 30 days)
+  - **Conversation Operations**:
+    - `insertConversation(conversation)` - Insert conversation into local DB
+    - `updateConversation(conversationId, updates)` - Update conversation fields
+    - `getConversations()` - Get all conversations sorted by update time
+    - `getConversation(conversationId)` - Get single conversation by ID
+    - `deleteConversation(conversationId)` - Delete conversation and its messages
+  - **Offline Queue Operations**:
+    - `enqueueOperation(operation)` - Add operation to offline queue
+    - `getQueuedOperations()` - Get all queued operations
+    - `dequeueOperation(operationId)` - Remove operation from queue
+    - `incrementRetryCount(operationId)` - Increment retry count
+    - `clearQueue()` - Clear all queued operations
+  - **Utility Functions**:
+    - `clearAllData()` - Clear all data from local database
+    - `getDatabaseStats()` - Get message, conversation, and queue counts
+  - **Database Tables**:
+    - `messages` - id (PK), senderId, conversationId, content, timestamp, status, type, imageUrl, readBy (JSON), synced, createdAt
+    - `conversations` - id (PK), type, participants (JSON), lastMessage, lastMessageTime, unreadCount (JSON), createdAt, updatedAt, groupName, groupIcon, adminIds (JSON)
+    - `offline_queue` - id (PK auto), operationType, data (JSON), createdAt, retryCount
+  - **Database Indexes**:
+    - `idx_messages_conversation` - On (conversationId, timestamp DESC) for fast message retrieval
+    - `idx_conversations_updated` - On (updatedAt DESC) for fast conversation list
+  - **Features**:
+    - ✅ Full SQLite integration with expo-sqlite
+    - ✅ Transaction support for atomic operations
+    - ✅ Offline queue for pending operations
+    - ✅ Message sync tracking (synced flag)
+    - ✅ Automatic cleanup of old messages
+    - ✅ JSON serialization for complex fields (readBy, participants, unreadCount)
+    - ✅ Comprehensive error handling with logging
+    - ✅ Pagination support for messages
+    - ✅ Database statistics and monitoring
 
-- [ ] **Task 3.5: Create Chat Context**
+- [x] **Task 3.5: Create Chat Context**
   - **Files Created**:
-    - `src/store/context/ChatContext.tsx`
-  - **State**: conversations, activeConversation, messages, loading, error
-  - **Functions**: loadConversations, selectConversation, sendMessage, loadMessages
+    - `src/store/context/ChatContext.tsx` ✅
+  - **State Management**:
+    - `conversations` - List of all conversations
+    - `activeConversation` - Currently selected conversation
+    - `messages` - Messages for active conversation
+    - `loading` - Loading state
+    - `error` - Error messages
+    - `isOnline` - Network connectivity status
+  - **Core Functions**:
+    - `loadConversations()` - Load conversations with real-time updates
+    - `selectConversation(conversationId)` - Select and load conversation
+    - `sendMessage(content, type)` - Send message with optimistic updates
+    - `loadMessages(conversationId)` - Load messages with real-time listener
+    - `createConversation(participantIds, type)` - Create new DM or group
+    - `syncOfflineQueue()` - Sync queued operations when online
+  - **Features**:
+    - ✅ Real-time Firestore listeners for conversations and messages
+    - ✅ Optimistic UI updates for sent messages
+    - ✅ Offline queue management with auto-sync
+    - ✅ Local database caching for offline access
+    - ✅ Network monitoring with NetInfo
+    - ✅ Automatic cleanup of listeners on unmount
+    - ✅ Mark messages as read automatically
+    - ✅ Error handling with user-friendly messages
+    - ✅ Database initialization on mount
 
-- [ ] **Task 3.6: Create useMessages Hook**
+- [x] **Task 3.6: Create useMessages Hook**
   - **Files Created**:
-    - `src/hooks/useMessages.ts`
-  - **Functions**: useMessages(conversationId)
-  - **Returns**: messages array, sendMessage, loading
+    - `src/hooks/useMessages.ts` ✅
+  - **Hook Signature**: `useMessages(conversationId: string | null)`
+  - **Returns**:
+    - `messages: Message[]` - Array of messages for the conversation
+    - `loading: boolean` - Loading state
+    - `error: string | null` - Error message if any
+    - `sendMessage(content, type, imageUrl)` - Send a message
+    - `refreshMessages()` - Force reload messages
+    - `markAsRead(messageId)` - Mark message as read
+  - **Features**:
+    - ✅ Real-time message updates via Firestore listener
+    - ✅ Optimistic UI updates for sent messages
+    - ✅ Offline support with local cache
+    - ✅ Automatic message caching to local database
+    - ✅ Network connectivity monitoring
+    - ✅ Failed message handling and retry queue
+    - ✅ Automatic listener cleanup on unmount
+    - ✅ Temporary IDs for optimistic updates
 
-- [ ] **Task 3.7: Create useConversations Hook**
+- [x] **Task 3.7: Create useConversations Hook**
   - **Files Created**:
-    - `src/hooks/useConversations.ts`
-  - **Functions**: useConversations()
-  - **Returns**: conversations array, createConversation, loading
+    - `src/hooks/useConversations.ts` ✅
+  - **Hook Signature**: `useConversations()`
+  - **Returns**:
+    - `conversations: Conversation[]` - Array of all conversations
+    - `loading: boolean` - Loading state
+    - `error: string | null` - Error message if any
+    - `createConversation(participantIds, type, groupName)` - Create new conversation
+    - `findOrCreateDM(otherUserId)` - Find existing DM or create new
+    - `refreshConversations()` - Force reload conversations
+    - `deleteConversation(conversationId)` - Delete conversation locally
+  - **Features**:
+    - ✅ Real-time conversation updates via Firestore listener
+    - ✅ Offline support with local cache
+    - ✅ Automatic conversation caching to local database
+    - ✅ Network connectivity monitoring
+    - ✅ DM de-duplication (find existing before creating)
+    - ✅ Automatic listener cleanup on unmount
+    - ✅ Group conversation support with custom names
 
-- [ ] **Task 3.8: Write Firestore Security Rules**
+- [x] **Task 3.8: Write Firestore Security Rules**
   - **Files Created**:
-    - `firebase/firestore.rules`
-  - **Rules**:
-    - Users can read/write their own profile
-    - Users can only read conversations they're part of
-    - Users can only read messages in their conversations
-    - Users can only send messages as themselves
+    - `firebase/firestore.rules` ✅
+  - **Helper Functions**:
+    - `isAuthenticated()` - Check if user is logged in
+    - `isOwner(userId)` - Check if user owns resource
+    - `isParticipant(participants)` - Check if user is in participant list
+    - `isAdmin(adminIds)` - Check if user is admin
+    - `hasRequiredFields(fields)` - Validate required fields exist
+  - **User Profile Rules**:
+    - ✅ Anyone authenticated can read any user profile (for displaying names/avatars)
+    - ✅ Users can only create/update their own profile
+    - ✅ Users can delete their own profile
+    - ✅ Required fields enforced: uid, email, displayName, createdAt, isOnline
+  - **Conversation Rules**:
+    - ✅ Users can only read conversations they are part of
+    - ✅ Users can create conversations if they're in participants list
+    - ✅ Minimum 2 participants required
+    - ✅ Users can update conversations they're part of (for lastMessage, unreadCount)
+    - ✅ DM deletion: Either participant can delete
+    - ✅ Group deletion: Only admins can delete
+    - ✅ Required fields enforced: type, participants, unreadCount, createdAt, updatedAt
+  - **Message Rules (subcollection)**:
+    - ✅ Users can only read messages in their conversations
+    - ✅ Users can only send messages as themselves (senderId validation)
+    - ✅ Users must be conversation participants to create messages
+    - ✅ Users can update messages to mark as read or update status
+    - ✅ Users can only delete their own messages
+    - ✅ Required fields enforced: senderId, content, timestamp, status, type
+  - **Typing Indicator Rules (subcollection)**:
+    - ✅ Users can read typing indicators in their conversations
+    - ✅ Users can only write their own typing indicator
+  - **Group Rules (future)**:
+    - ✅ Users can read groups they are members of
+    - ✅ Only creators start as admins
+    - ✅ Only admins can update/delete groups
+    - ✅ Required fields enforced: name, adminIds, memberIds, createdAt, createdBy
+  - **Security Features**:
+    - ✅ Default deny all (explicit allow rules only)
+    - ✅ Authentication required for all operations
+    - ✅ Participant verification for conversations/messages
+    - ✅ SenderId spoofing prevention
+    - ✅ Required field validation
+    - ✅ Admin role enforcement for group operations
 
-- [ ] **Task 3.9: Deploy Firestore Rules**
-  - **Action**: `firebase deploy --only firestore:rules`
+- [x] **Task 3.9: Deploy Firestore Rules** ✅ DEPLOYED
+  - **Files Created**:
+    - `firebase.json` ✅ - Firebase project configuration
+    - `.firebaserc` ✅ - Firebase project alias (pigeonai-dev)
+    - `firebase/firestore.indexes.json` ✅ - Firestore indexes for query optimization
+  - **Configuration**:
+    - Project: pigeonai-dev
+    - Rules file: firebase/firestore.rules
+    - Indexes: Optimized for conversations (participants + updatedAt) and messages (conversationId + timestamp)
+  - **Deployment Steps** (Manual):
+    1. ✅ Install Firebase CLI: `npm install -g firebase-tools`
+    2. ✅ Login to Firebase: `firebase login`
+    3. ✅ Verify project: `firebase projects:list`
+    4. ✅ Deploy rules: `firebase deploy --only firestore:rules`
+    5. ✅ Deploy indexes: `firebase deploy --only firestore:indexes`
+  - **Deployment Status**:
+    - ✅ Rules deployed successfully to cloud.firestore
+    - ✅ Indexes deployed successfully
+    - ⚠️ Minor warnings (unused functions) - safe to ignore
 
 - [ ] **Task 3.10: Write Unit Tests for Firestore Service**
   - **Files Created**:
