@@ -93,12 +93,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (!user) return;
 
-      if (nextAppState === 'active') {
-        // App came to foreground - set user as online
-        await authService.setUserOnlineStatus(user.uid, true);
-      } else if (nextAppState === 'background' || nextAppState === 'inactive') {
-        // App went to background - set user as offline
-        await authService.setUserOnlineStatus(user.uid, false);
+      try {
+        if (nextAppState === 'active') {
+          // App came to foreground - set user as online
+          await authService.setUserOnlineStatus(user.uid, true);
+        } else if (nextAppState === 'background' || nextAppState === 'inactive') {
+          // App went to background - set user as offline
+          await authService.setUserOnlineStatus(user.uid, false);
+        }
+      } catch (err) {
+        // Don't block app state changes if status update fails
+        console.warn('Failed to update online status on app state change:', err);
       }
     };
 
@@ -116,8 +121,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     return () => {
       if (user) {
-        // Set user offline when component unmounts
-        authService.setUserOnlineStatus(user.uid, false);
+        // Try to set user offline when component unmounts
+        // This is best-effort and may not always succeed
+        authService.setUserOnlineStatus(user.uid, false).catch((err) => {
+          console.warn('Failed to update online status on unmount:', err);
+        });
       }
     };
   }, [user]);

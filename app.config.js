@@ -14,7 +14,7 @@ export default {
     splash: {
       image: './assets/splash-icon.png',
       resizeMode: 'contain',
-      backgroundColor: '#000000',
+      backgroundColor: '#060C1D',
     },
     ios: {
       supportsTablet: true,
@@ -23,7 +23,7 @@ export default {
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/icon.png',
-        backgroundColor: '#000000',
+        backgroundColor: '#060C1D',
       },
       package: 'com.pigeonai.app',
     },

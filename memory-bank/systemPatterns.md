@@ -1,33 +1,47 @@
 # System Patterns: Pigeon AI
 
-**Last Updated**: October 20, 2025 - PR #3 Data Models Created
+**Last Updated**: October 20, 2025 - PR #3 COMPLETE ✅
 
 ## Architecture Overview
 
 Pigeon AI follows a **client-server architecture** with **real-time sync** and **serverless backend**.
 
 ### Current Implementation Status
-- ✅ **PR #1**: Project Setup & Configuration
-- ✅ **PR #2**: Authentication System (User model, Auth service, Auth UI)
-- 🔄 **PR #3**: Core Messaging Infrastructure - Data Layer
+- ✅ **PR #1**: Project Setup & Configuration (Expo SDK 54, Firebase, Dependencies)
+- ✅ **PR #2**: Authentication System (User model, Auth service, Auth UI, Dark Mode)
+- ✅ **PR #3**: Core Messaging Infrastructure - Data Layer (COMPLETE)
   - ✅ Message Model (18 helper functions)
   - ✅ Conversation Model (21 helper functions)
-  - 🔄 Firestore Service (In Progress)
+  - ✅ Firestore Service (19 functions - real-time messaging)
+  - ✅ SQLite Service (8 functions - local database)
+  - ✅ Local Database Service (29 functions - offline support)
+  - ✅ ChatContext (global state management)
+  - ✅ useMessages & useConversations hooks
+  - ✅ Security rules deployed to production
+  - ✅ Firestore indexes deployed
+- 🎯 **NEXT**: PR #4 (Chat UI & Real-Time Sync)
 
 ---
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     iOS App (SwiftUI)                       │
+│           React Native App (Expo SDK 54)                    │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │   UI Layer   │  │ View Models  │  │Local Storage │     │
-│  │   (SwiftUI)  │◄─┤  (Combine)   │◄─┤  (SwiftData) │     │
+│  │   UI Layer   │  │  Contexts    │  │Local Storage │     │
+│  │(Screens/     │◄─┤(Auth, Chat)  │◄─┤  (SQLite)    │     │
+│  │ Components)  │  │              │  │              │     │
 │  └──────────────┘  └──────┬───────┘  └──────────────┘     │
 │                            │                                 │
 │                    ┌───────▼────────┐                       │
-│                    │ Network Layer  │                       │
-│                    │ (URLSession +  │                       │
-│                    │  Firebase SDK) │                       │
+│                    │Custom Hooks    │                       │
+│                    │(useMessages,   │                       │
+│                    │ useConversations)│                     │
+│                    └───────┬────────┘                       │
+│                            │                                 │
+│                    ┌───────▼────────┐                       │
+│                    │Services Layer  │                       │
+│                    │(Firestore,     │                       │
+│                    │ SQLite, Auth)  │                       │
 │                    └───────┬────────┘                       │
 └────────────────────────────┼──────────────────────────────┘
                              │
@@ -39,13 +53,13 @@ Pigeon AI follows a **client-server architecture** with **real-time sync** and *
         │                    │                    │
 ┌───────▼─────────┐  ┌──────▼───────┐  ┌────────▼─────────┐
 │ Firebase Auth   │  │  Firestore   │  │ Cloud Functions  │
-│ (User Sessions) │  │ (Real-time   │  │ (AI Endpoints)   │
+│ (User Sessions) │  │ (Real-time   │  │ (Future: AI)     │
 │                 │  │  Database)   │  │                  │
 └─────────────────┘  └──────┬───────┘  └────────┬─────────┘
                              │                    │
                      ┌───────▼────────┐   ┌──────▼─────────┐
                      │ Firebase       │   │  OpenAI API    │
-                     │ Cloud Messaging│   │  (GPT-4)       │
+                     │ Cloud Messaging│   │  (Future)      │
                      │ (Push Notifs)  │   │                │
                      └────────────────┘   └────────────────┘
 ```
@@ -136,6 +150,125 @@ const sorted = ConversationModel.sortConversationsByTime(conversations);
 - **Reusability**: Helper functions used across components
 - **Firestore Integration**: Automatic timestamp conversion between JS Date and Firestore Timestamp
 - **Immutability**: No side effects, predictable behavior
+
+---
+
+## Implemented Services (PR #3)
+
+### Firestore Service (`src/services/firebase/firestoreService.ts`)
+
+**Purpose**: Interact with Firebase Firestore for real-time messaging and conversation management.
+
+**19 Functions Implemented**:
+
+**Conversation Operations**:
+- `createConversation(participantIds, type, groupName?, groupIcon?, adminIds?)` - Create new conversation
+- `getConversation(conversationId)` - Fetch single conversation
+- `getUserConversations(userId)` - Get all conversations for a user
+- `listenToConversations(userId, callback)` - Real-time conversation updates
+- `updateConversationUnreadCount(conversationId, userId, increment)` - Manage unread counts
+
+**Message Operations**:
+- `sendMessage(conversationId, message)` - Send new message
+- `getMessages(conversationId, limit?)` - Fetch messages with pagination
+- `listenToMessages(conversationId, callback)` - Real-time message updates
+- `updateMessageStatus(messageId, conversationId, status)` - Update message delivery status
+- `markMessageAsRead(messageId, conversationId, userId)` - Mark message as read
+- `markAllMessagesAsRead(conversationId, userId)` - Bulk mark as read
+- `deleteMessage(messageId, conversationId)` - Delete message
+
+**Typing Indicators**:
+- `setTypingStatus(conversationId, userId, isTyping)` - Set typing status
+- `listenToTypingStatus(conversationId, callback)` - Real-time typing updates
+
+**Utilities**:
+- `stopListening(conversationId)` - Clean up listeners
+- Plus internal helper functions for error handling and logging
+
+**Pattern**: Async functions with comprehensive error handling and logging.
+
+**Example Usage**:
+```typescript
+import * as firestoreService from '../services/firebase/firestoreService';
+
+// Send a message
+await firestoreService.sendMessage(conversationId, message);
+
+// Listen to messages (real-time)
+const unsubscribe = firestoreService.listenToMessages(
+  conversationId,
+  (messages) => {
+    setMessages(messages);
+  }
+);
+
+// Cleanup
+unsubscribe();
+```
+
+### Local Database Service (`src/services/database/localDatabase.ts`)
+
+**Purpose**: Provide offline support and local caching using SQLite.
+
+**29 Functions Implemented**:
+
+**Database Management**:
+- `initializeDatabase()` - Create tables and indexes
+- `closeDatabase()` - Safely close database
+- `clearAllData()` - Clear all data
+- `getDatabaseStats()` - Get counts of messages, conversations, queue
+
+**Message Operations**:
+- `insertMessage(message)` - Save message locally
+- `updateMessage(messageId, updates)` - Update existing message
+- `getMessages(conversationId, limit?, offset?)` - Fetch messages with pagination
+- `getMessageById(messageId)` - Get single message
+- `deleteMessage(messageId)` - Delete message
+- `markMessageAsSynced(messageId)` - Mark as synced with Firestore
+
+**Conversation Operations**:
+- `insertConversation(conversation)` - Save conversation locally
+- `updateConversation(conversationId, updates)` - Update conversation
+- `getConversations()` - Get all conversations sorted by update time
+- `getConversation(conversationId)` - Get single conversation
+- `deleteConversation(conversationId)` - Delete conversation and its messages
+
+**Offline Queue Operations**:
+- `enqueueOperation(operation)` - Add operation to offline queue
+- `getQueuedOperations()` - Get all queued operations
+- `dequeueOperation(operationId)` - Remove operation from queue
+- `incrementRetryCount(operationId)` - Increment retry count
+- `clearQueue()` - Clear all queued operations
+
+**Database Tables**:
+- `messages` - id, senderId, conversationId, content, timestamp, status, type, imageUrl, readBy (JSON), synced, createdAt
+- `conversations` - id, type, participants (JSON), lastMessage, lastMessageTime, unreadCount (JSON), createdAt, updatedAt, groupName, groupIcon, adminIds (JSON)
+- `offline_queue` - id (auto), operationType, data (JSON), createdAt, retryCount
+
+**Indexes for Performance**:
+- `idx_messages_conversation` on (conversationId, timestamp DESC)
+- `idx_conversations_updated` on (updatedAt DESC)
+
+**Example Usage**:
+```typescript
+import * as localDatabase from '../services/database/localDatabase';
+
+// Initialize database
+await localDatabase.initializeDatabase();
+
+// Save message locally
+await localDatabase.insertMessage(message);
+
+// Queue operation for offline sync
+await localDatabase.enqueueOperation({
+  operationType: 'sendMessage',
+  data: { conversationId, message },
+});
+
+// Get statistics
+const stats = await localDatabase.getDatabaseStats();
+console.log(`${stats.messageCount} messages, ${stats.queueLength} queued`);
+```
 
 ---
 

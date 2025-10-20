@@ -14,51 +14,51 @@ export const COLORS = {
   error: '#FF3B30',
   info: '#4A9FF5',               // Matching pigeon blue
   
-  // Background Colors (Dark Mode)
-  background: '#000000',
-  backgroundSecondary: '#1C1C1E',
-  backgroundTertiary: '#2C2C2E',
+  // Background Colors (Dark Mode - Matching Icon Background)
+  background: '#060C1D',         // Exact match to pigeon icon background
+  backgroundSecondary: '#0F1A28',
+  backgroundTertiary: '#1A2533',
   
   // Text Colors (Dark Mode)
   text: '#FFFFFF',
-  textSecondary: '#A1A1A6',
-  textTertiary: '#636366',
-  textPlaceholder: '#48484A',
+  textSecondary: '#B0B3BA',      // Lighter for better contrast
+  textTertiary: '#7A7D84',        // Lighter for better readability
+  textPlaceholder: '#5A5D64',     // Lighter but still subtle
   
   // Border Colors
-  border: '#38383A',
-  borderLight: '#48484A',
+  border: '#1E2A3D',
+  borderLight: '#2A3847',
   borderFocus: '#4A9FF5',        // Matching pigeon blue
   
   // Input Colors
-  inputBackground: '#1C1C1E',
-  inputBorder: '#38383A',
+  inputBackground: '#0F1A28',    // More visible against main background
+  inputBorder: '#1E2A3D',
   inputFocus: '#4A9FF5',         // Matching pigeon blue
   inputText: '#FFFFFF',
-  inputPlaceholder: '#8E8E93',
+  inputPlaceholder: '#7A7D84',   // Better visibility
   
   // Button Colors
   buttonPrimary: '#4A9FF5',      // Matching pigeon blue
   buttonPrimaryText: '#FFFFFF',
-  buttonSecondary: '#2C2C2E',
+  buttonSecondary: '#1A2533',    // Matching background tertiary
   buttonSecondaryText: '#4A9FF5', // Matching pigeon blue
-  buttonDisabled: '#3A3A3C',
-  buttonDisabledText: '#636366',
+  buttonDisabled: '#1E2A3D',
+  buttonDisabledText: '#7A7D84',  // Better visibility when disabled
   
   // Message bubble colors
   sentBubble: '#4A9FF5',         // Matching pigeon blue
-  receivedBubble: '#2C2C2E',
+  receivedBubble: '#1A2533',     // Matching background tertiary
   sentText: '#FFFFFF',
   receivedText: '#FFFFFF',
   
   // Status Indicators
   online: '#34C759',
-  offline: '#8E8E93',
+  offline: '#7A7D84',             // Lighter for better visibility
   typing: '#4A9FF5',             // Matching pigeon blue
   
   // Card/Surface Colors
-  card: '#1C1C1E',
-  cardHover: '#2C2C2E',
+  card: '#0F1A28',               // Matching background secondary
+  cardHover: '#1A2533',           // Matching background tertiary
   
   // Overlay Colors
   overlay: 'rgba(0, 0, 0, 0.7)',

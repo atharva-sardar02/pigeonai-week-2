@@ -1,8 +1,8 @@
 # Active Context: Pigeon AI
 
-**Last Updated**: October 20, 2025 - PR #2 Complete, PR #3 In Progress  
-**Current Phase**: Development - Core Messaging Infrastructure  
-**Status**: ✅ Auth Complete, Building Data Layer
+**Last Updated**: October 20, 2025 - PR #3 COMPLETE ✅  
+**Current Phase**: Development - Messaging Data Layer Complete, Ready for Chat UI  
+**Status**: ✅ Auth Complete, ✅ Data Layer Complete, UI Color Scheme Updated
 
 ---
 
@@ -11,37 +11,122 @@
 ### What We're Doing Right Now
 - ✅ **PR #1 COMPLETE**: Project setup finished, app running on Expo Go
 - ✅ **PR #2 COMPLETE**: Authentication system fully functional with dark mode UI
-- ✅ **PR #3 Tasks 3.1-3.2 COMPLETE**: Message and Conversation models created
-- 🎯 **Current**: PR #3 - Core Messaging Infrastructure (Data Layer)
+- ✅ **PR #3 COMPLETE**: Core Messaging Infrastructure (Data Layer)
+  - ✅ All 9 tasks completed (Tasks 3.1-3.9)
+  - ✅ Models, services, context, hooks, security rules deployed
+  - ✅ Firestore rules and indexes deployed to production
+- 🎨 **UI UPDATE COMPLETE**: Color scheme matched to pigeon icon background (`#060C1D`)
+- 🎯 **NEXT**: PR #4 - Chat UI & Real-Time Sync
 
-### Immediate Next Steps (PR #3 - Messaging Data Layer)
+### PR #3 Accomplishments
 
-1. **✅ COMPLETE: Message & Conversation Models** 
+1. **✅ Models Created** (Tasks 3.1-3.2)
    - Message model with 18 helper functions
    - Conversation model with 21 helper functions
-   - Full Firestore integration (timestamp conversion)
-   - Formatting utilities for timestamps
-   - Validation and sorting functions
+   - Full Firestore timestamp conversion
+   - Formatting, validation, and sorting utilities
 
-2. **🎯 NEXT: Firestore Service** (Task 3.3)
-   - Implement `createConversation(participantIds, type)`
-   - Implement `sendMessage(conversationId, message)`
-   - Implement `getMessages(conversationId, limit)`
-   - Implement `listenToMessages(conversationId, callback)`
-   - Implement `listenToConversations(userId, callback)`
-   - Implement `updateMessageStatus(messageId, status)`
-   - Implement `markMessageAsRead(messageId, userId)`
+2. **✅ Services Implemented** (Tasks 3.3-3.4)
+   - **Firestore Service**: 19 functions for conversations, messages, typing indicators
+   - **SQLite Service**: 8 core functions for local database operations
+   - **Local Database Service**: 29 functions with offline queue, caching, sync tracking
 
-3. **Local Database Setup** (Task 3.4)
-   - Set up SQLite with expo-sqlite
-   - Create message and conversation tables
-   - Implement insert, update, delete, fetch operations
-   - Implement offline queue
+3. **✅ State Management** (Tasks 3.5-3.7)
+   - **ChatContext**: Complete provider with conversations, messages, offline sync
+   - **useMessages Hook**: Real-time message management for conversations
+   - **useConversations Hook**: Real-time conversation list management
 
-4. **Chat Context** (Task 3.5)
-   - Create ChatContext provider
-   - Manage conversations and messages state
-   - Implement loadConversations, selectConversation, sendMessage
+4. **✅ Security** (Tasks 3.8-3.9)
+   - Comprehensive Firestore security rules (authentication, authorization, validation)
+   - Firestore indexes for optimized queries
+   - **DEPLOYED TO PRODUCTION** (`pigeonai-dev`)
+
+5. **🎨 UI Color Update**
+   - Background color matched to icon: `#060C1D`
+   - All secondary/tertiary colors adjusted for proper contrast
+   - Text colors optimized for dark background readability
+   - Splash screen and adaptive icons updated
+
+---
+
+## Key Learnings from PR #3 (Core Messaging Infrastructure)
+
+### Technical Learnings
+
+1. **Model Pattern**: Pure helper functions > classes
+   - 18 functions for Message, 21 for Conversation
+   - Immutable transforms (return new objects)
+   - Easy to test, reusable across codebase
+   - TypeScript ensures type safety
+
+2. **Firestore Integration**: Timestamp conversion is critical
+   - Firestore uses `Timestamp` type, JavaScript uses `Date`
+   - Must convert in both directions (`toFirestore()`, `fromFirestore()`)
+   - Helper functions handle this automatically
+   - Prevents runtime errors
+
+3. **SQLite for Offline**: expo-sqlite provides local persistence
+   - Create tables with indexes for fast queries
+   - Transaction support for atomic operations
+   - JSON serialization for complex fields (readBy, participants)
+   - Offline queue with retry logic
+
+4. **React Context**: Powerful for global state
+   - ChatContext manages all messaging state
+   - Real-time listeners integrated
+   - Network monitoring with NetInfo
+   - Automatic cleanup on unmount
+
+5. **Custom Hooks**: Encapsulate complex logic
+   - `useMessages(conversationId)` - Single conversation
+   - `useConversations()` - All conversations
+   - Return loading, error, data, and actions
+   - Reusable across components
+
+6. **Security Rules**: Must be comprehensive
+   - Default deny all
+   - Authenticate + authorize (user must be participant)
+   - Validate required fields (type, participants, timestamps)
+   - Prevent senderId spoofing
+
+7. **Firestore Indexes**: Required for complex queries
+   - Composite index for conversations: `participants` + `updatedAt DESC`
+   - Composite index for messages: `conversationId` + `timestamp DESC`
+   - Firebase CLI for deployment (`firebase deploy --only firestore:indexes`)
+
+8. **Color Theming**: Exact color match matters
+   - Icon background: `#060C1D` (very dark navy)
+   - Secondary: `#0F1A28`, Tertiary: `#1A2533`
+   - Text colors must have sufficient contrast (WCAG AA)
+   - Lighter text for readability: `#B0B3BA` (secondary), `#7A7D84` (tertiary)
+
+### Files Created (PR #3)
+- `src/models/Message.ts` (18 functions)
+- `src/models/Conversation.ts` (21 functions)
+- `src/services/firebase/firestoreService.ts` (19 functions)
+- `src/services/database/sqliteService.ts` (8 functions)
+- `src/services/database/localDatabase.ts` (29 functions)
+- `src/store/context/ChatContext.tsx` (ChatProvider + useChat)
+- `src/hooks/useMessages.ts`
+- `src/hooks/useConversations.ts`
+- `firebase/firestore.rules` (comprehensive security)
+- `firebase/firestore.indexes.json` (query optimization)
+- `firebase.json` (Firebase config)
+- `.firebaserc` (project alias)
+
+### What Worked Well
+- Pure function pattern for models (testable, reusable)
+- Firestore + SQLite dual-layer (online + offline)
+- React Context for state management
+- Custom hooks for specific features
+- Comprehensive security rules (deployed)
+
+### What to Improve (Post-MVP)
+- Add unit tests for models and services
+- Add integration tests for message flow
+- Optimize Firestore reads (pagination, caching)
+- Add retry logic for failed Firestore operations
+- Message encryption (end-to-end)
 
 ---
 

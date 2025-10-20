@@ -136,9 +136,15 @@ export const signOut = async (): Promise<void> => {
   try {
     const user = auth.currentUser;
     
-    // Update user's online status to false before signing out
+    // Try to update user's online status to false before signing out
+    // But don't block sign out if this fails
     if (user) {
-      await setUserOnlineStatus(user.uid, false);
+      try {
+        await setUserOnlineStatus(user.uid, false);
+      } catch (statusError) {
+        // Log the error but don't prevent sign out
+        console.warn('Failed to update online status on sign out:', statusError);
+      }
     }
 
     await firebaseSignOut(auth);
@@ -242,12 +248,21 @@ export const setUserOnlineStatus = async (
   isOnline: boolean
 ): Promise<void> => {
   try {
+    // Check if user is still authenticated before updating
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.uid !== uid) {
+      // User is not authenticated or uid mismatch, skip update
+      return;
+    }
+
     await updateDoc(doc(db, 'users', uid), {
       isOnline,
       lastSeen: serverTimestamp(),
     });
   } catch (error: any) {
-    console.error('Error updating online status:', error);
+    // Log as warning instead of error to avoid error overlay
+    // This is best-effort and expected to fail after sign out
+    console.warn('Failed to update online status:', error.message);
   }
 };
 
@@ -257,6 +272,13 @@ export const setUserOnlineStatus = async (
  */
 export const setupPresence = async (uid: string): Promise<void> => {
   try {
+    // Check if user is still authenticated
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.uid !== uid) {
+      // User is not authenticated, skip setup
+      return;
+    }
+
     const userStatusRef = doc(db, 'users', uid);
 
     // Set user as online
@@ -272,7 +294,7 @@ export const setupPresence = async (uid: string): Promise<void> => {
     // 3. Or implement periodic heartbeat system
     // This will be handled in the AuthContext
   } catch (error: any) {
-    console.error('Error setting up presence:', error);
+    console.warn('Failed to set up presence:', error.message);
   }
 };
 
