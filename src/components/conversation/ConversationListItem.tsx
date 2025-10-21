@@ -12,6 +12,7 @@ import { COLORS, SPACING, TYPOGRAPHY } from '../../utils/constants';
 import { formatTimestamp } from '../../utils/dateFormatter';
 import { Avatar } from '../common/Avatar';
 import { useUserDisplayName } from '../../hooks/useUserProfile';
+import { usePresence } from '../../hooks/usePresence';
 
 interface ConversationListItemProps {
   conversation: Conversation;
@@ -28,7 +29,7 @@ interface ConversationListItemProps {
  * - Last message preview
  * - Timestamp
  * - Unread badge count
- * - Online status indicator
+ * - Online status indicator (for direct messages)
  */
 export function ConversationListItem({
   conversation,
@@ -46,6 +47,9 @@ export function ConversationListItem({
 
   // Fetch other user's display name (cached)
   const otherUserName = useUserDisplayName(otherUserId);
+
+  // Get other user's presence status (for DMs only)
+  const { isOnline } = usePresence(otherUserId);
 
   // Get display name (for groups, use name; for 1-1, use other participant's name)
   const displayName = conversation.type === 'group'
@@ -75,8 +79,8 @@ export function ConversationListItem({
         <Avatar
           displayName={displayName}
           size="large"
-          showOnlineStatus={conversation.type === 'direct'}
-          isOnline={false} // TODO: Integrate with presence system in PR #5
+          showOnlineStatus={conversation.type === 'direct' || conversation.type === 'dm'}
+          isOnline={isOnline}
         />
       </View>
 

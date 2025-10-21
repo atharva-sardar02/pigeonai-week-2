@@ -47,14 +47,24 @@ export function fromFirestore(
     });
   }
 
+  // Handle timestamp - if serverTimestamp() hasn't resolved yet, use current time
+  let timestamp: Date;
+  if (data.timestamp instanceof Timestamp) {
+    timestamp = data.timestamp.toDate();
+  } else if (data.timestamp === null || data.timestamp === undefined) {
+    // serverTimestamp() hasn't resolved yet - use current time
+    console.warn(`Message ${snapshot.id} has null timestamp, using current time`);
+    timestamp = new Date();
+  } else {
+    timestamp = new Date(data.timestamp);
+  }
+
   return {
     id: snapshot.id,
     senderId: data.senderId || '',
     conversationId: data.conversationId || '',
     content: data.content || '',
-    timestamp: data.timestamp instanceof Timestamp 
-      ? data.timestamp.toDate() 
-      : new Date(data.timestamp),
+    timestamp,
     status: data.status || 'sent',
     type: data.type || 'text',
     imageUrl: data.imageUrl,

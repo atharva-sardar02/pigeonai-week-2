@@ -94,6 +94,22 @@ export async function initDatabase(): Promise<void> {
  */
 export async function insertMessage(message: Message, synced: boolean = false): Promise<void> {
   try {
+    // Convert readBy dates to timestamps for storage
+    const readByForStorage: { [userId: string]: number } = {};
+    if (message.readBy) {
+      Object.entries(message.readBy).forEach(([userId, date]) => {
+        readByForStorage[userId] = date.getTime();
+      });
+    }
+    
+    const timestampMs = message.timestamp.getTime();
+    
+    console.log(`💾 Inserting message to SQLite:`);
+    console.log(`  ID: ${message.id}`);
+    console.log(`  Timestamp Date: ${message.timestamp.toISOString()}`);
+    console.log(`  Timestamp (ms): ${timestampMs}`);
+    console.log(`  Status: ${message.status}`);
+    
     await SQLiteService.executeQuery(
       `INSERT OR REPLACE INTO messages 
        (id, senderId, conversationId, content, timestamp, status, type, imageUrl, readBy, synced) 
@@ -103,14 +119,16 @@ export async function insertMessage(message: Message, synced: boolean = false): 
         message.senderId,
         message.conversationId,
         message.content,
-        message.timestamp.getTime(),
+        timestampMs,
         message.status,
         message.type,
         message.imageUrl || null,
-        JSON.stringify(message.readBy || {}),
+        JSON.stringify(readByForStorage),
         synced ? 1 : 0,
       ]
     );
+    
+    console.log(`  ✅ Message inserted successfully`);
   } catch (error) {
     console.error('❌ Error inserting message:', error);
     throw error;
@@ -178,17 +196,46 @@ export async function getMessages(
       [conversationId, limit, offset]
     );
 
-    return rows.map((row) => ({
-      id: row.id,
-      senderId: row.senderId,
-      conversationId: row.conversationId,
-      content: row.content,
-      timestamp: new Date(row.timestamp),
-      status: row.status,
-      type: row.type,
-      imageUrl: row.imageUrl,
-      readBy: row.readBy ? JSON.parse(row.readBy) : {},
-    }));
+    console.log(`📖 Retrieved ${rows.length} messages from SQLite for conversation ${conversationId}`);
+
+    return rows.map((row, index) => {
+      // Parse readBy - convert string timestamps back to Date objects
+      let readBy: { [userId: string]: Date } = {};
+      if (row.readBy) {
+        try {
+          const parsed = JSON.parse(row.readBy);
+          // Convert each value to Date
+          Object.entries(parsed).forEach(([userId, timestamp]) => {
+            readBy[userId] = new Date(timestamp as string | number);
+          });
+        } catch (error) {
+          console.error('Error parsing readBy:', error);
+          readBy = {};
+        }
+      }
+      
+      const timestamp = new Date(row.timestamp);
+      
+      if (index < 3) { // Log first 3 messages for debugging
+        console.log(`  Message ${index + 1}:`);
+        console.log(`    ID: ${row.id}`);
+        console.log(`    Timestamp (raw): ${row.timestamp}`);
+        console.log(`    Timestamp (Date): ${timestamp.toISOString()}`);
+        console.log(`    Status: ${row.status}`);
+      }
+      
+      return {
+        id: row.id,
+        senderId: row.senderId,
+        conversationId: row.conversationId,
+        content: row.content,
+        timestamp: timestamp,
+        status: row.status,
+        type: row.type,
+        imageUrl: row.imageUrl,
+        readBy,
+      };
+    });
   } catch (error) {
     console.error('❌ Error getting messages:', error);
     return [];

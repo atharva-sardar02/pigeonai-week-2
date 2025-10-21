@@ -198,6 +198,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       setError(null);
       
+      // IMPORTANT: Set user offline BEFORE signing out
+      // This ensures we still have permissions to update Firestore
+      if (user) {
+        try {
+          console.log('🔴 Setting user offline before logout');
+          await authService.setUserOnlineStatus(user.uid, false);
+        } catch (err) {
+          // Log but don't block logout if this fails
+          console.warn('Failed to set offline status before logout:', err);
+        }
+      }
+      
       await authService.signOut();
       
       // Clear user profile cache

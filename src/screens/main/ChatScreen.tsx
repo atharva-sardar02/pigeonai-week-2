@@ -16,6 +16,7 @@ import { MessageInput } from '../../components/chat/MessageInput';
 import { useAuth } from '../../store/context/AuthContext';
 import { useMessages } from '../../hooks/useMessages';
 import { useUserDisplayName } from '../../hooks/useUserProfile';
+import { usePresence } from '../../hooks/usePresence';
 import * as FirestoreService from '../../services/firebase/firestoreService';
 import { COLORS } from '../../utils/constants';
 import { MainStackParamList, Conversation } from '../../types';
@@ -29,7 +30,7 @@ type ChatScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'C
  * Main chat interface for one-on-one and group conversations.
  * 
  * Features:
- * - Display conversation header with recipient info
+ * - Display conversation header with recipient info and online status
  * - Show message history with real-time updates
  * - Send new messages
  * - Optimistic UI updates
@@ -68,6 +69,9 @@ export const ChatScreen: React.FC = () => {
 
   // Fetch other user's display name (cached)
   const otherUserDisplayName = useUserDisplayName(otherUserId);
+
+  // Get other user's presence status (online/offline & last seen)
+  const { isOnline, lastSeen } = usePresence(otherUserId);
 
   // Fetch conversation if not provided
   useEffect(() => {
@@ -176,6 +180,8 @@ export const ChatScreen: React.FC = () => {
           currentUserId={user?.uid || ''}
           onBack={handleBack}
           onTitlePress={handleHeaderTap}
+          isOnline={isOnline}
+          lastSeen={lastSeen}
           getUserDisplayName={getUserDisplayName}
         />
         <View style={styles.errorContainer}>
@@ -200,7 +206,8 @@ export const ChatScreen: React.FC = () => {
           currentUserId={user?.uid || ''}
           onBack={handleBack}
           onTitlePress={handleHeaderTap}
-          onlineStatus={false} // TODO: Implement in PR #5 (Presence)
+          isOnline={isOnline}
+          lastSeen={lastSeen}
           getUserDisplayName={getUserDisplayName}
         />
 

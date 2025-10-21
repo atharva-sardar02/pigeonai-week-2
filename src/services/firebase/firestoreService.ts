@@ -759,3 +759,105 @@ export async function getParticipantCount(conversationId: string): Promise<numbe
     return 0;
   }
 }
+
+// ============================================================================
+// PRESENCE OPERATIONS
+// ============================================================================
+
+/**
+ * Update user's online presence status
+ * @param userId - The user's ID
+ * @param isOnline - Whether the user is online
+ * @param lastSeen - Optional timestamp for last seen (defaults to now)
+ */
+export async function updatePresence(
+  userId: string,
+  isOnline: boolean,
+  lastSeen?: Date
+): Promise<void> {
+  try {
+    const userRef = doc(db, FIREBASE_COLLECTIONS.USERS, userId);
+    
+    const presenceData: any = {
+      isOnline,
+      lastSeen: lastSeen ? Timestamp.fromDate(lastSeen) : serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await updateDoc(userRef, presenceData);
+    
+    console.log(`✅ Presence updated for user ${userId}: ${isOnline ? 'online' : 'offline'}`);
+  } catch (error: any) {
+    console.error('Error updating presence:', error);
+    throw new Error(error.message || 'Failed to update presence');
+  }
+}
+
+/**
+ * Listen to a user's presence status in real-time
+ * @param userId - The user's ID to listen to
+ * @param onPresenceChange - Callback when presence changes
+ * @param onError - Optional error callback
+ * @returns Unsubscribe function
+ */
+export function listenToPresence(
+  userId: string,
+  onPresenceChange: (isOnline: boolean, lastSeen: Date | null) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  try {
+    const userRef = doc(db, FIREBASE_COLLECTIONS.USERS, userId);
+
+    return onSnapshot(
+      userRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          const isOnline = data.isOnline || false;
+          const lastSeen = data.lastSeen?.toDate() || null;
+          
+          onPresenceChange(isOnline, lastSeen);
+        } else {
+          // User document doesn't exist - treat as offline
+          onPresenceChange(false, null);
+        }
+      },
+      (error) => {
+        console.error('Error listening to presence:', error);
+        if (onError) {
+          onError(new Error(error.message || 'Failed to listen to presence'));
+        }
+      }
+    );
+  } catch (error: any) {
+    console.error('Error setting up presence listener:', error);
+    throw new Error(error.message || 'Failed to set up presence listener');
+  }
+}
+
+/**
+ * Get user's current presence status (one-time fetch)
+ * @param userId - The user's ID
+ * @returns Object with isOnline and lastSeen
+ */
+export async function getPresence(
+  userId: string
+): Promise<{ isOnline: boolean; lastSeen: Date | null }> {
+  try {
+    const userRef = doc(db, FIREBASE_COLLECTIONS.USERS, userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      return { isOnline: false, lastSeen: null };
+    }
+
+    const data = userSnap.data();
+    return {
+      isOnline: data.isOnline || false,
+      lastSeen: data.lastSeen?.toDate() || null,
+    };
+  } catch (error: any) {
+    console.error('Error getting presence:', error);
+    return { isOnline: false, lastSeen: null };
+  }
+}

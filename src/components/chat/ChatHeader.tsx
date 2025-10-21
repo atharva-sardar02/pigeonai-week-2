@@ -8,13 +8,15 @@ import {
 } from 'react-native';
 import { Conversation } from '../../types';
 import { COLORS, SIZES } from '../../utils/constants';
+import { formatMessageTime } from '../../utils/dateFormatter';
 
 interface ChatHeaderProps {
   conversation: Conversation;
   currentUserId: string;
   onBack: () => void;
   onTitlePress?: () => void; // New prop for tapping on the header
-  onlineStatus?: boolean;
+  isOnline?: boolean;
+  lastSeen?: Date | null;
   getUserDisplayName?: (userId: string) => string;
 }
 
@@ -26,7 +28,7 @@ interface ChatHeaderProps {
  * Features:
  * - Back button
  * - Conversation/user name
- * - Online status indicator
+ * - Online status indicator with last seen
  * - Typing indicator (future)
  * - Group info (future)
  */
@@ -35,7 +37,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   currentUserId,
   onBack,
   onTitlePress,
-  onlineStatus = false,
+  isOnline = false,
+  lastSeen = null,
   getUserDisplayName,
 }) => {
   // Check if it's a group
@@ -63,6 +66,13 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
   // Get participant count for groups
   const participantCount = conversation.participants.length;
+
+  // Format last seen time
+  const getStatusText = (): string => {
+    if (isOnline) return 'Online';
+    if (lastSeen) return `Last seen ${formatMessageTime(lastSeen)}`;
+    return 'Offline';
+  };
 
   return (
     <View style={styles.container}>
@@ -97,11 +107,11 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             </Text>
           ) : (
             <>
-              {onlineStatus && (
+              {isOnline && (
                 <View style={styles.onlineIndicator} />
               )}
               <Text style={styles.status}>
-                {onlineStatus ? 'Online' : 'Offline'}
+                {getStatusText()}
               </Text>
             </>
           )}

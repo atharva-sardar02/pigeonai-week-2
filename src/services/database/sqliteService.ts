@@ -2,10 +2,25 @@ import * as SQLite from 'expo-sqlite';
 
 /**
  * SQLite Database Service
- * Low-level SQLite operations wrapper
+ * Low-level SQLite operations wrapper with operation queue for thread safety
  */
 
 let db: SQLite.SQLiteDatabase | null = null;
+let operationQueue: Promise<any> = Promise.resolve();
+
+/**
+ * Queue a database operation to ensure they run sequentially
+ */
+function queueOperation<T>(operation: () => Promise<T>): Promise<T> {
+  const queuedOperation = operationQueue.then(operation).catch((error) => {
+    console.error('Queued operation failed:', error);
+    throw error;
+  });
+  
+  operationQueue = queuedOperation.catch(() => {}); // Don't let errors block the queue
+  
+  return queuedOperation;
+}
 
 /**
  * Open or create the database
@@ -48,16 +63,18 @@ export async function executeQuery(
   sql: string,
   params: any[] = []
 ): Promise<SQLite.SQLiteRunResult> {
-  try {
-    const database = await openDatabase();
-    const result = await database.runAsync(sql, params);
-    return result;
-  } catch (error) {
-    console.error('❌ Error executing query:', error);
-    console.error('SQL:', sql);
-    console.error('Params:', params);
-    throw error;
-  }
+  return queueOperation(async () => {
+    try {
+      const database = await openDatabase();
+      const result = await database.runAsync(sql, params);
+      return result;
+    } catch (error) {
+      console.error('❌ Error executing query:', error);
+      console.error('SQL:', sql);
+      console.error('Params:', params);
+      throw error;
+    }
+  });
 }
 
 /**
@@ -67,16 +84,18 @@ export async function executeQueryAll<T = any>(
   sql: string,
   params: any[] = []
 ): Promise<T[]> {
-  try {
-    const database = await openDatabase();
-    const result = await database.getAllAsync<T>(sql, params);
-    return result;
-  } catch (error) {
-    console.error('❌ Error executing query (all):', error);
-    console.error('SQL:', sql);
-    console.error('Params:', params);
-    throw error;
-  }
+  return queueOperation(async () => {
+    try {
+      const database = await openDatabase();
+      const result = await database.getAllAsync<T>(sql, params);
+      return result;
+    } catch (error) {
+      console.error('❌ Error executing query (all):', error);
+      console.error('SQL:', sql);
+      console.error('Params:', params);
+      throw error;
+    }
+  });
 }
 
 /**
@@ -86,16 +105,18 @@ export async function executeQueryFirst<T = any>(
   sql: string,
   params: any[] = []
 ): Promise<T | null> {
-  try {
-    const database = await openDatabase();
-    const result = await database.getFirstAsync<T>(sql, params);
-    return result;
-  } catch (error) {
-    console.error('❌ Error executing query (first):', error);
-    console.error('SQL:', sql);
-    console.error('Params:', params);
-    throw error;
-  }
+  return queueOperation(async () => {
+    try {
+      const database = await openDatabase();
+      const result = await database.getFirstAsync<T>(sql, params);
+      return result;
+    } catch (error) {
+      console.error('❌ Error executing query (first):', error);
+      console.error('SQL:', sql);
+      console.error('Params:', params);
+      throw error;
+    }
+  });
 }
 
 /**
@@ -104,19 +125,21 @@ export async function executeQueryFirst<T = any>(
 export async function executeTransaction(
   operations: Array<{ sql: string; params?: any[] }>
 ): Promise<void> {
-  const database = await openDatabase();
-  
-  try {
-    await database.withTransactionAsync(async () => {
-      for (const operation of operations) {
-        await database.runAsync(operation.sql, operation.params || []);
-      }
-    });
-    console.log('✅ Transaction executed successfully');
-  } catch (error) {
-    console.error('❌ Error executing transaction:', error);
-    throw error;
-  }
+  return queueOperation(async () => {
+    const database = await openDatabase();
+    
+    try {
+      await database.withTransactionAsync(async () => {
+        for (const operation of operations) {
+          await database.runAsync(operation.sql, operation.params || []);
+        }
+      });
+      console.log('✅ Transaction executed successfully');
+    } catch (error) {
+      console.error('❌ Error executing transaction:', error);
+      throw error;
+    }
+  });
 }
 
 /**

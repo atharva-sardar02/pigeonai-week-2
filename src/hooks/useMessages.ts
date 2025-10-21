@@ -116,32 +116,30 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
           conversationId,
           async (firestoreMessages) => {
             // Real-time update received
-            // Pre-filter: Remove any messages that already exist in our ref
-            const newFirestoreMessages = firestoreMessages.filter(msg => {
-              // If we've already seen this ID, skip it immediately
-              if (messageIdsRef.current.has(msg.id)) {
-                return false;
-              }
-              return true;
-            });
+            console.log(`📨 Firestore listener fired: ${firestoreMessages.length} messages`);
             
-            // Add new message IDs to our tracking ref
-            newFirestoreMessages.forEach(msg => messageIdsRef.current.add(msg.id));
-            
-            // Deduplicate: Remove any temp messages that now have real counterparts
+            // CRITICAL: Use a single atomic update to prevent any race conditions
             setMessages((prevMessages) => {
-              // Create a set of real message IDs from Firestore
-              const realMessageIds = new Set(firestoreMessages.map(m => m.id));
+              console.log(`  Current state has: ${prevMessages.length} messages`);
               
-              // Filter out temp messages that have real counterparts
-              const tempMessages = prevMessages.filter(msg => {
-                if (!msg.id.startsWith('temp_')) return false;
-                
-                // Check if this temp message has a real counterpart by ID
-                if (realMessageIds.has(msg.id)) {
-                  messageIdsRef.current.delete(msg.id); // Remove temp ID from tracking
+              // Create a Map of ALL message IDs we currently have (for deduplication)
+              const existingIds = new Set(prevMessages.map(m => m.id));
+              
+              // Filter Firestore messages to only truly new ones
+              const newMessages = firestoreMessages.filter(msg => {
+                // Skip if we already have this message in state
+                if (existingIds.has(msg.id)) {
                   return false;
                 }
+                return true;
+              });
+              
+              console.log(`  Found ${newMessages.length} new messages to add`);
+              
+              // Find temp messages that should be replaced by real messages
+              const realMessageIds = new Set(firestoreMessages.map(m => m.id));
+              const tempMessages = prevMessages.filter(msg => {
+                if (!msg.id.startsWith('temp_')) return false;
                 
                 // Check if this temp message has a real counterpart by matching
                 // content, sender, and timestamp (within 2 seconds)
@@ -152,30 +150,64 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
                 );
                 
                 if (hasDuplicate) {
-                  messageIdsRef.current.delete(msg.id); // Remove temp ID from tracking
+                  console.log(`  Removing temp message: ${msg.id}`);
+                  // Remove temp ID from tracking
+                  messageIdsRef.current.delete(msg.id);
                   return false;
                 }
                 
                 return true;
               });
               
-              // Merge: temp messages + real messages
-              const mergedMessages = [...tempMessages, ...firestoreMessages];
+              console.log(`  Keeping ${tempMessages.length} temp messages`);
               
-              // AGGRESSIVE deduplication - remove ANY duplicate IDs immediately
-              const uniqueMap = new Map<string, typeof mergedMessages[0]>();
-              for (const msg of mergedMessages) {
-                // If we've seen this ID before, skip it (keep first occurrence)
+              // Merge: existing messages + temp messages + new real messages
+              // But exclude temp messages and messages that are being replaced
+              const keptMessages = prevMessages.filter(msg => 
+                !msg.id.startsWith('temp_') && !newMessages.some(nm => nm.id === msg.id)
+              );
+              
+              const finalMessages = [...keptMessages, ...tempMessages, ...newMessages];
+              
+              console.log(`  Before deduplication: ${finalMessages.length} messages`);
+              
+              // Final deduplication using Map (safety net)
+              const uniqueMap = new Map<string, typeof finalMessages[0]>();
+              for (const msg of finalMessages) {
                 if (!uniqueMap.has(msg.id)) {
                   uniqueMap.set(msg.id, msg);
+                  // Add to tracking ref
+                  messageIdsRef.current.add(msg.id);
+                } else {
+                  console.warn(`⚠️ Duplicate detected during merge: ${msg.id}`);
                 }
               }
+              
               const uniqueMessages = Array.from(uniqueMap.values());
               
-              // Sort by timestamp (oldest first, for inverted list)
+              console.log(`  After deduplication: ${uniqueMessages.length} messages`);
+              
+              // Sort by timestamp (oldest first)
               const sorted = uniqueMessages.sort((a, b) => 
                 a.timestamp.getTime() - b.timestamp.getTime()
               );
+              
+              // Final check: Ensure no duplicate IDs in the returned array
+              const finalIds = new Set<string>();
+              const hasDuplicates = sorted.some(msg => {
+                if (finalIds.has(msg.id)) {
+                  console.error(`🚨 DUPLICATE ID IN FINAL ARRAY: ${msg.id}`);
+                  return true;
+                }
+                finalIds.add(msg.id);
+                return false;
+              });
+              
+              if (hasDuplicates) {
+                console.error('🚨 CRITICAL: Duplicates found in final message array!');
+              } else {
+                console.log(`  ✅ Final array has ${sorted.length} unique messages`);
+              }
               
               return sorted;
             });
@@ -254,9 +286,19 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
         // Track this temp ID in our ref to prevent duplicates
         messageIdsRef.current.add(tempId);
 
+        console.log(`📤 Sending optimistic message:`);
+        console.log(`  ID: ${tempId}`);
+        console.log(`  Timestamp: ${optimisticMessage.timestamp.toISOString()}`);
+        console.log(`  Timestamp (ms): ${optimisticMessage.timestamp.getTime()}`);
+
         // Step 2: Add to UI immediately (optimistic update)
         // Add to END of array (newest messages at bottom)
-        setMessages((prev) => [...prev, optimisticMessage]);
+        setMessages((prev) => {
+          const updated = [...prev, optimisticMessage];
+          console.log(`  Total messages after add: ${updated.length}`);
+          console.log(`  Last message timestamp: ${updated[updated.length - 1]?.timestamp.toISOString()}`);
+          return updated;
+        });
 
         // Step 3: Save to local database
         await LocalDatabase.insertMessage(optimisticMessage, false);
