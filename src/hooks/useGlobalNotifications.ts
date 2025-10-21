@@ -18,6 +18,7 @@ export function useGlobalNotifications() {
   const activeListeners = useRef(new Map<string, () => void>());
   const lastSeenTimestamps = useRef(new Map<string, Date>());
   const appState = useRef(AppState.currentState);
+  const hasCheckedMissedOnInit = useRef(false); // Prevent checking missed messages on reload
 
   // Check for missed messages when user comes online
   const checkMissedMessages = async () => {
@@ -102,9 +103,17 @@ export function useGlobalNotifications() {
 
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       // App moved to foreground (user came online)
+      // Only check if we've already done initial setup (hasCheckedMissedOnInit is true)
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        console.log('📱 User came online - checking for missed messages...');
-        await checkMissedMessages();
+        // Only check missed messages if this is NOT the first time app state is changing
+        if (hasCheckedMissedOnInit.current) {
+          console.log('📱 User came online - checking for missed messages...');
+          await checkMissedMessages();
+        } else {
+          // First app state change after initialization - mark as checked
+          hasCheckedMissedOnInit.current = true;
+          console.log('📱 Skipping missed message check on initial load');
+        }
       }
 
       appState.current = nextAppState;
