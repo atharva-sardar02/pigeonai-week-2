@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Conversation } from '../types';
 import { useAuth } from '../store/context/AuthContext';
 import * as FirestoreService from '../services/firebase/firestoreService';
+import * as AuthService from '../services/firebase/authService';
 import * as LocalDatabase from '../services/database/localDatabase';
 import NetInfo from '@react-native-community/netinfo';
 
@@ -77,10 +78,25 @@ export function useConversations(): UseConversationsReturn {
 
       if (isOnline) {
         // Load from cache first for instant display
-        const cachedConversations = await LocalDatabase.getConversations();
+        // IMPORTANT: Filter by userId to ensure user only sees their conversations
+        const cachedConversations = await LocalDatabase.getConversations(user.uid);
         if (cachedConversations.length > 0) {
           setConversations(cachedConversations);
           setLoading(false); // Stop loading immediately
+          
+          // Pre-fetch user profiles for all participants
+          // This ensures names are cached before display
+          const participantIds = new Set<string>();
+          cachedConversations.forEach(conv => {
+            conv.participants.forEach(id => {
+              if (id !== user.uid) participantIds.add(id);
+            });
+          });
+          
+          // Fetch all user profiles in parallel
+          Promise.all(
+            Array.from(participantIds).map(id => AuthService.getUserProfile(id))
+          ).catch(err => console.warn('Error pre-fetching user profiles:', err));
         } else {
           setLoading(true); // Only show loading if no cache
         }
@@ -91,6 +107,19 @@ export function useConversations(): UseConversationsReturn {
           async (firestoreConversations) => {
             setConversations(firestoreConversations);
             setLoading(false);
+
+            // Pre-fetch user profiles for all participants
+            const participantIds = new Set<string>();
+            firestoreConversations.forEach(conv => {
+              conv.participants.forEach(id => {
+                if (id !== user.uid) participantIds.add(id);
+              });
+            });
+            
+            // Fetch all user profiles in parallel
+            Promise.all(
+              Array.from(participantIds).map(id => AuthService.getUserProfile(id))
+            ).catch(err => console.warn('Error pre-fetching user profiles:', err));
 
             // Cache conversations locally
             for (const conversation of firestoreConversations) {
@@ -113,8 +142,9 @@ export function useConversations(): UseConversationsReturn {
         setUnsubscribe(() => listener);
       } else {
         // Offline - load from cache
+        // IMPORTANT: Filter by userId to ensure user only sees their conversations
         setLoading(true);
-        const cachedConversations = await LocalDatabase.getConversations();
+        const cachedConversations = await LocalDatabase.getConversations(user.uid);
         setConversations(cachedConversations);
         setLoading(false);
       }

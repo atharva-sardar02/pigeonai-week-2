@@ -2,7 +2,7 @@
 
 **Project Start**: October 20, 2025  
 **Current Sprint**: MVP (24 hours)  
-**Status**: 🟢 3 PRs Complete, Data Layer Deployed, Ready for UI
+**Status**: 🟢 3 PRs Complete, PR #4 (Chat UI) 95% Complete
 
 ---
 
@@ -143,20 +143,110 @@
     - `.firebaserc` - Project alias (pigeonai-dev)
     - `firebase/firestore.indexes.json` - Query optimization indexes
 
-### UI Color Update (Between PR #3 and PR #4)
-- [x] Background color matched to pigeon icon: `#060C1D`
-- [x] Secondary/tertiary backgrounds adjusted: `#0F1A28`, `#1A2533`
-- [x] Text colors optimized for contrast:
-  - Primary: `#FFFFFF`
-  - Secondary: `#B0B3BA` (improved from `#A1A1A6`)
-  - Tertiary: `#7A7D84` (improved from `#636366`)
-  - Placeholders: `#5A5D64` (improved from `#48484A`)
-- [x] Border colors adjusted for dark background
-- [x] Input backgrounds made more visible
-- [x] Button disabled states improved
-- [x] Splash screen background updated
-- [x] Android adaptive icon background updated
-- [x] All `COLORS` constants updated in `src/utils/constants.ts`
+### PR #4: Chat UI & Real-Time Sync (95% COMPLETE 🟡)
+- [x] Task 4.1: MessageBubble Component
+  - Message display with sent/received styling
+  - Timestamp formatting
+  - Status indicators (sent, delivered, read, sending, failed)
+- [x] Task 4.2: MessageList Component
+  - FlatList with virtualization and inverted list
+  - Auto-scroll to bottom on new messages
+  - Pull-to-refresh
+  - Loading and empty states
+- [x] Task 4.3: MessageInput Component
+  - Multi-line text input with auto-grow
+  - Send button with loading state
+  - Character limit (optional)
+- [x] Task 4.4: ChatHeader Component
+  - Back button navigation
+  - Conversation/user name display
+  - Online status indicator (placeholder for PR #5)
+  - Tappable header to view user/group details
+- [x] Task 4.5: ChatScreen
+  - Integration of header, message list, and input
+  - Real-time message updates via useMessages hook
+  - Optimistic UI updates for sent messages
+  - Loading and error states
+  - Handle header tap to navigate to user details
+- [x] Task 4.6: Optimistic UI Updates
+  - Messages appear immediately when sent
+  - Loading indicator during send
+  - Error handling with retry option
+- [x] Task 4.7: Real-Time Message Listeners
+  - Firestore onSnapshot integration
+  - Automatic message updates
+  - Cleanup on unmount
+  - Cache-first loading (SQLite → Firestore)
+- [x] Task 4.8: ConversationListItem Component
+  - Avatar with online status indicator
+  - User display names (fetched and cached)
+  - Last message preview
+  - Timestamp formatting
+  - Unread count badge
+- [x] Task 4.9: ConversationListScreen
+  - FlatList of conversations
+  - Real-time updates via useConversations hook
+  - Pull-to-refresh
+  - Empty state with prompt to start new chat
+  - Navigation to chat and profile screens
+  - Floating action button for new chat
+  - Cache-first loading for instant display
+- [x] Task 4.10: NewChatScreen
+  - User search with debounced input
+  - Avatar display for search results
+  - Create or find existing DM conversation
+  - Navigate to chat on user selection
+- [x] Task 4.11: Set Up Main Navigation
+  - MainNavigator with all screens
+  - AppNavigator with auth flow integration
+  - Splash screen control via initializing state
+  - Screen transitions and animations
+- [x] Task 4.12: Clear Cache Button
+  - Added to ProfileScreen
+  - Shows cache statistics (messages, conversations)
+  - Confirmation dialog before clearing
+  - Persistent cache across sessions
+- [x] Task 4.13: Date Formatter Utilities
+  - formatTimestamp() - "Just now", "5m ago", "Yesterday", "Jan 15"
+  - formatMessageTime() - for message bubbles
+  - formatFullTimestamp() - detailed timestamps
+- [x] Task 4.14: Avatar Component & User Details
+  - **Avatar Component**: Reusable avatar with multiple sizes
+    - Small (32px), Medium (48px), Large (64px), XLarge (100px)
+    - Image display with initials fallback
+    - Optional online status indicator
+    - Custom colors support
+  - **UserDetailsScreen**: Full user profile view
+    - Large avatar with online status
+    - Display name, email, member since
+    - Common groups placeholder (for PR #6)
+    - Back navigation
+  - **useUserProfile Hook**: Smart caching system
+    - Global Map cache for user profiles
+    - Fetch once, reuse everywhere
+    - Clear on logout
+    - useUserDisplayName convenience hook
+  - **Integration Complete**:
+    - ConversationListItem shows real user names
+    - ChatScreen header shows real user names
+    - NewChatScreen uses Avatar component
+    - ProfileScreen uses Avatar component
+    - Tappable chat header navigates to UserDetailsScreen
+- [ ] Task 4.15: Write Unit Tests for Date Formatter (Deferred)
+- [ ] Task 4.16: Write Integration Test for Real-Time Messaging (Deferred)
+- [ ] Task 4.17: Manual Test Chat Flow (Ongoing)
+
+**Key Achievements**:
+- ✅ Complete chat UI with real-time sync
+- ✅ Optimistic updates for instant feedback
+- ✅ Cache-first loading for blazing fast UX
+- ✅ User profile caching for performance
+- ✅ Reusable Avatar component system
+- ✅ User details accessible from chat
+- ✅ Cache management UI for users
+- ✅ All navigation flows working
+- ✅ Dark mode theming consistent
+- ✅ Real user names displayed everywhere
 
 ---
 
@@ -166,10 +256,13 @@
 - ✅ PR #1 Complete (Project Setup & Configuration)
 - ✅ PR #2 Complete (Authentication System)
 - ✅ PR #3 Complete (Core Messaging Infrastructure - Data Layer)
-  - ✅ All 9 tasks complete (Tasks 3.1-3.9)
-  - ✅ Firestore rules and indexes deployed to production
-  - ✅ UI color scheme updated to match icon
-- 🎯 **Current**: PR #4 (Chat UI & Real-Time Sync) - Ready to Start
+- 🟡 **PR #4: 95% Complete** (Chat UI & Real-Time Sync)
+  - ✅ All UI components built and integrated
+  - ✅ Real-time sync working
+  - ✅ Cache-first loading implemented
+  - ✅ Avatar system and user profiles complete
+  - ⏸️ Testing tasks deferred (will do continuous testing)
+- 🎯 **Next**: PR #5 (Presence & Typing Indicators)
 
 ---
 

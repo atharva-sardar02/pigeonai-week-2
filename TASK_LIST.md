@@ -808,37 +808,37 @@ pigeonai-week-2/
 
 ### Tasks
 
-- [ ] **Task 4.1: Create Message Bubble Component**
+- [x] **Task 4.1: Create Message Bubble Component**
   - **Files Created**:
     - `src/components/chat/MessageBubble.tsx`
   - **Props**: message, isOwnMessage
   - **UI**: Different styling for sent vs received, timestamp, status indicators (checkmarks)
 
-- [ ] **Task 4.2: Create Message List Component**
+- [x] **Task 4.2: Create Message List Component**
   - **Files Created**:
     - `src/components/chat/MessageList.tsx`
   - **Implementation**: FlatList with virtualization, inverted list, pull-to-load-more
   - **Props**: messages, onLoadMore
 
-- [ ] **Task 4.3: Create Message Input Component**
+- [x] **Task 4.3: Create Message Input Component**
   - **Files Created**:
     - `src/components/chat/MessageInput.tsx`
   - **UI**: TextInput, send button, image picker button
   - **Props**: onSend, onImagePick
 
-- [ ] **Task 4.4: Create Chat Header Component**
+- [x] **Task 4.4: Create Chat Header Component**
   - **Files Created**:
     - `src/components/chat/ChatHeader.tsx`
-  - **UI**: Recipient name, online status, back button
-  - **Props**: conversation, onBack
+  - **UI**: Recipient name, online status, back button, tappable to view user details
+  - **Props**: conversation, onBack, onTitlePress
 
-- [ ] **Task 4.5: Create Chat Screen**
+- [x] **Task 4.5: Create Chat Screen**
   - **Files Created**:
     - `src/screens/main/ChatScreen.tsx`
   - **Components Used**: ChatHeader, MessageList, MessageInput
-  - **Functionality**: Load messages, send messages, real-time updates
+  - **Functionality**: Load messages, send messages, real-time updates, navigate to user details
 
-- [ ] **Task 4.6: Implement Optimistic UI Updates**
+- [x] **Task 4.6: Implement Optimistic UI Updates**
   - **Files Modified**:
     - `src/store/context/ChatContext.tsx`
     - `src/hooks/useMessages.ts`
@@ -849,52 +849,68 @@ pigeonai-week-2/
     4. On success → update status to "sent"
     5. On failure → update status to "failed", show retry
 
-- [ ] **Task 4.7: Implement Real-Time Message Listeners**
+- [x] **Task 4.7: Implement Real-Time Message Listeners**
   - **Files Modified**:
     - `src/hooks/useMessages.ts`
-  - **Action**: Set up Firestore onSnapshot listener
+  - **Action**: Set up Firestore onSnapshot listener with cache-first loading
   - **Cleanup**: Unsubscribe on unmount
 
-- [ ] **Task 4.8: Create Conversation List Item Component**
+- [x] **Task 4.8: Create Conversation List Item Component**
   - **Files Created**:
     - `src/components/conversation/ConversationListItem.tsx`
-  - **UI**: Avatar, name, last message preview, timestamp, unread badge
+  - **UI**: Avatar, real user name (cached), last message preview, timestamp, unread badge
 
-- [ ] **Task 4.9: Create Conversation List Screen**
+- [x] **Task 4.9: Create Conversation List Screen**
   - **Files Created**:
     - `src/screens/main/ConversationListScreen.tsx`
   - **Components Used**: ConversationList (FlatList of ConversationListItem)
-  - **Functionality**: Navigate to chat on tap
+  - **Functionality**: Navigate to chat on tap, cache-first loading, pull-to-refresh
 
-- [ ] **Task 4.10: Create New Chat Screen**
+- [x] **Task 4.10: Create New Chat Screen**
   - **Files Created**:
     - `src/screens/main/NewChatScreen.tsx`
-  - **UI**: Search users, select user, start conversation
-  - **Functionality**: Search Firestore users, create new conversation
+  - **UI**: Search users, select user, start conversation, avatar display
+  - **Functionality**: Search Firestore users, create new conversation or find existing DM
 
-- [ ] **Task 4.11: Set Up Main Navigation**
+- [x] **Task 4.11: Set Up Main Navigation**
   - **Files Created**:
     - `src/navigation/MainNavigator.tsx`
-  - **Screens**: ConversationList, Chat, NewChat, Profile
+  - **Files Modified**:
+    - `src/navigation/AppNavigator.tsx`
+  - **Screens**: ConversationList, Chat, NewChat, Profile, UserDetails
   - **Type**: Stack navigator
 
-- [ ] **Task 4.12: Create App Navigator (Root)**
-  - **Files Created**:
-    - `src/navigation/AppNavigator.tsx`
-  - **Logic**: If authenticated → MainNavigator, else → AuthNavigator
+- [x] **Task 4.12: Cache Management & ProfileScreen Enhancement**
   - **Files Modified**:
-    - `App.tsx` (wrap with AuthProvider, NavigationContainer)
+    - `src/screens/main/ProfileScreen.tsx`
+    - `src/services/database/localDatabase.ts`
+  - **Features Added**:
+    - Display cache statistics (message count, conversation count)
+    - Clear cache button with confirmation dialog
+    - Persistent cache across user sessions
+    - Cache survives logout/login cycles
+  - **Functions**: `clearAllData()`, `getDatabaseStats()`
 
-- [ ] **Task 4.13: Implement Message Timestamps**
+- [x] **Task 4.13: Implement Message Timestamps**
   - **Files Created**:
     - `src/utils/dateFormatter.ts`
-  - **Functions**: formatMessageTime (e.g., "Just now", "5m ago", "Yesterday", "Jan 15")
+  - **Functions**: formatTimestamp, formatMessageTime, formatFullTimestamp
+  - **Formats**: "Just now", "5m ago", "Yesterday", "Jan 15", etc.
 
-- [ ] **Task 4.14: Create Avatar Component**
+- [x] **Task 4.14: Create Avatar Component**
   - **Files Created**:
     - `src/components/common/Avatar.tsx`
-  - **Props**: imageUrl, displayName (for initials fallback), size
-  - **UI**: Circle with image or initials
+    - `src/components/common/index.ts`
+    - `src/screens/main/UserDetailsScreen.tsx`
+    - `src/hooks/useUserProfile.ts`
+  - **Props**: imageUrl, displayName (for initials fallback), size (small, medium, large, xlarge), showOnlineStatus, isOnline
+  - **UI**: Circle with image or initials, optional online status indicator
+  - **Integrated**: ConversationListItem, ProfileScreen, NewChatScreen, UserDetailsScreen
+  - **Features**: 
+    - Tappable chat header to view user details
+    - User details screen with profile info and common groups placeholder
+    - User profile caching hook for performance
+    - Display real user names in conversations and chat headers
 
 - [ ] **Task 4.15: Write Unit Tests for Date Formatter**
   - **Files Created**:

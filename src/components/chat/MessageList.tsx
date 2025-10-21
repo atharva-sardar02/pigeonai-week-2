@@ -42,18 +42,29 @@ export const MessageList: React.FC<MessageListProps> = ({
   refreshing = false,
 }) => {
   const flatListRef = useRef<FlatList>(null);
+  const isInitialMount = useRef(true);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Scroll to bottom on initial load (when messages first arrive)
   useEffect(() => {
-    if (messages.length > 0 && flatListRef.current) {
-      // Small delay to ensure FlatList has rendered
+    if (messages.length > 0 && isInitialMount.current) {
+      isInitialMount.current = false;
+      // For inverted list, offset 0 is the bottom (newest messages)
       setTimeout(() => {
-        flatListRef.current?.scrollToIndex({
-          index: 0,
-          animated: true,
-        });
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
       }, 100);
     }
+  }, [messages.length]);
+
+  // Auto-scroll to bottom when new messages arrive
+  const previousMessageCount = useRef(messages.length);
+  useEffect(() => {
+    if (messages.length > previousMessageCount.current && !isInitialMount.current) {
+      // New message arrived - scroll to bottom
+      setTimeout(() => {
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+      }, 50);
+    }
+    previousMessageCount.current = messages.length;
   }, [messages.length]);
 
   // Render individual message
@@ -72,24 +83,20 @@ export const MessageList: React.FC<MessageListProps> = ({
   const renderEmptyState = () => {
     if (loading) {
       return (
-        <View style={styles.emptyWrapper}>
-          <View style={styles.emptyContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.emptyText}>Loading messages...</Text>
-          </View>
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.emptyText}>Loading messages...</Text>
         </View>
       );
     }
 
     return (
-      <View style={styles.emptyWrapper}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>💬</Text>
-          <Text style={styles.emptyText}>No messages yet</Text>
-          <Text style={styles.emptySubtext}>
-            Start the conversation by sending a message
-          </Text>
-        </View>
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyIcon}>💬</Text>
+        <Text style={styles.emptyText}>No messages yet</Text>
+        <Text style={styles.emptySubtext}>
+          Start the conversation by sending a message
+        </Text>
       </View>
     );
   };
@@ -109,13 +116,30 @@ export const MessageList: React.FC<MessageListProps> = ({
   // Key extractor
   const keyExtractor = (item: Message) => item.id;
 
+  // Deduplicate messages (safety check - shouldn't have duplicates but just in case)
+  const uniqueMessages = React.useMemo(() => {
+    const seen = new Set<string>();
+    return messages.filter(msg => {
+      if (seen.has(msg.id)) {
+        console.warn('Duplicate message ID found in MessageList:', msg.id);
+        return false;
+      }
+      seen.add(msg.id);
+      return true;
+    });
+  }, [messages]);
+
+  // Reverse messages for inverted FlatList
+  // Firestore returns oldest->newest, inverted list needs newest->oldest
+  const reversedMessages = [...uniqueMessages].reverse();
+
   return (
     <FlatList
       ref={flatListRef}
-      data={messages}
+      data={reversedMessages}
       renderItem={renderMessage}
       keyExtractor={keyExtractor}
-      inverted // New messages at bottom
+      inverted // Keeps keyboard behavior smooth and new messages at bottom
       contentContainerStyle={styles.contentContainer}
       ListEmptyComponent={renderEmptyState}
       ListFooterComponent={renderFooter}
@@ -135,10 +159,6 @@ export const MessageList: React.FC<MessageListProps> = ({
       maintainVisibleContentPosition={{
         minIndexForVisible: 0,
       }}
-      onScrollToIndexFailed={(info) => {
-        // Handle scroll failures gracefully
-        console.warn('Scroll to index failed:', info);
-      }}
     />
   );
 };
@@ -147,16 +167,16 @@ const styles = StyleSheet.create({
   contentContainer: {
     flexGrow: 1,
     paddingVertical: SIZES.paddingSmall,
-  },
-  emptyWrapper: {
-    flex: 1,
-    transform: [{ scaleY: -1 }], // Counter the inverted list
+    // For inverted list with empty state, we need special handling
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: SIZES.paddingLarge * 2,
+    // Flip the empty state back to normal since the FlatList is inverted
+    // Rotate 180deg on Z axis to flip without perspective distortion
+    transform: [{ rotate: '180deg' }],
   },
   emptyIcon: {
     fontSize: 64,

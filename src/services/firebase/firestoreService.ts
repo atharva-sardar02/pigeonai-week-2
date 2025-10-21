@@ -6,6 +6,7 @@ import {
   getDoc,
   getDocs,
   updateDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -160,29 +161,104 @@ export async function findOrCreateDMConversation(
   userId2: string
 ): Promise<string> {
   try {
-    // Check if conversation already exists
-    const q = query(
+    // Check if conversation already exists between these two users
+    // Note: Some conversations might be stored as 'dm' or 'direct'
+    
+    // Query for type 'dm'
+    const q1 = query(
       collection(db, FIREBASE_COLLECTIONS.CONVERSATIONS),
       where('type', '==', 'dm'),
       where('participants', 'array-contains', userId1)
     );
 
-    const querySnapshot = await getDocs(q);
+    const snapshot1 = await getDocs(q1);
     
-    // Find conversation that includes both users
-    const existingConversation = querySnapshot.docs.find((doc) => {
+    // Find ALL conversations that include both users (to detect duplicates)
+    const dmConversations = snapshot1.docs.filter((doc) => {
       const data = doc.data();
       return (
         data.participants.length === 2 &&
+        data.participants.includes(userId1) &&
         data.participants.includes(userId2)
       );
     });
 
-    if (existingConversation) {
-      return existingConversation.id;
+    // Query for type 'direct' (legacy support)
+    const q2 = query(
+      collection(db, FIREBASE_COLLECTIONS.CONVERSATIONS),
+      where('type', '==', 'direct'),
+      where('participants', 'array-contains', userId1)
+    );
+
+    const snapshot2 = await getDocs(q2);
+    
+    // Find ALL conversations that include both users
+    const directConversations = snapshot2.docs.filter((doc) => {
+      const data = doc.data();
+      return (
+        data.participants.length === 2 &&
+        data.participants.includes(userId1) &&
+        data.participants.includes(userId2)
+      );
+    });
+
+    // Combine all found conversations
+    const allConversations = [...dmConversations, ...directConversations];
+
+    if (allConversations.length > 0) {
+      // If we found duplicates, clean them up!
+      if (allConversations.length > 1) {
+        console.warn(`⚠️ Found ${allConversations.length} duplicate conversations, cleaning up...`);
+        
+        // Sort by creation date (oldest first) and by whether they have messages
+        const conversationsWithData = await Promise.all(
+          allConversations.map(async (doc) => {
+            const data = doc.data();
+            // Check if conversation has messages
+            const messagesSnapshot = await getDocs(
+              collection(db, FIREBASE_COLLECTIONS.CONVERSATIONS, doc.id, 'messages')
+            );
+            return {
+              doc,
+              data,
+              hasMessages: messagesSnapshot.size > 0,
+              messageCount: messagesSnapshot.size,
+              createdAt: data.createdAt?.toDate() || new Date(),
+            };
+          })
+        );
+
+        // Keep the conversation with messages, or the oldest one
+        conversationsWithData.sort((a, b) => {
+          if (a.hasMessages !== b.hasMessages) {
+            return b.hasMessages ? 1 : -1; // Prioritize conversation with messages
+          }
+          if (a.messageCount !== b.messageCount) {
+            return b.messageCount - a.messageCount; // Keep the one with more messages
+          }
+          return a.createdAt.getTime() - b.createdAt.getTime(); // Or keep the oldest
+        });
+
+        const keepConversation = conversationsWithData[0];
+        const deleteConversations = conversationsWithData.slice(1);
+
+        // Delete duplicate conversations
+        for (const conv of deleteConversations) {
+          console.log(`🗑️ Deleting duplicate conversation: ${conv.doc.id}`);
+          await deleteDoc(doc(db, FIREBASE_COLLECTIONS.CONVERSATIONS, conv.doc.id));
+        }
+
+        console.log(`✅ Kept conversation: ${keepConversation.doc.id} (messages: ${keepConversation.messageCount})`);
+        return keepConversation.doc.id;
+      }
+
+      // Only one conversation found - return it
+      console.log('✅ Found existing conversation:', allConversations[0].id);
+      return allConversations[0].id;
     }
 
-    // Create new conversation
+    // No existing conversation found, create new one as 'dm'
+    console.log('📝 Creating new DM conversation between', userId1, 'and', userId2);
     return await createConversation([userId1, userId2], 'dm');
   } catch (error: any) {
     console.error('Error finding or creating DM conversation:', error);

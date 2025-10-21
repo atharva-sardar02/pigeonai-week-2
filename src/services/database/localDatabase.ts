@@ -387,15 +387,15 @@ export async function updateConversation(
 }
 
 /**
- * Get all conversations
+ * Get all conversations for a specific user
  */
-export async function getConversations(): Promise<Conversation[]> {
+export async function getConversations(userId?: string): Promise<Conversation[]> {
   try {
     const rows = await SQLiteService.executeQueryAll<any>(
       'SELECT * FROM conversations ORDER BY updatedAt DESC'
     );
 
-    return rows.map((row) => ({
+    const conversations = rows.map((row) => ({
       id: row.id,
       type: row.type,
       participants: JSON.parse(row.participants),
@@ -408,6 +408,13 @@ export async function getConversations(): Promise<Conversation[]> {
       groupIcon: row.groupIcon,
       adminIds: row.adminIds ? JSON.parse(row.adminIds) : undefined,
     }));
+
+    // Filter by userId if provided (ensures user only sees their conversations)
+    if (userId) {
+      return conversations.filter(conv => conv.participants.includes(userId));
+    }
+
+    return conversations;
   } catch (error) {
     console.error('❌ Error getting conversations:', error);
     return [];

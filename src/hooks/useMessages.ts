@@ -103,7 +103,51 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
           conversationId,
           async (firestoreMessages) => {
             // Real-time update received
-            setMessages(firestoreMessages);
+            // Deduplicate: Remove any temp messages that now have real counterparts
+            setMessages((prevMessages) => {
+              // Create a set of real message IDs from Firestore
+              const realMessageIds = new Set(firestoreMessages.map(m => m.id));
+              
+              // Filter out temp messages that have real counterparts
+              const tempMessages = prevMessages.filter(msg => {
+                if (!msg.id.startsWith('temp_')) return false;
+                
+                // Check if this temp message has a real counterpart by ID
+                if (realMessageIds.has(msg.id)) return false;
+                
+                // Check if this temp message has a real counterpart by matching
+                // content, sender, and timestamp (within 2 seconds)
+                const hasDuplicate = firestoreMessages.some(realMsg => 
+                  realMsg.senderId === msg.senderId &&
+                  realMsg.content === msg.content &&
+                  Math.abs(realMsg.timestamp.getTime() - msg.timestamp.getTime()) < 2000
+                );
+                
+                if (hasDuplicate) return false;
+                
+                return true;
+              });
+              
+              // Merge: temp messages + real messages
+              const mergedMessages = [...tempMessages, ...firestoreMessages];
+              
+              // Remove any duplicate IDs (final safety - use Map to keep only first occurrence)
+              const seenIds = new Set<string>();
+              const uniqueMessages = mergedMessages.filter(msg => {
+                if (seenIds.has(msg.id)) {
+                  console.log('Duplicate ID detected and removed:', msg.id);
+                  return false;
+                }
+                seenIds.add(msg.id);
+                return true;
+              });
+              
+              // Sort by timestamp (oldest first, for inverted list)
+              return uniqueMessages.sort((a, b) => 
+                a.timestamp.getTime() - b.timestamp.getTime()
+              );
+            });
+            
             setLoading(false);
 
             // Cache messages locally for offline access
@@ -193,20 +237,13 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
               imageUrl
             );
 
-            // Step 5: On success - Update with real ID and status "sent"
-            const sentMessage: Message = {
-              ...optimisticMessage,
-              id: messageId,
-              status: 'sent',
-            };
-
-            setMessages((prev) =>
-              prev.map((msg) => (msg.id === tempId ? sentMessage : msg))
-            );
-
-            // Update local database with real ID
+            // Step 5: Update local database with real ID
+            // Note: We don't update the UI state here because the Firestore
+            // real-time listener will receive the message and handle deduplication
             await LocalDatabase.deleteMessage(tempId);
-            await LocalDatabase.insertMessage(sentMessage, true);
+            
+            // The real message will come from the Firestore listener
+            // and replace the temp message automatically
           } catch (err: any) {
             // Step 6: On failure - Mark as failed
             console.error('Failed to send message to Firestore:', err);

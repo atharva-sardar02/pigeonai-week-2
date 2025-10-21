@@ -1,8 +1,8 @@
 # Active Context: Pigeon AI
 
-**Last Updated**: October 20, 2025 - PR #3 COMPLETE ✅  
-**Current Phase**: Development - Messaging Data Layer Complete, Ready for Chat UI  
-**Status**: ✅ Auth Complete, ✅ Data Layer Complete, UI Color Scheme Updated
+**Last Updated**: October 21, 2025 - PR #4 In Progress (Avatar & User Details Complete) ✅  
+**Current Phase**: Development - Chat UI Implementation  
+**Status**: ✅ Auth Complete, ✅ Data Layer Complete, ✅ Avatar & User Profile System Complete, 🟡 Chat UI In Progress
 
 ---
 
@@ -16,7 +16,10 @@
   - ✅ Models, services, context, hooks, security rules deployed
   - ✅ Firestore rules and indexes deployed to production
 - 🎨 **UI UPDATE COMPLETE**: Color scheme matched to pigeon icon background (`#060C1D`)
-- 🎯 **NEXT**: PR #4 - Chat UI & Real-Time Sync
+- 🟡 **PR #4 IN PROGRESS**: Chat UI & Real-Time Sync
+  - ✅ Tasks 4.1-4.13: Complete (Message Bubble, List, Input, Chat Screen, Conversation List, NewChat, Navigation, Date Formatter)
+  - ✅ Task 4.14: Avatar Component, UserDetails Screen, User Profile Caching **COMPLETE**
+  - ⏸️ Tasks 4.15-4.17: Testing tasks (deferred)
 
 ### PR #3 Accomplishments
 
@@ -99,6 +102,47 @@
    - Secondary: `#0F1A28`, Tertiary: `#1A2533`
    - Text colors must have sufficient contrast (WCAG AA)
    - Lighter text for readability: `#B0B3BA` (secondary), `#7A7D84` (tertiary)
+
+9. **User Profile Caching**: Performance optimization critical for good UX
+   - Global cache Map for user profiles (avoids repeated Firestore reads)
+   - useUserProfile hook with caching layer
+   - Display names fetched once and reused across components
+   - Cache cleared on logout to prevent stale data
+
+10. **Avatar System**: Reusable components save development time
+    - Single Avatar component with multiple sizes (small, medium, large, xlarge)
+    - Image display with initials fallback
+    - Optional online status indicator
+    - Integrated across all screens (conversations, chat, profile, user details)
+
+11. **Navigation Serialization**: React Navigation requires serializable params
+    - Don't pass complex objects (Conversation) through navigation
+    - Pass only primitive types (strings, numbers, booleans)
+    - Fetch complex data on destination screen using IDs
+    - Prevents "non-serializable values" warnings
+
+12. **Performance Patterns**: Cache-first loading for instant UI
+    - Load from SQLite cache immediately (instant display)
+    - Then set up real-time Firestore listener for updates
+    - User sees data instantly, updates happen in background
+    - Dramatically improves perceived performance
+
+### Files Created (PR #4 - In Progress)
+- `src/components/chat/MessageBubble.tsx` (message display)
+- `src/components/chat/MessageList.tsx` (FlatList with real-time updates)
+- `src/components/chat/MessageInput.tsx` (compose and send)
+- `src/components/chat/ChatHeader.tsx` (tappable header)
+- `src/screens/main/ChatScreen.tsx` (main chat interface)
+- `src/components/conversation/ConversationListItem.tsx` (list item)
+- `src/screens/main/ConversationListScreen.tsx` (home screen)
+- `src/screens/main/NewChatScreen.tsx` (user search)
+- `src/screens/main/ProfileScreen.tsx` (user profile & settings with cache management)
+- `src/screens/main/UserDetailsScreen.tsx` (user details from chat header)
+- `src/navigation/MainNavigator.tsx` (main app navigation)
+- `src/utils/dateFormatter.ts` (timestamp formatting)
+- `src/components/common/Avatar.tsx` (reusable avatar component)
+- `src/components/common/index.ts` (barrel export)
+- `src/hooks/useUserProfile.ts` (user profile caching hook)
 
 ### Files Created (PR #3)
 - `src/models/Message.ts` (18 functions)
