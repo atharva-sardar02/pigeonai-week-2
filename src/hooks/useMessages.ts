@@ -41,57 +41,95 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
   }, []);
 
   /**
-   * Load messages when conversationId changes
+   * Set up and cleanup real-time listener when conversation changes
+   * 
+   * Cleanup is critical to prevent:
+   * - Memory leaks
+   * - Unnecessary Firestore reads (costs money!)
+   * - Stale data updates
    */
   useEffect(() => {
     if (!conversationId || !user) {
       setMessages([]);
+      // Cleanup any existing listener immediately when user logs out
+      if (unsubscribe) {
+        unsubscribe();
+        setUnsubscribe(null);
+      }
       return;
     }
 
     loadMessages();
 
-    // Cleanup listener on unmount or conversation change
+    // Cleanup function: Unsubscribe from Firestore listener
     return () => {
       if (unsubscribe) {
+        console.log(`Cleaning up message listener for conversation: ${conversationId}`);
         unsubscribe();
+        setUnsubscribe(null);
       }
     };
   }, [conversationId, user, isOnline]);
 
   /**
-   * Load messages from Firestore with real-time updates
+   * Load messages and set up real-time listener (Task 4.7)
+   * 
+   * Optimized flow (cache-first for instant loading):
+   * 1. Load from cache immediately for instant display
+   * 2. Subscribe to Firestore onSnapshot for real-time updates
+   * 3. Receive immediate snapshot with current messages from Firestore
+   * 4. Receive updates whenever any message changes (new, edited, status update)
+   * 5. Cache messages locally for offline access
+   * 6. Cleanup listener when conversation changes or component unmounts
    */
   const loadMessages = useCallback(async () => {
     if (!conversationId || !user) return;
 
     try {
-      setLoading(true);
       setError(null);
 
       if (isOnline) {
-        // Set up real-time listener
+        // Load from cache first for instant display ⚡
+        const cachedMessages = await LocalDatabase.getMessages(conversationId);
+        if (cachedMessages.length > 0) {
+          setMessages(cachedMessages);
+          setLoading(false); // Stop loading immediately - show cached data!
+        } else {
+          setLoading(true); // Only show loading if no cached messages
+        }
+
+        // Then set up real-time Firestore listener for updates
         const listener = FirestoreService.listenToMessages(
           conversationId,
           async (firestoreMessages) => {
+            // Real-time update received
             setMessages(firestoreMessages);
             setLoading(false);
 
-            // Cache messages locally
+            // Cache messages locally for offline access
             for (const message of firestoreMessages) {
               await LocalDatabase.insertMessage(message, true);
             }
           },
           (err) => {
-            console.error('Error listening to messages:', err);
+            // Suppress permission errors during logout
+            if (err.message.includes('permission') || err.message.includes('permissions') || err.message.includes('Permission denied')) {
+              // Don't log anything - already logged as warning in service
+              setLoading(false);
+              return;
+            }
+            // Listener error callback
+            console.error('Error in real-time message listener:', err);
             setError(err.message);
             setLoading(false);
           }
         );
 
+        // Store unsubscribe function for cleanup
         setUnsubscribe(() => listener);
       } else {
-        // Offline - load from cache
+        // Offline - load from local cache
+        setLoading(true);
         const cachedMessages = await LocalDatabase.getMessages(conversationId);
         setMessages(cachedMessages);
         setLoading(false);
@@ -104,7 +142,15 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
   }, [conversationId, user, isOnline]);
 
   /**
-   * Send a message
+   * Send a message with optimistic UI updates
+   * 
+   * Flow:
+   * 1. Create temporary message with status "sending"
+   * 2. Add to local state immediately (optimistic update)
+   * 3. Save to local database
+   * 4. Send to Firestore (if online)
+   * 5. On success: Update status to "sent" and replace temp ID
+   * 6. On failure: Update status to "failed" and queue for retry
    */
   const sendMessage = useCallback(
     async (content: string, type: MessageType = 'text', imageUrl?: string) => {
@@ -115,7 +161,7 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
       try {
         setError(null);
 
-        // Create optimistic message
+        // Step 1: Create optimistic message with temporary ID
         const tempId = `temp_${Date.now()}_${Math.random()}`;
         const optimisticMessage: Message = {
           id: tempId,
@@ -123,21 +169,22 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
           conversationId,
           content,
           timestamp: new Date(),
-          status: 'sending',
+          status: 'sending', // Show as "sending"
           type,
           imageUrl,
           readBy: { [user.uid]: new Date() },
         };
 
-        // Add to UI immediately
-        setMessages((prev) => [...prev, optimisticMessage]);
+        // Step 2: Add to UI immediately (optimistic update)
+        // Note: MessageList is inverted, so new messages go at the start
+        setMessages((prev) => [optimisticMessage, ...prev]);
 
-        // Save to local database
+        // Step 3: Save to local database
         await LocalDatabase.insertMessage(optimisticMessage, false);
 
         if (isOnline) {
           try {
-            // Send to Firestore
+            // Step 4: Send to Firestore
             const messageId = await FirestoreService.sendMessage(
               conversationId,
               user.uid,
@@ -146,7 +193,7 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
               imageUrl
             );
 
-            // Update with real ID
+            // Step 5: On success - Update with real ID and status "sent"
             const sentMessage: Message = {
               ...optimisticMessage,
               id: messageId,
@@ -157,18 +204,23 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
               prev.map((msg) => (msg.id === tempId ? sentMessage : msg))
             );
 
-            // Update local database
+            // Update local database with real ID
             await LocalDatabase.deleteMessage(tempId);
             await LocalDatabase.insertMessage(sentMessage, true);
           } catch (err: any) {
-            // Mark as failed
+            // Step 6: On failure - Mark as failed
+            console.error('Failed to send message to Firestore:', err);
+            
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === tempId ? { ...msg, status: 'failed' } : msg
               )
             );
 
-            // Queue for retry
+            // Update local database with failed status
+            await LocalDatabase.updateMessage(tempId, { status: 'failed' });
+
+            // Queue for retry when connection is restored
             await LocalDatabase.enqueueOperation({
               operationType: 'sendMessage',
               data: {
@@ -184,7 +236,7 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
             throw err;
           }
         } else {
-          // Offline - queue for later
+          // Offline - keep as "sending" and queue for later
           await LocalDatabase.enqueueOperation({
             operationType: 'sendMessage',
             data: {

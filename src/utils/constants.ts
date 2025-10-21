@@ -92,6 +92,40 @@ export const SIZES = {
   avatarLarge: 64,
 };
 
+// Spacing (for consistent padding/margins)
+export const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
+};
+
+// Typography
+export const TYPOGRAPHY = {
+  fontSize: {
+    xs: 12,
+    sm: 14,
+    md: 16,
+    lg: 18,
+    xl: 20,
+    xxl: 24,
+    xxxl: 32,
+  },
+  fontWeight: {
+    regular: '400',
+    medium: '500',
+    semibold: '600',
+    bold: '700',
+  },
+  lineHeight: {
+    tight: 1.2,
+    normal: 1.5,
+    relaxed: 1.75,
+  },
+};
+
 // Firebase Collection Names
 export const COLLECTIONS = {
   users: 'users',
@@ -99,6 +133,15 @@ export const COLLECTIONS = {
   messages: 'messages',
   groups: 'groups',
   typing: 'typing',
+};
+
+// Firebase Collection Names (alias for backwards compatibility)
+export const FIREBASE_COLLECTIONS = {
+  USERS: 'users',
+  CONVERSATIONS: 'conversations',
+  MESSAGES: 'messages',
+  GROUPS: 'groups',
+  TYPING: 'typing',
 };
 
 // Message Limits

@@ -136,6 +136,12 @@ export function listenToConversations(
         callback(conversations);
       },
       (error) => {
+        // Suppress permission errors (expected during logout)
+        if (error.message?.includes('permission') || error.message?.includes('permissions')) {
+          // Silently handle - this is expected when user logs out
+          onError?.(new Error('Permission denied'));
+          return;
+        }
         console.error('Error listening to conversations:', error);
         onError?.(new Error(error.message || 'Failed to listen to conversations'));
       }
@@ -363,6 +369,12 @@ export function listenToMessages(
         callback(messages);
       },
       (error) => {
+        // Suppress permission errors (expected during logout)
+        if (error.message?.includes('permission') || error.message?.includes('permissions')) {
+          // Silently handle - this is expected when user logs out
+          onError?.(new Error('Permission denied'));
+          return;
+        }
         console.error('Error listening to messages:', error);
         onError?.(new Error(error.message || 'Failed to listen to messages'));
       }
@@ -575,6 +587,74 @@ export function listenToTypingIndicators(
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
+
+/**
+ * Search users by display name or email (Task 4.10)
+ * 
+ * Note: This is a simple search implementation.
+ * For production, consider using:
+ * - Algolia for better search performance
+ * - Cloud Functions for server-side search
+ * - Firebase Extensions for full-text search
+ * 
+ * Current implementation:
+ * - Searches by email (exact match)
+ * - Searches by displayName prefix (case-insensitive)
+ */
+export async function searchUsers(searchQuery: string): Promise<any[]> {
+  try {
+    const results: any[] = [];
+    const normalizedQuery = searchQuery.toLowerCase().trim();
+
+    // Search by email (exact match or prefix)
+    const emailQuery = query(
+      collection(db, FIREBASE_COLLECTIONS.USERS),
+      where('email', '>=', normalizedQuery),
+      where('email', '<=', normalizedQuery + '\uf8ff'),
+      firestoreLimit(10)
+    );
+
+    const emailSnap = await getDocs(emailQuery);
+    emailSnap.forEach((doc) => {
+      results.push({
+        uid: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    // Search by displayName (prefix match)
+    // Note: Firestore doesn't support case-insensitive queries natively
+    // This is a workaround - for production use Algolia or similar
+    const nameQuery = query(
+      collection(db, FIREBASE_COLLECTIONS.USERS),
+      orderBy('displayName'),
+      firestoreLimit(50) // Get more to filter client-side
+    );
+
+    const nameSnap = await getDocs(nameQuery);
+    nameSnap.forEach((doc) => {
+      const userData = doc.data();
+      const displayName = (userData.displayName || '').toLowerCase();
+      
+      // Check if display name contains the search query
+      if (displayName.includes(normalizedQuery)) {
+        // Check if not already in results
+        if (!results.some((r) => r.uid === doc.id)) {
+          results.push({
+            uid: doc.id,
+            ...userData,
+          });
+        }
+      }
+    });
+
+    // Limit final results
+    return results.slice(0, 20);
+  } catch (error: any) {
+    console.error('Error searching users:', error);
+    throw new Error(error.message || 'Failed to search users');
+  }
+}
 
 /**
  * Check if a conversation exists

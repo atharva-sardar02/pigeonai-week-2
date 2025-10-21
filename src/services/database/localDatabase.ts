@@ -14,6 +14,7 @@ import * as SQLiteService from './sqliteService';
 /**
  * Initialize the local database
  * Creates tables if they don't exist
+ * Cache persists across sessions for better performance
  */
 export async function initDatabase(): Promise<void> {
   try {
@@ -77,6 +78,7 @@ export async function initDatabase(): Promise<void> {
     `);
 
     console.log('✅ Local database initialized successfully');
+    console.log('💾 Cache will persist across sessions for instant loading');
   } catch (error) {
     console.error('❌ Error initializing database:', error);
     throw error;

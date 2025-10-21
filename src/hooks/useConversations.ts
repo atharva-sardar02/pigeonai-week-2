@@ -47,15 +47,21 @@ export function useConversations(): UseConversationsReturn {
   useEffect(() => {
     if (!user) {
       setConversations([]);
+      // Cleanup any existing listener immediately when user logs out
+      if (unsubscribe) {
+        unsubscribe();
+        setUnsubscribe(null);
+      }
       return;
     }
 
     loadConversations();
 
-    // Cleanup listener on unmount
+    // Cleanup listener on unmount or when user changes
     return () => {
       if (unsubscribe) {
         unsubscribe();
+        setUnsubscribe(null);
       }
     };
   }, [user, isOnline]);
@@ -67,11 +73,19 @@ export function useConversations(): UseConversationsReturn {
     if (!user) return;
 
     try {
-      setLoading(true);
       setError(null);
 
       if (isOnline) {
-        // Set up real-time listener
+        // Load from cache first for instant display
+        const cachedConversations = await LocalDatabase.getConversations();
+        if (cachedConversations.length > 0) {
+          setConversations(cachedConversations);
+          setLoading(false); // Stop loading immediately
+        } else {
+          setLoading(true); // Only show loading if no cache
+        }
+
+        // Then set up real-time listener for updates
         const listener = FirestoreService.listenToConversations(
           user.uid,
           async (firestoreConversations) => {
@@ -84,6 +98,12 @@ export function useConversations(): UseConversationsReturn {
             }
           },
           (err) => {
+            // Suppress permission errors during logout
+            if (err.message.includes('permission') || err.message.includes('permissions') || err.message.includes('Permission denied')) {
+              // Don't log anything - already logged as warning in service
+              setLoading(false);
+              return;
+            }
             console.error('Error listening to conversations:', err);
             setError(err.message);
             setLoading(false);
@@ -93,6 +113,7 @@ export function useConversations(): UseConversationsReturn {
         setUnsubscribe(() => listener);
       } else {
         // Offline - load from cache
+        setLoading(true);
         const cachedConversations = await LocalDatabase.getConversations();
         setConversations(cachedConversations);
         setLoading(false);

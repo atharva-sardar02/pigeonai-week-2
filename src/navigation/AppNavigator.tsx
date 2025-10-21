@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../store/context/AuthContext';
 import { AuthNavigator } from './AuthNavigator';
+import { MainNavigator } from './MainNavigator';
 import { SplashScreen } from '../screens/auth/SplashScreen';
 import { RootStackParamList } from '../types';
 import { COLORS } from '../utils/constants';
@@ -11,7 +11,7 @@ import { COLORS } from '../utils/constants';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 /**
- * App Navigator
+ * App Navigator (Task 4.12)
  * 
  * Root navigator that handles authentication flow:
  * - Shows Splash screen while checking auth state
@@ -19,7 +19,10 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  * - Shows Main screens if user is logged in
  */
 export const AppNavigator: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, initializing } = useAuth();
+
+  // Show splash while initially checking auth or during sign in/out
+  const showSplash = initializing || loading;
 
   return (
     <NavigationContainer
@@ -60,17 +63,12 @@ export const AppNavigator: React.FC = () => {
           animation: 'fade',
         }}
       >
-        {loading ? (
-          // Show splash screen while checking auth state
+        {showSplash ? (
+          // Show splash screen while checking auth state or during sign in/out
           <Stack.Screen name="Splash" component={SplashScreen} />
         ) : user ? (
           // User is logged in - show main app screens
-          // TODO: Replace with MainNavigator when implemented
-          <Stack.Screen 
-            name="Main" 
-            component={PlaceholderMainScreen}
-            options={{ title: 'Pigeon AI' }}
-          />
+          <Stack.Screen name="Main" component={MainNavigator} />
         ) : (
           // User is not logged in - show auth screens
           <Stack.Screen name="Auth" component={AuthNavigator} />
@@ -79,72 +77,3 @@ export const AppNavigator: React.FC = () => {
     </NavigationContainer>
   );
 };
-
-/**
- * Placeholder Main Screen
- * TODO: Replace with actual MainNavigator in PR #3
- */
-const PlaceholderMainScreen: React.FC = () => {
-  const { signOut, user } = useAuth();
-
-  return (
-    <View style={placeholderStyles.container}>
-      <Text style={placeholderStyles.title}>
-        Welcome to Pigeon AI! 🎉
-      </Text>
-      <Text style={placeholderStyles.subtitle}>
-        You're logged in as: {user?.email}
-      </Text>
-      <TouchableOpacity
-        style={placeholderStyles.button}
-        onPress={signOut}
-      >
-        <Text style={placeholderStyles.buttonText}>Sign Out</Text>
-      </TouchableOpacity>
-      <Text style={placeholderStyles.note}>
-        Main app screens will be implemented in PR #3
-      </Text>
-    </View>
-  );
-};
-
-const placeholderStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  title: {
-    color: COLORS.text,
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: COLORS.textSecondary,
-    fontSize: 16,
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: COLORS.buttonPrimary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-  },
-  buttonText: {
-    color: COLORS.buttonPrimaryText,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  note: {
-    color: COLORS.textTertiary,
-    marginTop: 32,
-    fontSize: 14,
-    textAlign: 'center',
-  },
-});
-

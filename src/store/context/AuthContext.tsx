@@ -2,6 +2,8 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { User as FirebaseUser } from 'firebase/auth';
 import { AppState, AppStateStatus } from 'react-native';
 import * as authService from '../../services/firebase/authService';
+import * as LocalDatabase from '../../services/database/localDatabase';
+import { clearUserProfileCache } from '../../hooks/useUserProfile';
 import { User, AuthContextType } from '../../types';
 
 /**
@@ -28,6 +30,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [initializing, setInitializing] = useState<boolean>(true);
+
+  /**
+   * Initialize local database on app start
+   */
+  useEffect(() => {
+    const initLocalDatabase = async () => {
+      try {
+        await LocalDatabase.initDatabase();
+        console.log('✅ Local database initialized in AuthProvider');
+      } catch (error) {
+        console.error('❌ Failed to initialize local database:', error);
+      }
+    };
+
+    initLocalDatabase();
+  }, []);
 
   /**
    * Fetch user profile from Firestore
@@ -182,6 +200,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       await authService.signOut();
       
+      // Clear user profile cache
+      clearUserProfileCache();
+      
       // Auth state listener will handle clearing the user
     } catch (err: any) {
       setError(err.message || 'Failed to sign out');
@@ -266,7 +287,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const value: AuthContextType = {
     user,
-    loading: loading || initializing,
+    loading,
+    initializing,
     error,
     signUp,
     signIn,

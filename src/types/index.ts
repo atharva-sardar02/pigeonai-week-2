@@ -64,6 +64,7 @@ export interface Group {
 export interface AuthContextType {
   user: User | null;
   loading: boolean;
+  initializing: boolean;
   error: string | null;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -104,9 +105,10 @@ export type AuthStackParamList = {
 
 export type MainStackParamList = {
   ConversationList: undefined;
-  Chat: { conversationId: string };
+  Chat: { conversationId: string; conversation?: Conversation };
   NewChat: undefined;
   Profile: undefined;
+  UserDetails: { userId: string };
   GroupDetails: { groupId: string };
   CreateGroup: undefined;
 };
