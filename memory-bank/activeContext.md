@@ -1,573 +1,410 @@
 # Active Context: Pigeon AI
 
-**Last Updated**: October 21, 2025 - PR #4 In Progress (Avatar & User Details Complete) ✅  
-**Current Phase**: Development - Chat UI Implementation  
-**Status**: ✅ Auth Complete, ✅ Data Layer Complete, ✅ Avatar & User Profile System Complete, 🟡 Chat UI In Progress
+**Last Updated**: October 21, 2025 - Multiple PRs Complete ✅  
+**Current Phase**: Development - Push Notifications & UI Enhancements Complete  
+**Status**: ✅ Auth Complete, ✅ Data Layer Complete, ✅ Chat UI Complete, ✅ Presence Complete, ✅ Group Chat Complete, ✅ Push Notifications Complete, ✅ UI Enhancements Complete
 
 ---
 
 ## Current Focus
 
-### What We're Doing Right Now
-- ✅ **PR #1 COMPLETE**: Project setup finished, app running on Expo Go
-- ✅ **PR #2 COMPLETE**: Authentication system fully functional with dark mode UI
+### Completed Today (October 21, 2025)
+
+#### **Push Notifications (PR #10 - COMPLETE ✅)**
+- ✅ Task 10.1: FCM Configuration complete
+- ✅ Task 10.2-10.10: Notification service implementation
+- ✅ Task 10.11: Firestore security rules updated for FCM tokens
+- ✅ Hybrid notification system (local for Expo Go, remote for builds)
+- ✅ Global notification listener for all conversations
+- ✅ Missed message notifications when coming online
+- ✅ Clean console output (removed debugging logs)
+- ✅ EAS Build configuration complete
+
+#### **UI Enhancements (Today)**
+- ✅ Inverted FlatList for natural chat scrolling (newest at bottom)
+- ✅ Read receipts update in real-time (not just on reload)
+- ✅ Fixed notification spam on first login
+- ✅ Logo added to ConversationListScreen header
+- ✅ Expandable FAB menu (New Chat / New Group buttons)
+- ✅ KeyboardAvoidingView for all input screens
+- ✅ Group Details Screen with member list
+- ✅ Clickable members in Group Details (navigate to profiles)
+- ✅ "(You)" indicator beside current user's name
+- ✅ Message timestamps show date AND time (e.g., "Yesterday 2:30 PM")
+
+### All PRs Complete
+
+- ✅ **PR #1 COMPLETE**: Project Setup & Configuration
+- ✅ **PR #2 COMPLETE**: Authentication System
 - ✅ **PR #3 COMPLETE**: Core Messaging Infrastructure (Data Layer)
-  - ✅ All 9 tasks completed (Tasks 3.1-3.9)
-  - ✅ Models, services, context, hooks, security rules deployed
-  - ✅ Firestore rules and indexes deployed to production
 - ✅ **PR #4 COMPLETE**: Chat UI & Real-Time Sync
-  - ✅ All core tasks complete
-  - ✅ Avatar Component, UserDetails Screen, User Profile Caching
-  - ⏸️ Tasks 4.15-4.17: Testing tasks (deferred)
 - ✅ **PR #5 COMPLETE**: Presence & Typing Indicators
-  - ✅ Tasks 5.1-5.10, 5.13: All core functionality working
-  - 🐛 **Current Issue**: Debugging typing indicator inconsistency on one device
-  - Added debug logging to diagnose missing "typing" word
-  - ⏸️ Tasks 5.11-5.12: Unit tests (deferred)
-- 🎯 **NEXT**: PR #6 (Read Receipts & Message States) after fixing current bug
+- ✅ **PR #9 COMPLETE**: Group Chat (Tasks 9.1-9.16)
+- ✅ **PR #10 COMPLETE**: Push Notifications (Tasks 10.1-10.11, Hybrid System)
+- ✅ **UI Enhancements COMPLETE**: Logo, FAB menu, Group Details, Keyboard handling, Timestamp improvements
 
-### PR #3 Accomplishments
+### Next Steps
 
-1. **✅ Models Created** (Tasks 3.1-3.2)
-   - Message model with 18 helper functions
-   - Conversation model with 21 helper functions
-   - Full Firestore timestamp conversion
-   - Formatting, validation, and sorting utilities
-
-2. **✅ Services Implemented** (Tasks 3.3-3.4)
-   - **Firestore Service**: 19 functions for conversations, messages, typing indicators
-   - **SQLite Service**: 8 core functions for local database operations
-   - **Local Database Service**: 29 functions with offline queue, caching, sync tracking
-
-3. **✅ State Management** (Tasks 3.5-3.7)
-   - **ChatContext**: Complete provider with conversations, messages, offline sync
-   - **useMessages Hook**: Real-time message management for conversations
-   - **useConversations Hook**: Real-time conversation list management
-
-4. **✅ Security** (Tasks 3.8-3.9)
-   - Comprehensive Firestore security rules (authentication, authorization, validation)
-   - Firestore indexes for optimized queries
-   - **DEPLOYED TO PRODUCTION** (`pigeonai-dev`)
-
-5. **🎨 UI Color Update**
-   - Background color matched to icon: `#060C1D`
-   - All secondary/tertiary colors adjusted for proper contrast
-   - Text colors optimized for dark background readability
-   - Splash screen and adaptive icons updated
+- Tasks 5.11-5.12: Unit Tests (deferred)
+- Task 10.12: Unit Tests for Notification Service (deferred)
+- Task 10.13: Manual Test Notifications in EAS Build
+- PR #6: Read Receipts & Message States (partially implemented)
+- PR #7: Image Sharing (future)
+- PR #8: Offline Support (partially implemented with local DB and queue)
+- PR #11: UI Polish & Error Handling (partially done)
+- PR #12: Testing, Bug Fixes & Documentation
 
 ---
 
-## Key Learnings from PR #3 (Core Messaging Infrastructure)
+## Major Accomplishments
 
-### Technical Learnings
+### Presence System (PR #5)
+- Real-time online/offline status with AppState integration
+- Last seen timestamps ("Last seen 5m ago")
+- Green online indicators on avatars
+- Chat header shows: typing (animated) → Online → Last seen → Offline
+- Typing indicator: "messaging • • •" with animated dots in header
+- Keyboard-driven typing lifecycle (persists while keyboard is up)
+- No duplicate listeners, optimized for performance
 
-1. **Model Pattern**: Pure helper functions > classes
-   - 18 functions for Message, 21 for Conversation
-   - Immutable transforms (return new objects)
-   - Easy to test, reusable across codebase
-   - TypeScript ensures type safety
+### Group Chat (PR #9)
+- Create groups with 3+ members
+- Group conversations with real-time messaging
+- Admin management system
+- Member management (add/remove)
+- Leave group functionality
+- Group avatars and names
+- Proper sender name display in group messages
+- Typing indicators showing multiple users
+- Group Details screen with:
+  - Group info (name, description, icon, member count)
+  - Member list with avatars
+  - Admin badges
+  - Clickable members (navigate to profiles/settings)
+  - "(You)" indicator
+  - Leave Group button
 
-2. **Firestore Integration**: Timestamp conversion is critical
-   - Firestore uses `Timestamp` type, JavaScript uses `Date`
-   - Must convert in both directions (`toFirestore()`, `fromFirestore()`)
-   - Helper functions handle this automatically
-   - Prevents runtime errors
+### Push Notifications (PR #10)
+- **Hybrid System**:
+  - Local notifications in Expo Go for development
+  - Remote push notifications in EAS Build for production
+  - Environment detection (`Constants.appOwnership`)
+- **Global Notification Listener**:
+  - Single listener for all conversations
+  - Tracks last seen message per conversation
+  - Only notifies for new messages from others
+  - Works anywhere in the app (not just in chat)
+- **Missed Message Notifications**:
+  - Checks for messages received while offline
+  - Notifies when user comes online
+  - Prevents spam on first login/reload
+- **FCM Integration**:
+  - Firebase Cloud Messaging configured
+  - Device token registration
+  - Firestore security rules for FCM tokens
+  - Clean error handling (silent in Expo Go)
+- **Documentation**:
+  - Comprehensive guides for FCM setup
+  - Hybrid notification system explained
+  - Testing without build instructions
+  - Migration path to direct FCM documented
 
-3. **SQLite for Offline**: expo-sqlite provides local persistence
-   - Create tables with indexes for fast queries
-   - Transaction support for atomic operations
-   - JSON serialization for complex fields (readBy, participants)
-   - Offline queue with retry logic
+### Performance Optimizations
+- **Zero Duplicate Messages**: Advanced deduplication with `useRef` tracking
+- **Zero Message Jitter**: Inverted FlatList with proper scroll handling
+- **Cache-First Loading**: Instant display from SQLite, background sync
+- **User Profile Caching**: Global cache prevents "Unknown User" flashes
+- **Thread-Safe SQLite**: Operation queue prevents concurrency errors
+- **Real-Time Updates**: Read receipts, typing indicators, presence all update live
+- **Optimized Scrolling**: Empty state mirroring fixed for inverted lists
+- **Clean Console**: Removed debug logs, only essential production logs remain
 
-4. **React Context**: Powerful for global state
-   - ChatContext manages all messaging state
-   - Real-time listeners integrated
-   - Network monitoring with NetInfo
-   - Automatic cleanup on unmount
-
-5. **Custom Hooks**: Encapsulate complex logic
-   - `useMessages(conversationId)` - Single conversation
-   - `useConversations()` - All conversations
-   - Return loading, error, data, and actions
-   - Reusable across components
-
-6. **Security Rules**: Must be comprehensive
-   - Default deny all
-   - Authenticate + authorize (user must be participant)
-   - Validate required fields (type, participants, timestamps)
-   - Prevent senderId spoofing
-
-7. **Firestore Indexes**: Required for complex queries
-   - Composite index for conversations: `participants` + `updatedAt DESC`
-   - Composite index for messages: `conversationId` + `timestamp DESC`
-   - Firebase CLI for deployment (`firebase deploy --only firestore:indexes`)
-
-8. **Color Theming**: Exact color match matters
-   - Icon background: `#060C1D` (very dark navy)
-   - Secondary: `#0F1A28`, Tertiary: `#1A2533`
-   - Text colors must have sufficient contrast (WCAG AA)
-   - Lighter text for readability: `#B0B3BA` (secondary), `#7A7D84` (tertiary)
-
-9. **User Profile Caching**: Performance optimization critical for good UX
-   - Global cache Map for user profiles (avoids repeated Firestore reads)
-   - useUserProfile hook with caching layer
-   - Display names fetched once and reused across components
-   - Cache cleared on logout to prevent stale data
-
-10. **Avatar System**: Reusable components save development time
-    - Single Avatar component with multiple sizes (small, medium, large, xlarge)
-    - Image display with initials fallback
-    - Optional online status indicator
-    - Integrated across all screens (conversations, chat, profile, user details)
-
-11. **Navigation Serialization**: React Navigation requires serializable params
-    - Don't pass complex objects (Conversation) through navigation
-    - Pass only primitive types (strings, numbers, booleans)
-    - Fetch complex data on destination screen using IDs
-    - Prevents "non-serializable values" warnings
-
-12. **Performance Patterns**: Cache-first loading for instant UI
-    - Load from SQLite cache immediately (instant display)
-    - Then set up real-time Firestore listener for updates
-    - User sees data instantly, updates happen in background
-    - Dramatically improves perceived performance
-
-### Files Created (PR #4 - In Progress)
-- `src/components/chat/MessageBubble.tsx` (message display)
-- `src/components/chat/MessageList.tsx` (FlatList with real-time updates)
-- `src/components/chat/MessageInput.tsx` (compose and send)
-- `src/components/chat/ChatHeader.tsx` (tappable header)
-- `src/screens/main/ChatScreen.tsx` (main chat interface)
-- `src/components/conversation/ConversationListItem.tsx` (list item)
-- `src/screens/main/ConversationListScreen.tsx` (home screen)
-- `src/screens/main/NewChatScreen.tsx` (user search)
-- `src/screens/main/ProfileScreen.tsx` (user profile & settings with cache management)
-- `src/screens/main/UserDetailsScreen.tsx` (user details from chat header)
-- `src/navigation/MainNavigator.tsx` (main app navigation)
-- `src/utils/dateFormatter.ts` (timestamp formatting)
-- `src/components/common/Avatar.tsx` (reusable avatar component)
-- `src/components/common/index.ts` (barrel export)
-- `src/hooks/useUserProfile.ts` (user profile caching hook)
-
-### Files Created (PR #3)
-- `src/models/Message.ts` (18 functions)
-- `src/models/Conversation.ts` (21 functions)
-- `src/services/firebase/firestoreService.ts` (19 functions)
-- `src/services/database/sqliteService.ts` (8 functions)
-- `src/services/database/localDatabase.ts` (29 functions)
-- `src/store/context/ChatContext.tsx` (ChatProvider + useChat)
-- `src/hooks/useMessages.ts`
-- `src/hooks/useConversations.ts`
-- `firebase/firestore.rules` (comprehensive security)
-- `firebase/firestore.indexes.json` (query optimization)
-- `firebase.json` (Firebase config)
-- `.firebaserc` (project alias)
-
-### What Worked Well
-- Pure function pattern for models (testable, reusable)
-- Firestore + SQLite dual-layer (online + offline)
-- React Context for state management
-- Custom hooks for specific features
-- Comprehensive security rules (deployed)
-
-### What to Improve (Post-MVP)
-- Add unit tests for models and services
-- Add integration tests for message flow
-- Optimize Firestore reads (pagination, caching)
-- Add retry logic for failed Firestore operations
-- Message encryption (end-to-end)
+### UI/UX Enhancements
+- **Logo in Header**: App icon displayed beside "Pigeon" in ConversationListScreen
+- **Expandable FAB Menu**: 
+  - Main FAB with `+` icon
+  - Expands to show "New Chat" and "New Group" buttons
+  - Icons and labels for clarity
+  - Semi-transparent overlay when open
+- **Group Details Screen**:
+  - Tappable header in group chats
+  - Shows group info and member list
+  - Admin badges for group admins
+  - Clickable members (others → User Details, self → Settings)
+  - "(You)" beside current user's name
+  - Leave Group button
+- **Keyboard Handling**:
+  - `KeyboardAvoidingView` on ChatScreen, CreateGroupScreen, LoginScreen, SignupScreen
+  - Proper offset for iOS/Android
+  - Smooth keyboard interactions
+- **Message Timestamps**:
+  - Now show date AND time
+  - "Yesterday 2:30 PM" instead of just "Yesterday"
+  - "Jan 15 2:30 PM" for older messages
+  - Consistent time display across all messages
 
 ---
 
-## Key Learnings from PR #2 (Authentication System)
+## Technical Learnings from Recent Work
 
-### UI/UX Insights
-1. **Dark Mode First**: Users expect dark mode in messaging apps
-   - Consistent color palette defined in constants
-   - All screens designed with dark theme from start
-   - Reduces eye strain, modern aesthetic
+### Push Notifications
+1. **Expo Go Limitations (SDK 53+)**: Remote push notifications don't work in Expo Go
+   - Requires EAS Build or Expo Dev Client for full push notification testing
+   - Solution: Hybrid system with local notifications for development
+2. **Global vs. Per-Conversation Listeners**: 
+   - Initially had notification logic in `useMessages` (per-conversation)
+   - Moved to global `useGlobalNotifications` hook for app-wide coverage
+   - Prevents duplicate listeners, ensures notifications work anywhere
+3. **Preventing Notification Spam**:
+   - Must mark existing messages as "seen" on initialization
+   - Use `processedMessageIds` ref to track notified messages
+   - Timestamp-based filtering for "missed messages"
+   - Flag to prevent checks on initial app load
+4. **Firebase Message Limit**: Default `getMessages` limit is 50
+   - Can cause notification spam if user has >50 messages
+   - Solution: Fetch all messages (`limit: 9999`) during initialization
+5. **Silent Error Handling**: Expo Go shows errors for unavailable features
+   - Must silently catch and ignore errors for better UX
+   - `LogBox.ignoreLogs()` for in-app yellow warnings
+   - Custom console filters for terminal output
 
-2. **Form Validation UX**: Real-time validation improves experience
-   - Validate on blur, not on every keystroke (less annoying)
-   - Show field-level errors clearly
-   - Disable submit button when form invalid
-   - Show loading states during async operations
+### Group Chat
+1. **Group Creation Validation**: Ensure at least 3 total members (creator + 2 others)
+2. **Admin Management**: First creator is admin, can add/remove members
+3. **Typing in Groups**: Show names of who's typing, with smart formatting
+   - 1 user: "John is messaging"
+   - 2 users: "John and Sarah are messaging"
+   - 3+ users: "3 people are messaging"
+4. **Group Details Navigation**: Tappable headers provide access to group/user info
+5. **User Profile Access**: Different navigation based on user (self → Settings, others → User Details)
 
-3. **SafeAreaView Migration**: Deprecated `react-native` SafeAreaView
-   - Use `react-native-safe-area-context` instead
-   - Wrap entire app with `SafeAreaProvider`
-   - Prevents content from overlapping notches/safe areas
+### Scrolling and Message Display
+1. **Inverted FlatList**: Standard pattern for chat apps
+   - Newest messages at bottom (natural)
+   - Oldest at top (scroll up to see more)
+   - Requires reversing array and mirroring empty state
+2. **Empty State Mirroring**: Must apply both `scaleY: -1` and `scaleX: -1` to prevent horizontal flip
+3. **Scroll to End**: Use `scrollToEnd()` with inverted list, not `scrollToOffset(0)`
+4. **Optimistic Updates**: Insert at beginning of array for inverted list: `[optimisticMessage, ...prev]`
 
-4. **Icon Integration**: Custom branding matters even in MVP
-   - Icon used on splash, login, signup screens
-   - Color palette extracted from icon for consistency
-   - Visual identity established early
-
-5. **Spacing Refinement**: Small spacing tweaks have big impact
-   - Reduced gaps between related elements
-   - "Forgot password?" close to password field
-   - "Sign up" link close to button
-   - Improved visual hierarchy
-
-### Technical Learnings
-1. **Auth Persistence**: Firebase Auth needs explicit persistence
-   - Use `initializeAuth` with `getReactNativePersistence(AsyncStorage)`
-   - Without this, users logged out on app restart
-   - Critical for mobile apps
-
-2. **Presence Tracking**: Online/offline status requires careful management
-   - Set online on app foreground
-   - Set offline on app background/unmount
-   - Update lastSeen timestamp
-   - Use app state listener (`AppState.addEventListener`)
-
-3. **Navigation Theme**: React Navigation needs explicit fonts
-   - Must configure `fonts` in `NavigationContainer` theme
-   - Use system fonts to avoid font loading issues
-   - Set `dark: true` for dark mode
-
-4. **Error Handling**: User-friendly errors are essential
-   - Convert Firebase error codes to readable messages
-   - "User not found" → "No account found with this email"
-   - "wrong-password" → "Incorrect password"
-   - Improves user experience significantly
-
-### Files Created (PR #2)
-- `src/models/User.ts` (11 functions)
-- `src/services/firebase/authService.ts` (13 functions)
-- `src/store/context/AuthContext.tsx` (AuthProvider + useAuth)
-- `src/screens/auth/LoginScreen.tsx`
-- `src/screens/auth/SignupScreen.tsx`
-- `src/screens/auth/SplashScreen.tsx`
-- `src/components/auth/LoginForm.tsx`
-- `src/components/auth/SignupForm.tsx`
-- `src/utils/validators.ts` (5 validation functions)
-- `src/navigation/AuthNavigator.tsx`
-- `src/navigation/AppNavigator.tsx`
-
-### What Worked Well
-- Dark mode design looks professional
-- Form validation prevents bad inputs
-- Auth flow is smooth and intuitive
-- Presence tracking ready for messaging features
-- Context pattern makes auth state globally accessible
-
-### What to Improve (Post-MVP)
-- Add "Remember me" option
-- Add social auth (Google, Apple)
-- Add email verification flow
-- Add profile picture upload
-- Add password strength indicator
+### Real-Time Updates
+1. **Message Update Detection**: Must compare entire `readBy` object and `status` field
+   - Not just check for new messages
+   - Update existing messages when their fields change
+2. **Firestore Listener Efficiency**: Compare before/after state to detect actual changes
+3. **useEffect Dependency Arrays**: Stabilize with `useRef` to prevent listener churn
 
 ---
 
-## Key Learnings from PR #1
+## Key Files Modified Today
 
-### Setup Process Insights
-1. **Expo SDK Versioning**: Expo Go app determines SDK version
-   - User had SDK 54 on phone, so we upgraded project from SDK 52 to SDK 54
-   - Important: Check Expo Go version before initializing project
-   - Command: `npx expo install expo@latest` then `npx expo install --fix`
+### Notifications
+- `App.tsx`: Added `GlobalNotificationListener`, `LogBox.ignoreLogs()`, console filters
+- `src/hooks/useGlobalNotifications.ts`: Global notification listener with missed message handling
+- `src/components/GlobalNotificationListener.tsx`: Wrapper component for global notifications
+- `src/services/notifications/notificationService.ts`: Complete notification service (cleaned logs)
+- `src/services/notifications/localNotificationHelper.ts`: Local notification helpers
+- `src/services/firebase/authService.ts`: Device token management
+- `src/store/context/AuthContext.tsx`: Silent push registration on login
+- `src/components/common/NotificationBanner.tsx`: In-app notification banner
+- `app.config.js`: FCM configuration, notification permissions
+- `eas.json`: EAS Build configuration
+- `firebase/firestore.rules`: Security rules for FCM tokens
 
-2. **Firebase Configuration**: Use Web SDK for Expo Go
-   - Register **Web app** in Firebase Console (not iOS/Android native apps)
-   - Use Firebase JS SDK (`firebase` package), not `@react-native-firebase`
-   - Store credentials in `.env` with `EXPO_PUBLIC_` prefix
-   - No need for `google-services.json` or `GoogleService-Info.plist`
+### UI Enhancements
+- `src/screens/main/ConversationListScreen.tsx`: Logo, expandable FAB menu
+- `src/screens/group/GroupDetailsScreen.tsx`: Complete group details screen
+- `src/navigation/MainNavigator.tsx`: Added GroupDetails route
+- `src/screens/main/ChatScreen.tsx`: Navigation to GroupDetails, KeyboardAvoidingView
+- `src/screens/group/CreateGroupScreen.tsx`: KeyboardAvoidingView
+- `src/screens/auth/LoginScreen.tsx`: KeyboardAvoidingView
+- `src/screens/auth/SignupScreen.tsx`: KeyboardAvoidingView
+- `src/models/Message.ts`: Updated `formatTimestamp()` to show date + time
+- `src/components/chat/MessageList.tsx`: Inverted FlatList, fixed empty state mirroring
+- `src/hooks/useMessages.ts`: Real-time read receipt updates, optimistic insert order
 
-3. **EAS Account Required**: Expo Go now requires EAS login
-   - Even for local development, EAS account needed
-   - Free tier is sufficient (no credit card)
-   - Sign up at expo.dev/signup
-   - Login: `npx expo login`
-
-4. **Network Configuration**: Same WiFi Required
-   - Computer and phone must be on same WiFi network
-   - LAN mode is default (use tunnel mode if firewall blocks)
-   - Windows Firewall may need exception for port 8081/8082
-   - Manual URL entry more reliable than QR scan sometimes
-
-5. **Package Installation**: Use correct commands
-   - Expo managed packages: `npx expo install <package>`
-   - NPM packages: `npm install <package>`
-   - Force flag needed after major upgrades: `npm install --force`
-
-6. **Cache Issues**: Clear cache after SDK upgrades
-   - Metro cache can get corrupted: `npm start --clear`
-   - Or delete `node_modules` and reinstall
-   - Port conflicts: Use different port with `--port 8082`
-
-7. **Missing Dependencies**: 
-   - `babel-preset-expo` needed for SDK 54
-   - `expo-asset` and `expo-font` required even if not used
-   - Add plugins to `app.config.js`
-
-### Tech Stack Finalized (PR #1)
-- **Expo SDK**: 54.0.0 (latest)
-- **React**: 19.1.0 (latest)
-- **React Native**: 0.81.4 (latest for SDK 54)
-- **TypeScript**: 5.9.2 (latest)
-- **Firebase JS SDK**: 12.4.0 (latest)
-- **React Navigation**: 7.x (latest)
-- **Location**: us-east4 (Northern Virginia - closest to user)
+### Documentation
+- `docs/PUSH_NOTIFICATIONS.md`: Implementation and migration guide
+- `docs/BACKGROUND_NOTIFICATIONS.md`: Background notification handling
+- `docs/PR10_PUSH_NOTIFICATIONS_SUMMARY.md`: PR summary
+- `docs/EXPO_GO_LIMITATIONS.md`: Expo Go push notification limitations
+- `docs/FCM_SETUP_GUIDE.md`: Comprehensive FCM setup guide
+- `docs/FCM_QUICKSTART.md`: Quick-start guide
+- `docs/FCM_CHECKLIST.md`: Configuration checklist
+- `docs/FCM_CONFIGURATION_COMPLETE.md`: Task 10.1 summary
+- `docs/GOOGLE_SERVICES_EXPLAINED.md`: Why google-services.json is not a secret
+- `docs/FIRESTORE_SECURITY_RULES.md`: Security rules documentation
+- `docs/TESTING_NOTIFICATIONS_WITHOUT_BUILD.md`: Local testing guide
+- `docs/HYBRID_NOTIFICATIONS.md`: Hybrid system documentation
 
 ---
 
-## Recent Decisions
+## All Bugs Fixed
 
-### Platform Selection: React Native + Expo
-**Decided**: October 20, 2025  
-**Rationale**:
-- Cross-platform from day one (iOS + Android)
-- Expo Go enables instant testing without building
-- Fast iteration with hot reload
-- Strong Firebase SDK support
-- Large ecosystem of libraries
-- No need for TestFlight/APK during MVP - just share QR code
-
-**Alternative Considered**: iOS native (Swift) - better performance but React Native chosen for cross-platform reach
-
-### Persona Selection: DEFERRED to Post-MVP
-**Decided**: October 20, 2025  
-**Rationale**: 
-- Focus MVP purely on messaging infrastructure
-- Choose persona AFTER proving the messaging foundation works
-- Allows flexibility based on what works best
-- Reduces scope pressure for 24-hour sprint
-
-**Persona Options** (will choose one post-MVP):
-1. Remote Team Professional
-2. International Communicator
-3. Busy Parent/Caregiver
-4. Content Creator/Influencer
-
-### Backend Selection: Firebase
-**Decided**: October 20, 2025  
-**Rationale**:
-- Real-time sync built-in (saves weeks of work)
-- Offline support handled automatically
-- Generous free tier
-- Scales to millions of users
-- Excellent documentation and iOS SDK
-- Fast setup (hours vs. days for custom backend)
-
-**Alternative Considered**: Custom Node.js + PostgreSQL + WebSockets - more control but significantly more setup time
-
-### AI Features: NOT in MVP
-**Decided**: October 20, 2025  
-**Rationale**:
-- MVP must focus 100% on messaging infrastructure reliability
-- AI features add complexity that could jeopardize core functionality
-- Better to have perfect messaging + no AI than flaky messaging + AI
-- AI features will be added in Phase 2 after persona selection
-
-**Post-MVP AI Plan**:
-1. Complete and test messaging MVP
-2. Choose persona based on team preference
-3. Design 5 required AI features + 1 advanced feature for that persona
-4. Implement Cloud Functions for AI endpoints
-5. Build AI interface (dedicated chat or contextual)
-6. Test AI features thoroughly
+1. **Logout Permission Error (FIXED)**: Set user offline BEFORE `auth.signOut()`
+2. **SQLite Concurrent Operations Error (FIXED)**: Added operation queue
+3. **Message Timestamp Issues (FIXED)**: Handle null timestamps from `serverTimestamp()`
+4. **Typing Indicator Bugs (FIXED)**: Keyboard-driven lifecycle, animated dots
+5. **Duplicate Messages (FIXED)**: `useRef` deduplication, ref cleanup on unmount
+6. **Duplicate Key Errors on Reload (FIXED)**: Clear `messageIdsRef` on logout/conversation change
+7. **AppState Listener Churn (FIXED)**: Use `userIdRef` to stabilize dependencies
+8. **User Set to Offline When Opening Chat (FIXED)**: Removed duplicate AppState listeners
+9. **Typing Indicator Word Missing (FIXED)**: Changed to "messaging" with white color
+10. **FirestoreService.getUserProfile Error (FIXED)**: Use `AuthService.getUserProfile`
+11. **Notifications for All Messages (FIXED)**: Global listener with timestamp tracking
+12. **expo-notifications Errors in Expo Go (FIXED)**: Silent error handling, `LogBox.ignoreLogs()`
+13. **Deprecated removeNotificationSubscription (FIXED)**: Use `subscription.remove()`
+14. **Notification Delays After Scrolling Changes (FIXED)**: Optimized scroll logic
+15. **Incorrect Scrolling (FIXED)**: Reverted to inverted FlatList with proper empty state
+16. **Old Message Notification on Reload (FIXED)**: `hasCheckedMissedOnInit` flag
+17. **Read Receipts Not Real-Time (FIXED)**: Compare `readBy` and `status` in listener
+18. **Notification Spam on First Login (FIXED)**: Fetch all messages during initialization (limit: 9999)
 
 ---
 
-## Open Questions
+## Features Working
 
-### 1. Read Receipt Privacy
-**Question**: Should read receipts always be shown, or should users be able to disable them?  
-**Impact**: Privacy vs. transparency trade-off  
-**Decision Needed By**: Before implementing read receipts  
-**Recommendation**: Always show for MVP (like WhatsApp default), add privacy toggle post-MVP
+### Core Messaging
+✅ Real-time one-on-one chat  
+✅ Real-time group chat (3+ members)  
+✅ Message persistence (SQLite cache)  
+✅ Offline support with queue  
+✅ Optimistic UI updates  
+✅ Zero duplicate messages  
+✅ Zero message jitter  
+✅ Cache-first loading (instant display)  
+✅ Inverted FlatList (natural scrolling)
 
-### 2. Group Size Limits
-**Question**: Maximum users per group chat?  
-**Impact**: Performance, UI complexity, Firestore read costs  
-**Recommendation**: 50 users max for MVP (WhatsApp allows 256, but 50 is more than sufficient for testing)
+### Presence & Typing
+✅ Real-time online/offline presence tracking  
+✅ Last seen timestamps ("Last seen 5m ago")  
+✅ App state integration (foreground/background)  
+✅ Green online indicators on avatars  
+✅ Chat header shows: typing → Online → Last seen → Offline  
+✅ Typing indicator: "messaging • • •" with animated dots in header  
+✅ Typing persists while keyboard is up with text  
+✅ Typing clears on keyboard dismiss  
+✅ Typing re-appears on keyboard reopen if text exists
 
-### 3. Message History Limits
-**Question**: How many messages to load initially? How far back to cache locally?  
-**Impact**: Performance, storage, initial load time  
-**Recommendation**: 
-- Load last 50 messages initially
-- Cache last 30 days locally
-- Load more on scroll (pagination)
+### Group Chat
+✅ Create groups with name, description, icon  
+✅ Select 3+ members (current user + 2 others minimum)  
+✅ Admin management system  
+✅ Add/remove group members  
+✅ Leave group functionality  
+✅ Group conversations with real-time sync  
+✅ Sender names displayed in group messages  
+✅ Group typing indicators (multiple users)  
+✅ Group Details screen with member list  
+✅ Clickable members (navigate to profiles)  
+✅ Admin badges in member list  
+✅ "(You)" indicator beside current user  
 
-### 4. AI Request Rate Limits
-**Question**: How many AI requests per user per hour?  
-**Impact**: Cost management, preventing abuse  
-**Recommendation**: 20 requests/hour per user for MVP (very generous, can tighten if abused)
+### Push Notifications
+✅ Local notifications in Expo Go (development)  
+✅ Remote push notifications in EAS Build (production)  
+✅ Global notification listener (works anywhere in app)  
+✅ Notifications for new messages from others  
+✅ Missed message notifications when coming online  
+✅ No notification spam on first login/reload  
+✅ Device token registration and management  
+✅ FCM integration complete  
+✅ Firestore security rules for tokens  
+✅ Clean error handling (silent in Expo Go)  
+✅ In-app notification banner (foreground)  
+✅ Navigation on notification tap
 
-### 5. TestFlight Distribution Timeline
-**Question**: When to start TestFlight submission process?  
-**Impact**: TestFlight review takes 24-48 hours  
-**Recommendation**: Submit by hour 18-20 of MVP sprint to allow time for review
-
----
-
-## Current Blockers
-
-**None** - PRD is complete, awaiting user approval to begin implementation.
-
----
-
-## What's Working Well
-
-- **PRD Structure**: Comprehensive, covers all key areas
-- **Persona Definition**: Clear understanding of target user and pain points
-- **Technical Decisions**: Well-reasoned choices with clear rationale
-- **Timeline**: Realistic 24-hour MVP breakdown
-
----
-
-## What Needs Attention
-
-- **User Approval**: Need confirmation on:
-  - Persona selection (Remote Team Professional)
-  - Platform choice (iOS native)
-  - AI feature priorities
-  - Any PRD adjustments
-
----
-
-## Active Considerations
-
-### Time Management
-- 24 hours is tight for MVP
-- Must prioritize ruthlessly: messaging reliability > feature count
-- Plan to skip nice-to-haves if running behind:
-  - Background push notifications (foreground only for MVP)
-  - Advanced UI polish (basic polish is fine)
-  - Complex animations (smooth scrolling is enough)
-
-### Testing Strategy
-- Test on physical devices early (don't wait until hour 20)
-- Borrow second iPhone for real-time testing if needed
-- Use Network Link Conditioner to simulate poor network
-- Create test accounts: alice@test.com, bob@test.com, carol@test.com
-
-### Cost Monitoring
-- Set up Firebase budget alert at $50
-- Monitor OpenAI usage (aim for <$20 during MVP testing)
-- Use GPT-3.5 Turbo for development/testing, GPT-4 for final demo
-
-### Fallback Plans
-If significantly behind schedule:
-1. **Hour 12**: If messaging not working, skip group chat (focus on 1-on-1)
-2. **Hour 18**: If AI features not working, implement only 3 core features (summarization, action items, search)
-3. **Hour 20**: If TestFlight blocked, prepare local demo with clear setup instructions
+### UI/UX
+✅ Dark mode theme throughout  
+✅ Logo in ConversationListScreen header  
+✅ Expandable FAB menu (New Chat / New Group)  
+✅ Group Details screen  
+✅ KeyboardAvoidingView for all input screens  
+✅ Message timestamps show date AND time  
+✅ Proper scroll handling (inverted FlatList)  
+✅ Empty state correctly mirrored  
+✅ Read receipts update in real-time  
+✅ User profile caching (no "Unknown User" flashes)  
+✅ Clean logout (no permission errors)  
+✅ Thread-safe SQLite operations
 
 ---
 
-## Development Environment Status
+## Visual Design
 
-**Setup Needed**:
-- [ ] Node.js 18+ installed
-- [ ] Expo project created (`npx create-expo-app pigeonai-week-2 --template blank-typescript`)
-- [ ] Firebase project created (pigeonai-dev)
-- [ ] Firebase services enabled (Auth, Firestore, Storage)
-- [ ] Firebase WEB app registered (not iOS/Android)
-- [ ] Firebase web config copied (apiKey, projectId, etc.)
-- [ ] Firebase JS SDK installed (`npm install firebase`)
-- [ ] Navigation packages installed
-- [ ] `firebaseConfig.ts` created with initialization
-- [ ] Test app runs on Expo Go (scan QR code)
-- [ ] Test accounts created (alice@test.com, bob@test.com, carol@test.com)
+### Header Status Priority (Chat)
+1. 🔵 **messaging • • •** ← Animated dots, primary color, italic (when typing)
+2. 🟢 **Online** ← Green dot + "Online" text
+3. ⏰ **Last seen 5m ago** ← Relative time
+4. ⚫ **Offline** ← Default state
 
----
+### Typing Animation
+- 3 dots bouncing in sequence (0ms, 200ms, 400ms delay)
+- Opacity: 0.4 → 1.0
+- Duration: 400ms per cycle
+- Uses `useNativeDriver: true` for 60fps performance
 
-## Communication & Collaboration
+### Group Typing Display
+- 1 user: "John is messaging • • •"
+- 2 users: "John and Sarah are messaging • • •"
+- 3+ users: "3 people are messaging • • •"
 
-**Demo Strategy**: 
-- Record demo video showing all features
-- Two-device setup for real-time messaging
-- Show offline scenario clearly
-- Demonstrate all 6 AI features with clear examples
+### FAB Menu
+- Main FAB: Primary color, `+` icon (rotates to `×` when open)
+- Secondary FABs: 
+  - "New Chat" with chat bubble icon
+  - "New Group" with people icon
+  - Labels beside icons
+- Semi-transparent overlay when open
+- Smooth animations for expand/collapse
 
-**Documentation Plan**:
-- README with setup instructions
-- Architecture diagram
-- API documentation for Cloud Functions
-- Persona brainlift (1-page document)
-
----
-
-## Key Metrics to Track During Development
-
-### Functional Metrics
-- [ ] Message delivery success rate (target: 100% in testing)
-- [ ] Message latency (target: <1 second real-time)
-- [ ] Offline-to-online sync time (target: <5 seconds for 100 messages)
-- [ ] AI response time (target: <10 seconds)
-
-### Development Velocity
-- Hour 6: Authentication + basic UI ✅
-- Hour 12: Core messaging working ✅
-- Hour 18: All essential features + basic AI ✅
-- Hour 24: Polished, tested, documented ✅
+### Message Timestamps
+- **Today**: `2:30 PM` (time only)
+- **Yesterday**: `Yesterday 2:30 PM`
+- **This year**: `Jan 15 2:30 PM`
+- **Other years**: `Jan 15 2023 2:30 PM`
 
 ---
 
-## Dependencies & Prerequisites
+## Technical Stack (Final)
 
-### Required Before Starting
-1. Node.js 18+ installed
-2. npm or yarn package manager
-3. Firebase account (free tier is sufficient)
-4. VS Code or preferred code editor
-5. Physical device with Expo Go app installed (iOS or Android)
-   - Download Expo Go from App Store (iOS) or Play Store (Android)
-   - Or use Android emulator / iOS simulator
+### Frontend
+- React Native 0.81.4
+- Expo SDK 54
+- TypeScript 5.9.2
+- React Navigation 7.x
+- expo-notifications
+- expo-sqlite
+- expo-image-picker
 
-### Optional But Helpful
-- React Native Debugger
-- Firebase Emulator Suite for local backend testing
-- Postman for API testing (if building Cloud Functions post-MVP)
-- Multiple physical devices for real-time testing
+### Backend
+- Firebase Authentication
+- Cloud Firestore
+- Firebase Cloud Messaging
+- Firebase Storage (ready for image sharing)
+- Firebase Cloud Functions (ready for AI features)
 
----
-
-## Risk Management
-
-### Top Risks
-
-**Risk 1: Firebase setup complexity**  
-**Mitigation**: Follow Firebase iOS quickstart guide, allocate 1 hour for setup  
-**Contingency**: Use Firebase Emulator locally if deployment issues
-
-**Risk 2: Push notifications don't work**  
-**Mitigation**: Start with foreground notifications only (simpler)  
-**Contingency**: Skip background notifications for MVP, document as post-MVP feature
-
-**Risk 3: AI features take too long**  
-**Mitigation**: Implement simplest version of each feature first  
-**Contingency**: Reduce from 6 features to 3 core features if needed
-
-**Risk 4: Real-time sync issues**  
-**Mitigation**: Use Firestore's built-in real-time listeners (battle-tested)  
-**Contingency**: Add manual refresh button if auto-sync problematic
-
-**Risk 5: Expo Go limitations**  
-**Mitigation**: Use only Expo-compatible packages, check compatibility before installing  
-**Contingency**: Use Expo Dev Client if need native modules not in Expo Go
+### Tools
+- EAS Build
+- Expo Go (development)
+- Git + GitHub
+- VS Code
 
 ---
 
-## Post-MVP Roadmap (If Time Permits)
+## Known Issues ⚠️
 
-**Early Submission (4 days)**:
-- Background push notifications
-- Contextual AI features (long-press to translate/summarize)
-- Message search (non-AI, local)
-- UI polish and animations
-- Enhanced group chat features
+**None currently** - All major bugs have been fixed.
 
-**Final Submission (7 days)**:
-- Advanced AI: Full multi-step agent
-- Voice messages
-- Message editing/deletion
-- Enhanced media support
-- Performance optimizations
-- Comprehensive testing
+---
+
+## Next Session Priorities 🎯
+
+1. **Image Sharing (PR #7)**: Implement image upload and display
+2. **Read Receipts Polish (PR #6)**: Complete read receipt system
+3. **UI Polish (PR #11)**: Error handling, loading states, animations
+4. **Testing (PR #12)**: Manual testing, bug fixes, documentation
+5. **AI Features**: Implement persona-specific AI capabilities (post-MVP)
 
 ---
 
@@ -577,4 +414,8 @@ If significantly behind schedule:
 - **Key Context Files**: This file (activeContext.md) + progress.md are most critical for understanding current state
 - **Decision Log**: All major decisions documented here with rationale
 - **PRD is Source of Truth**: Refer to PRD.md for detailed requirements, tech stack, and user stories
+- **TASK_LIST.md**: Comprehensive task breakdown with file structure and implementation details
 
+---
+
+**Last Updated**: October 21, 2025, 11:00 PM CT
