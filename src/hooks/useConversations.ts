@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Conversation } from '../types';
 import { useAuth } from '../store/context/AuthContext';
 import * as FirestoreService from '../services/firebase/firestoreService';
@@ -28,6 +28,9 @@ export function useConversations(): UseConversationsReturn {
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
+  
+  // Track conversation IDs to prevent duplicates BEFORE state update
+  const conversationIdsRef = useRef(new Set<string>());
 
   /**
    * Monitor network connectivity
@@ -53,9 +56,14 @@ export function useConversations(): UseConversationsReturn {
         unsubscribe();
         setUnsubscribe(null);
       }
+      // Clear the conversation ID tracking ref
+      conversationIdsRef.current.clear();
       return;
     }
 
+    // Clear conversation IDs when user changes
+    conversationIdsRef.current.clear();
+    
     loadConversations();
 
     // Cleanup listener on unmount or when user changes
@@ -64,6 +72,8 @@ export function useConversations(): UseConversationsReturn {
         unsubscribe();
         setUnsubscribe(null);
       }
+      // Clear the conversation ID tracking ref on cleanup
+      conversationIdsRef.current.clear();
     };
   }, [user, isOnline]);
 
@@ -83,6 +93,9 @@ export function useConversations(): UseConversationsReturn {
         if (cachedConversations.length > 0) {
           setConversations(cachedConversations);
           setLoading(false); // Stop loading immediately
+          
+          // Initialize our tracking ref with cached conversation IDs
+          conversationIdsRef.current = new Set(cachedConversations.map(c => c.id));
           
           // Pre-fetch user profiles for all participants
           // This ensures names are cached before display
@@ -105,6 +118,19 @@ export function useConversations(): UseConversationsReturn {
         const listener = FirestoreService.listenToConversations(
           user.uid,
           async (firestoreConversations) => {
+            // Pre-filter: Remove any conversations that already exist in our ref
+            const newFirestoreConversations = firestoreConversations.filter(conv => {
+              // If we've already seen this ID, skip it immediately
+              if (conversationIdsRef.current.has(conv.id)) {
+                return false;
+              }
+              return true;
+            });
+            
+            // Add new conversation IDs to our tracking ref
+            newFirestoreConversations.forEach(conv => conversationIdsRef.current.add(conv.id));
+            
+            // Update state with all conversations (cached + new from Firestore)
             setConversations(firestoreConversations);
             setLoading(false);
 

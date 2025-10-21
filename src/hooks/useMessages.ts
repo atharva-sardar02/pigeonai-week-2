@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Message, MessageType } from '../types';
 import { useAuth } from '../store/context/AuthContext';
 import * as FirestoreService from '../services/firebase/firestoreService';
@@ -26,6 +26,9 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
+  
+  // Track message IDs to prevent duplicates BEFORE state update
+  const messageIdsRef = useRef(new Set<string>());
 
   /**
    * Monitor network connectivity
@@ -56,9 +59,14 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
         unsubscribe();
         setUnsubscribe(null);
       }
+      // Clear the message ID tracking ref
+      messageIdsRef.current.clear();
       return;
     }
 
+    // Clear message IDs when conversation changes
+    messageIdsRef.current.clear();
+    
     loadMessages();
 
     // Cleanup function: Unsubscribe from Firestore listener
@@ -68,6 +76,8 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
         unsubscribe();
         setUnsubscribe(null);
       }
+      // Clear the message ID tracking ref on cleanup
+      messageIdsRef.current.clear();
     };
   }, [conversationId, user, isOnline]);
 
@@ -88,21 +98,36 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
     try {
       setError(null);
 
-      if (isOnline) {
-        // Load from cache first for instant display ⚡
-        const cachedMessages = await LocalDatabase.getMessages(conversationId);
-        if (cachedMessages.length > 0) {
-          setMessages(cachedMessages);
-          setLoading(false); // Stop loading immediately - show cached data!
-        } else {
-          setLoading(true); // Only show loading if no cached messages
-        }
+        if (isOnline) {
+          // Load from cache first for instant display ⚡
+          const cachedMessages = await LocalDatabase.getMessages(conversationId);
+          if (cachedMessages.length > 0) {
+            setMessages(cachedMessages);
+            setLoading(false); // Stop loading immediately - show cached data!
+            
+            // Initialize our tracking ref with cached message IDs
+            messageIdsRef.current = new Set(cachedMessages.map(m => m.id));
+          } else {
+            setLoading(true); // Only show loading if no cached messages
+          }
 
         // Then set up real-time Firestore listener for updates
         const listener = FirestoreService.listenToMessages(
           conversationId,
           async (firestoreMessages) => {
             // Real-time update received
+            // Pre-filter: Remove any messages that already exist in our ref
+            const newFirestoreMessages = firestoreMessages.filter(msg => {
+              // If we've already seen this ID, skip it immediately
+              if (messageIdsRef.current.has(msg.id)) {
+                return false;
+              }
+              return true;
+            });
+            
+            // Add new message IDs to our tracking ref
+            newFirestoreMessages.forEach(msg => messageIdsRef.current.add(msg.id));
+            
             // Deduplicate: Remove any temp messages that now have real counterparts
             setMessages((prevMessages) => {
               // Create a set of real message IDs from Firestore
@@ -113,7 +138,10 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
                 if (!msg.id.startsWith('temp_')) return false;
                 
                 // Check if this temp message has a real counterpart by ID
-                if (realMessageIds.has(msg.id)) return false;
+                if (realMessageIds.has(msg.id)) {
+                  messageIdsRef.current.delete(msg.id); // Remove temp ID from tracking
+                  return false;
+                }
                 
                 // Check if this temp message has a real counterpart by matching
                 // content, sender, and timestamp (within 2 seconds)
@@ -123,7 +151,10 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
                   Math.abs(realMsg.timestamp.getTime() - msg.timestamp.getTime()) < 2000
                 );
                 
-                if (hasDuplicate) return false;
+                if (hasDuplicate) {
+                  messageIdsRef.current.delete(msg.id); // Remove temp ID from tracking
+                  return false;
+                }
                 
                 return true;
               });
@@ -131,21 +162,22 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
               // Merge: temp messages + real messages
               const mergedMessages = [...tempMessages, ...firestoreMessages];
               
-              // Remove any duplicate IDs (final safety - use Map to keep only first occurrence)
-              const seenIds = new Set<string>();
-              const uniqueMessages = mergedMessages.filter(msg => {
-                if (seenIds.has(msg.id)) {
-                  console.log('Duplicate ID detected and removed:', msg.id);
-                  return false;
+              // AGGRESSIVE deduplication - remove ANY duplicate IDs immediately
+              const uniqueMap = new Map<string, typeof mergedMessages[0]>();
+              for (const msg of mergedMessages) {
+                // If we've seen this ID before, skip it (keep first occurrence)
+                if (!uniqueMap.has(msg.id)) {
+                  uniqueMap.set(msg.id, msg);
                 }
-                seenIds.add(msg.id);
-                return true;
-              });
+              }
+              const uniqueMessages = Array.from(uniqueMap.values());
               
               // Sort by timestamp (oldest first, for inverted list)
-              return uniqueMessages.sort((a, b) => 
+              const sorted = uniqueMessages.sort((a, b) => 
                 a.timestamp.getTime() - b.timestamp.getTime()
               );
+              
+              return sorted;
             });
             
             setLoading(false);
@@ -219,9 +251,12 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
           readBy: { [user.uid]: new Date() },
         };
 
+        // Track this temp ID in our ref to prevent duplicates
+        messageIdsRef.current.add(tempId);
+
         // Step 2: Add to UI immediately (optimistic update)
-        // Note: MessageList is inverted, so new messages go at the start
-        setMessages((prev) => [optimisticMessage, ...prev]);
+        // Add to END of array (newest messages at bottom)
+        setMessages((prev) => [...prev, optimisticMessage]);
 
         // Step 3: Save to local database
         await LocalDatabase.insertMessage(optimisticMessage, false);

@@ -27,7 +27,7 @@ interface MessageListProps {
  * 
  * Features:
  * - FlatList with virtualization for performance
- * - Inverted list (new messages at bottom)
+ * - Natural scrolling (new messages at bottom)
  * - Auto-scroll to bottom on new message
  * - Pull-to-refresh for loading more messages
  * - Loading indicators
@@ -48,9 +48,9 @@ export const MessageList: React.FC<MessageListProps> = ({
   useEffect(() => {
     if (messages.length > 0 && isInitialMount.current) {
       isInitialMount.current = false;
-      // For inverted list, offset 0 is the bottom (newest messages)
+      // Scroll to end (bottom) after initial render
       setTimeout(() => {
-        flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+        flatListRef.current?.scrollToEnd({ animated: false });
       }, 100);
     }
   }, [messages.length]);
@@ -59,10 +59,10 @@ export const MessageList: React.FC<MessageListProps> = ({
   const previousMessageCount = useRef(messages.length);
   useEffect(() => {
     if (messages.length > previousMessageCount.current && !isInitialMount.current) {
-      // New message arrived - scroll to bottom
+      // New message arrived - smoothly scroll to bottom
       setTimeout(() => {
-        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-      }, 50);
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
     previousMessageCount.current = messages.length;
   }, [messages.length]);
@@ -117,29 +117,30 @@ export const MessageList: React.FC<MessageListProps> = ({
   const keyExtractor = (item: Message) => item.id;
 
   // Deduplicate messages (safety check - shouldn't have duplicates but just in case)
+  // Use useMemo to prevent flickering during re-renders
   const uniqueMessages = React.useMemo(() => {
     const seen = new Set<string>();
-    return messages.filter(msg => {
+    const filtered: Message[] = [];
+    
+    for (const msg of messages) {
       if (seen.has(msg.id)) {
         console.warn('Duplicate message ID found in MessageList:', msg.id);
-        return false;
+        continue;
       }
       seen.add(msg.id);
-      return true;
-    });
+      filtered.push(msg);
+    }
+    
+    return filtered;
   }, [messages]);
-
-  // Reverse messages for inverted FlatList
-  // Firestore returns oldest->newest, inverted list needs newest->oldest
-  const reversedMessages = [...uniqueMessages].reverse();
 
   return (
     <FlatList
       ref={flatListRef}
-      data={reversedMessages}
+      data={uniqueMessages}
       renderItem={renderMessage}
       keyExtractor={keyExtractor}
-      inverted // Keeps keyboard behavior smooth and new messages at bottom
+      extraData={uniqueMessages.length} // Force re-render only when count changes
       contentContainerStyle={styles.contentContainer}
       ListEmptyComponent={renderEmptyState}
       ListFooterComponent={renderFooter}
@@ -156,9 +157,10 @@ export const MessageList: React.FC<MessageListProps> = ({
         ) : undefined
       }
       showsVerticalScrollIndicator={false}
-      maintainVisibleContentPosition={{
-        minIndexForVisible: 0,
-      }}
+      removeClippedSubviews={true} // Improve performance and reduce flicker
+      maxToRenderPerBatch={10} // Render fewer items per batch
+      updateCellsBatchingPeriod={50} // Batch updates
+      windowSize={21} // Keep reasonable number of items in memory
     />
   );
 };
@@ -167,16 +169,12 @@ const styles = StyleSheet.create({
   contentContainer: {
     flexGrow: 1,
     paddingVertical: SIZES.paddingSmall,
-    // For inverted list with empty state, we need special handling
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: SIZES.paddingLarge * 2,
-    // Flip the empty state back to normal since the FlatList is inverted
-    // Rotate 180deg on Z axis to flip without perspective distortion
-    transform: [{ rotate: '180deg' }],
   },
   emptyIcon: {
     fontSize: 64,
