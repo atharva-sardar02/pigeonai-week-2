@@ -192,8 +192,10 @@ export const ChatScreen: React.FC = () => {
     if (!conversation || !user) return;
 
     if (conversation.type === 'group') {
-      // TODO: Navigate to group details (PR #6)
-      console.log('Group details - coming in PR #6');
+      // Navigate to group details
+      if (conversation.groupId) {
+        navigation.navigate('GroupDetails', { groupId: conversation.groupId });
+      }
     } else {
       // For direct messages, get the other user's ID
       const otherUserId = conversation.participants.find((id) => id !== user.uid);

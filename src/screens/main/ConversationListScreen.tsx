@@ -9,7 +9,7 @@ import {
   RefreshControl,
   ViewStyle,
   TextStyle,
-  Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -48,6 +48,7 @@ export function ConversationListScreen({
   const { conversations, loading, error, refreshConversations } =
     useConversations();
   const [refreshing, setRefreshing] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
 
   /**
    * Handle pull-to-refresh
@@ -73,6 +74,7 @@ export function ConversationListScreen({
    * Navigate to new chat screen
    */
   const handleNewChat = () => {
+    setFabOpen(false);
     navigation.navigate('NewChat');
   };
 
@@ -80,31 +82,15 @@ export function ConversationListScreen({
    * Navigate to create group screen
    */
   const handleNewGroup = () => {
+    setFabOpen(false);
     navigation.navigate('CreateGroup');
   };
 
   /**
-   * Show options menu for new conversation
+   * Toggle FAB menu
    */
-  const handleNewConversation = () => {
-    Alert.alert(
-      'New Conversation',
-      'What would you like to create?',
-      [
-        {
-          text: 'New Chat',
-          onPress: handleNewChat,
-        },
-        {
-          text: 'New Group',
-          onPress: handleNewGroup,
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
+  const toggleFab = () => {
+    setFabOpen(!fabOpen);
   };
 
   /**
@@ -170,7 +156,14 @@ export function ConversationListScreen({
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Pigeon</Text>
+        <View style={styles.headerLeft}>
+          <Image 
+            source={require('../../../assets/icon.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerTitle}>Pigeon</Text>
+        </View>
         <TouchableOpacity
           style={styles.profileButton}
           onPress={handleProfile}
@@ -200,13 +193,51 @@ export function ConversationListScreen({
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Floating Action Button (New Chat/Group) */}
+      {/* Overlay when FAB menu is open */}
+      {fabOpen && (
+        <TouchableOpacity
+          style={styles.fabOverlay}
+          onPress={() => setFabOpen(false)}
+          activeOpacity={1}
+        />
+      )}
+
+      {/* Floating Action Buttons */}
+      {fabOpen && (
+        <>
+          {/* New Group Button */}
+          <TouchableOpacity
+            style={[styles.fabSecondary, styles.fabGroup]}
+            onPress={handleNewGroup}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="people" size={24} color={COLORS.buttonPrimaryText} />
+          </TouchableOpacity>
+          <Text style={[styles.fabLabel, styles.fabLabelGroup]}>New Group</Text>
+
+          {/* New Chat Button */}
+          <TouchableOpacity
+            style={[styles.fabSecondary, styles.fabChat]}
+            onPress={handleNewChat}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="person-add" size={24} color={COLORS.buttonPrimaryText} />
+          </TouchableOpacity>
+          <Text style={[styles.fabLabel, styles.fabLabelChat]}>New Chat</Text>
+        </>
+      )}
+
+      {/* Main FAB (Add Button) */}
       <TouchableOpacity
-        style={styles.fab}
-        onPress={handleNewConversation}
+        style={[styles.fab, fabOpen && styles.fabRotated]}
+        onPress={toggleFab}
         activeOpacity={0.8}
       >
-        <Ionicons name="add" size={28} color={COLORS.buttonPrimaryText} />
+        <Ionicons 
+          name={fabOpen ? "close" : "add"} 
+          size={28} 
+          color={COLORS.buttonPrimaryText} 
+        />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -226,6 +257,17 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+  } as ViewStyle,
+
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  } as ViewStyle,
+
+  logo: {
+    width: 32,
+    height: 32,
   } as ViewStyle,
 
   headerTitle: {
@@ -301,6 +343,69 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+    zIndex: 1000,
+  } as ViewStyle,
+
+  fabRotated: {
+    transform: [{ rotate: '45deg' }],
+  } as ViewStyle,
+
+  fabOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    zIndex: 998,
+  } as ViewStyle,
+
+  fabSecondary: {
+    position: 'absolute',
+    right: SPACING.lg,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.buttonPrimary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    zIndex: 999,
+  } as ViewStyle,
+
+  fabChat: {
+    bottom: SPACING.xl + 80, // Main FAB bottom + 80
+  } as ViewStyle,
+
+  fabGroup: {
+    bottom: SPACING.xl + 140, // Main FAB bottom + 140
+  } as ViewStyle,
+
+  fabLabel: {
+    position: 'absolute',
+    right: SPACING.lg + 60, // FAB width + 10 padding
+    backgroundColor: COLORS.surface,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: 4,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    zIndex: 999,
+  } as ViewStyle,
+
+  fabLabelChat: {
+    bottom: SPACING.xl + 92, // Align with chat FAB
+  } as ViewStyle,
+
+  fabLabelGroup: {
+    bottom: SPACING.xl + 152, // Align with group FAB
   } as ViewStyle,
 });
 

@@ -7,6 +7,7 @@ import { NewChatScreen } from '../screens/main/NewChatScreen';
 import { ProfileScreen } from '../screens/main/ProfileScreen';
 import { UserDetailsScreen } from '../screens/main/UserDetailsScreen';
 import { CreateGroupScreen } from '../screens/group/CreateGroupScreen';
+import { GroupDetailsScreen } from '../screens/group/GroupDetailsScreen';
 import { NotificationTestScreen } from '../screens/test/NotificationTestScreen';
 import { COLORS } from '../utils/constants';
 
@@ -92,6 +93,16 @@ export const MainNavigator: React.FC = () => {
         }}
       />
 
+      {/* Group Details Screen (PR #9) */}
+      <Stack.Screen
+        name="GroupDetails"
+        component={GroupDetailsScreen}
+        options={{
+          title: 'Group Details',
+          animation: 'slide_from_right',
+        }}
+      />
+
       {/* Notification Test Screen (Temporary - for testing without EAS Build) */}
       <Stack.Screen
         name="NotificationTest"
@@ -101,16 +112,6 @@ export const MainNavigator: React.FC = () => {
           animation: 'slide_from_right',
         }}
       />
-
-      {/* Group Details Screen (Future - PR #9) */}
-      {/* <Stack.Screen
-        name="GroupDetails"
-        component={GroupDetailsScreen}
-        options={{
-          title: 'Group Details',
-          animation: 'slide_from_right',
-        }}
-      /> */}
     </Stack.Navigator>
   );
 };

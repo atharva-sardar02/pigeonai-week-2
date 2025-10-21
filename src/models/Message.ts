@@ -186,11 +186,18 @@ export function isTextMessage(message: Message): boolean {
 }
 
 /**
- * Format message timestamp (e.g., "2:30 PM", "Yesterday", "Jan 15")
+ * Format message timestamp (e.g., "2:30 PM", "Yesterday 2:30 PM", "Jan 15 2:30 PM")
  */
 export function formatTimestamp(timestamp: Date): string {
   const now = new Date();
   const diff = now.getTime() - timestamp.getTime();
+  
+  // Format time (e.g., "2:30 PM")
+  const timeString = timestamp.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
   
   // Less than 1 minute
   if (diff < 60000) {
@@ -203,37 +210,35 @@ export function formatTimestamp(timestamp: Date): string {
     return `${minutes}m ago`;
   }
   
-  // Today - show time
+  // Today - show time only
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   if (timestamp >= today) {
-    return timestamp.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+    return timeString;
   }
   
-  // Yesterday
+  // Yesterday - show "Yesterday" + time
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
   if (timestamp >= yesterday) {
-    return 'Yesterday';
+    return `Yesterday ${timeString}`;
   }
   
-  // This year - show month and day
+  // This year - show month, day + time
   if (timestamp.getFullYear() === now.getFullYear()) {
-    return timestamp.toLocaleDateString('en-US', {
+    const dateString = timestamp.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });
+    return `${dateString} ${timeString}`;
   }
   
-  // Different year - show full date
-  return timestamp.toLocaleDateString('en-US', {
+  // Different year - show full date + time
+  const dateString = timestamp.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
+  return `${dateString} ${timeString}`;
 }
 
 /**
