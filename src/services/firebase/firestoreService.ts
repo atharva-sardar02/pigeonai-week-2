@@ -861,3 +861,94 @@ export async function getPresence(
     return { isOnline: false, lastSeen: null };
   }
 }
+
+// ============================================================================
+// TYPING INDICATOR OPERATIONS
+// ============================================================================
+
+/**
+ * Set typing status for a user in a conversation
+ * @param conversationId - The conversation ID
+ * @param userId - The user's ID
+ * @param isTyping - Whether the user is typing
+ */
+export async function setTypingStatus(
+  conversationId: string,
+  userId: string,
+  isTyping: boolean
+): Promise<void> {
+  try {
+    const typingRef = doc(
+      db,
+      FIREBASE_COLLECTIONS.CONVERSATIONS,
+      conversationId,
+      FIREBASE_COLLECTIONS.TYPING,
+      userId
+    );
+
+    if (isTyping) {
+      // Set typing status with timestamp
+      await setDoc(typingRef, {
+        userId,
+        isTyping: true,
+        timestamp: serverTimestamp(),
+      });
+    } else {
+      // Remove typing status
+      await deleteDoc(typingRef);
+    }
+  } catch (error: any) {
+    console.error('Error setting typing status:', error);
+    // Don't throw - typing indicators are not critical
+  }
+}
+
+/**
+ * Listen to typing status for a conversation
+ * @param conversationId - The conversation ID
+ * @param onTypingChange - Callback when typing status changes
+ * @param onError - Optional error callback
+ * @returns Unsubscribe function
+ */
+export function listenToTyping(
+  conversationId: string,
+  onTypingChange: (typingUsers: { userId: string; timestamp: Date }[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  try {
+    const typingCollectionRef = collection(
+      db,
+      FIREBASE_COLLECTIONS.CONVERSATIONS,
+      conversationId,
+      FIREBASE_COLLECTIONS.TYPING
+    );
+
+    return onSnapshot(
+      typingCollectionRef,
+      (snapshot) => {
+        const typingUsers: { userId: string; timestamp: Date }[] = [];
+        
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.isTyping) {
+            typingUsers.push({
+              userId: data.userId,
+              timestamp: data.timestamp?.toDate() || new Date(),
+            });
+          }
+        });
+
+        onTypingChange(typingUsers);
+      },
+      (error) => {
+        console.error('Error listening to typing status:', error);
+        if (onError) {
+          onError(new Error(error.message || 'Failed to listen to typing status'));
+        }
+      }
+    );
+  } catch (error: any) {
+    console.error('Error setting up typing listener:', error);
+    throw new Error(error.message || 'Failed to set up typing listener');
+  }
+}

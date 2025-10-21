@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Animated,
 } from 'react-native';
 import { Conversation } from '../../types';
 import { COLORS, SIZES } from '../../utils/constants';
@@ -17,6 +18,7 @@ interface ChatHeaderProps {
   onTitlePress?: () => void; // New prop for tapping on the header
   isOnline?: boolean;
   lastSeen?: Date | null;
+  typingUserIds?: string[]; // New prop for typing users
   getUserDisplayName?: (userId: string) => string;
 }
 
@@ -39,10 +41,57 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onTitlePress,
   isOnline = false,
   lastSeen = null,
+  typingUserIds = [],
   getUserDisplayName,
 }) => {
   // Check if it's a group
   const isGroup = conversation.type === 'group';
+
+  // Animation values for typing dots
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  // Animate dots when typing
+  useEffect(() => {
+    if (typingUserIds.length === 0) {
+      // Reset animations when not typing
+      dot1.setValue(0);
+      dot2.setValue(0);
+      dot3.setValue(0);
+      return;
+    }
+
+    const animateDot = (dotValue: Animated.Value, delay: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dotValue, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dotValue, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
+
+    const animation = Animated.parallel([
+      animateDot(dot1, 0),
+      animateDot(dot2, 200),
+      animateDot(dot3, 400),
+    ]);
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [typingUserIds.length, dot1, dot2, dot3]);
 
   // Get display name for conversation
   const getDisplayName = (): string => {
@@ -69,9 +118,27 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
   // Format last seen time
   const getStatusText = (): string => {
+    // Priority 1: Show typing if anyone is typing
+    if (typingUserIds.length > 0) {
+      return 'typing'; // Just "typing" - dots will be animated separately
+    }
+    
+    // Priority 2: Show online status
     if (isOnline) return 'Online';
+    
+    // Priority 3: Show last seen
     if (lastSeen) return `Last seen ${formatMessageTime(lastSeen)}`;
+    
+    // Priority 4: Show offline
     return 'Offline';
+  };
+
+  // Get animated opacity for a dot
+  const getDotOpacity = (dotValue: Animated.Value) => {
+    return dotValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.4, 1],
+    });
   };
 
   return (
@@ -107,12 +174,42 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             </Text>
           ) : (
             <>
-              {isOnline && (
+              {/* Show green dot only if online AND not typing */}
+              {isOnline && typingUserIds.length === 0 && (
                 <View style={styles.onlineIndicator} />
               )}
-              <Text style={styles.status}>
-                {getStatusText()}
-              </Text>
+              
+              {/* Show typing text with animated dots OR normal status */}
+              {typingUserIds.length > 0 ? (
+                <View style={styles.typingContainer}>
+                  <Text style={styles.typingText}>
+                    {getStatusText()}
+                  </Text>
+                  {/* Animated dots */}
+                  <Animated.View
+                    style={[
+                      styles.typingDot,
+                      { opacity: getDotOpacity(dot1) },
+                    ]}
+                  />
+                  <Animated.View
+                    style={[
+                      styles.typingDot,
+                      { opacity: getDotOpacity(dot2) },
+                    ]}
+                  />
+                  <Animated.View
+                    style={[
+                      styles.typingDot,
+                      { opacity: getDotOpacity(dot3) },
+                    ]}
+                  />
+                </View>
+              ) : (
+                <Text style={styles.status}>
+                  {getStatusText()}
+                </Text>
+              )}
             </>
           )}
         </View>
@@ -204,6 +301,22 @@ const styles = StyleSheet.create({
   status: {
     fontSize: SIZES.fontSmall,
     color: COLORS.textSecondary,
+  },
+  typingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  typingText: {
+    fontSize: SIZES.fontSmall,
+    color: COLORS.primary,
+    fontStyle: 'italic',
+  },
+  typingDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.primary,
   },
   onlineIndicator: {
     width: 8,

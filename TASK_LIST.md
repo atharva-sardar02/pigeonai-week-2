@@ -950,68 +950,76 @@ pigeonai-week-2/
 
 ### Tasks
 
-- [ ] **Task 5.1: Implement Presence System**
+- [x] **Task 5.1: Implement Presence System**
   - **Files Modified**:
     - `src/services/firebase/firestoreService.ts`
   - **Functions**:
     - `updatePresence(userId, isOnline)`
     - `listenToPresence(userId, callback)`
+    - `getPresence(userId)`
   - **Logic**:
     - On app foreground → set isOnline = true
     - On app background → set isOnline = false, update lastSeen
-    - Use Firestore onDisconnect() for cleanup
+    - Updates user document in Firestore
 
-- [ ] **Task 5.2: Create usePresence Hook**
+- [x] **Task 5.2: Create usePresence Hook**
   - **Files Created**:
     - `src/hooks/usePresence.ts`
   - **Function**: usePresence(userId)
-  - **Returns**: isOnline, lastSeen
+  - **Returns**: isOnline, lastSeen, loading, error
 
-- [ ] **Task 5.3: Integrate Presence with App State**
+- [x] **Task 5.3: Integrate Presence with App State**
   - **Files Created**:
     - `src/store/context/PresenceContext.tsx`
   - **Logic**: Listen to AppState, update presence on change
   - **Dependencies**: react-native AppState
+  - **Integration**: Wrapped in App.tsx
 
-- [ ] **Task 5.4: Display Online Status in Chat Header**
+- [x] **Task 5.4: Display Online Status in Chat Header**
   - **Files Modified**:
     - `src/components/chat/ChatHeader.tsx`
   - **UI**: Green dot if online, "last seen X ago" if offline
+  - **Added**: Typing indicator with animated dots
 
-- [ ] **Task 5.5: Display Online Status in Conversation List**
+- [x] **Task 5.5: Display Online Status in Conversation List**
   - **Files Modified**:
     - `src/components/conversation/ConversationListItem.tsx`
   - **UI**: Green dot badge on avatar if online
 
-- [ ] **Task 5.6: Implement Typing Indicators - Backend**
+- [x] **Task 5.6: Implement Typing Indicators - Backend**
   - **Files Modified**:
     - `src/services/firebase/firestoreService.ts`
   - **Functions**:
     - `setTypingStatus(conversationId, userId, isTyping)`
     - `listenToTyping(conversationId, callback)`
-  - **Implementation**: Use Firestore subcollection `/conversations/{id}/typing/{userId}` with TTL
+  - **Implementation**: Uses Firestore subcollection `/conversations/{id}/typing/{userId}`
 
-- [ ] **Task 5.7: Create useTypingIndicator Hook**
+- [x] **Task 5.7: Create useTypingIndicator Hook**
   - **Files Created**:
     - `src/hooks/useTypingIndicator.ts`
   - **Functions**: useTypingIndicator(conversationId)
   - **Returns**: typingUsers array, setTyping function
+  - **Logic**: No timeouts, managed by MessageInput lifecycle
 
-- [ ] **Task 5.8: Create Typing Indicator Component**
+- [x] **Task 5.8: Create Typing Indicator Component**
   - **Files Created**:
     - `src/components/chat/TypingIndicator.tsx`
-  - **UI**: Animated dots, "User is typing..." text
+  - **UI**: Animated dots component (created but integrated in header instead)
   - **Props**: typingUsers
 
-- [ ] **Task 5.9: Integrate Typing in Message Input**
+- [x] **Task 5.9: Integrate Typing in Message Input**
   - **Files Modified**:
     - `src/components/chat/MessageInput.tsx`
-  - **Logic**: On text change → setTyping(true), clear after 3 seconds
+  - **Logic**: 
+    - Typing active while text exists in input
+    - Clears on keyboard dismiss
+    - Clears on message send
 
-- [ ] **Task 5.10: Display Typing Indicator in Chat**
+- [x] **Task 5.10: Display Typing Indicator in Chat**
   - **Files Modified**:
     - `src/screens/main/ChatScreen.tsx`
-  - **UI**: Show TypingIndicator component below messages
+    - `src/components/chat/ChatHeader.tsx`
+  - **UI**: Shows "typing • • •" with animated dots in header (replaces online status)
 
 - [ ] **Task 5.11: Write Unit Tests for Presence Logic**
   - **Files Created**:
@@ -1031,14 +1039,15 @@ pigeonai-week-2/
     - ✅ Typing status auto-clears after 3 seconds
     - ✅ Multiple users typing returns correct array
 
-- [ ] **Task 5.13: Manual Test Presence & Typing**
+- [x] **Task 5.13: Manual Test Presence & Typing**
   - **Actions**:
-    1. User goes online → status updates in other device
-    2. User goes offline → "last seen" updates
-    3. User types → "typing..." appears in other device
-    4. Stop typing → indicator disappears after 3 seconds
+    1. User goes online → status updates in other device ✅
+    2. User goes offline → "last seen" updates ✅
+    3. User types → "typing..." appears in other device ✅
+    4. Close keyboard → "typing" clears, shows "Online" ✅
+    5. Reopen keyboard with text → "typing..." reappears ✅
 
-**PR Description**: "Implement presence system (online/offline, last seen) and typing indicators with real-time updates. Integrated into chat header and conversation list. Includes unit tests for presence and typing logic."
+**PR Description**: "Implement presence system (online/offline, last seen) and typing indicators with real-time updates. Typing indicator shows in chat header with animated dots. Presence integrated into chat header and conversation list. All manual tests passing."
 
 ---
 

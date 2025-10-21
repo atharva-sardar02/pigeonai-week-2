@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -7,11 +7,13 @@ import {
   Platform,
   KeyboardAvoidingView,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import { COLORS, SIZES } from '../../utils/constants';
 
 interface MessageInputProps {
   onSend: (content: string) => void;
+  onTypingChange?: (isTyping: boolean) => void; // New prop for typing indicator
   onImagePick?: () => void;
   placeholder?: string;
   disabled?: boolean;
@@ -29,15 +31,46 @@ interface MessageInputProps {
  * - Image picker button (optional)
  * - Keyboard handling
  * - Loading state while sending
+ * - Typing indicator support
  */
 export const MessageInput: React.FC<MessageInputProps> = ({
   onSend,
+  onTypingChange,
   onImagePick,
   placeholder = 'Type a message...',
   disabled = false,
   sending = false,
 }) => {
   const [text, setText] = useState('');
+  const isTypingRef = useRef(false);
+
+  /**
+   * Handle text change with typing indicator
+   * Typing stays active as long as there's text in the input
+   */
+  const handleTextChange = (newText: string) => {
+    setText(newText);
+
+    // Only trigger typing if onTypingChange is provided
+    if (!onTypingChange) return;
+
+    // If user is typing (has text), set typing status
+    if (newText.trim().length > 0) {
+      // Set typing to true if not already
+      if (!isTypingRef.current) {
+        isTypingRef.current = true;
+        onTypingChange(true);
+      }
+      // Note: We DON'T clear typing after timeout anymore
+      // Typing stays active as long as there's text in the input
+    } else {
+      // If text is cleared, immediately set typing to false
+      if (isTypingRef.current) {
+        isTypingRef.current = false;
+        onTypingChange(false);
+      }
+    }
+  };
 
   const handleSend = () => {
     const trimmedText = text.trim();
@@ -45,9 +78,47 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       return;
     }
 
+    // Clear typing status before sending
+    if (isTypingRef.current && onTypingChange) {
+      isTypingRef.current = false;
+      onTypingChange(false);
+    }
+
     onSend(trimmedText);
     setText(''); // Clear input after sending
   };
+
+  /**
+   * Cleanup on unmount
+   */
+  useEffect(() => {
+    return () => {
+      // Clear typing status on unmount
+      if (isTypingRef.current && onTypingChange) {
+        onTypingChange(false);
+      }
+    };
+  }, [onTypingChange]);
+
+  /**
+   * Listen for keyboard dismiss to clear typing status
+   */
+  useEffect(() => {
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        // When keyboard is dismissed, clear typing status if there's text
+        if (isTypingRef.current && onTypingChange) {
+          isTypingRef.current = false;
+          onTypingChange(false);
+        }
+      }
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+    };
+  }, [onTypingChange]);
 
   const canSend = text.trim().length > 0 && !disabled && !sending;
 
@@ -77,7 +148,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           <TextInput
             style={styles.input}
             value={text}
-            onChangeText={setText}
+            onChangeText={handleTextChange}
             placeholder={placeholder}
             placeholderTextColor={COLORS.textPlaceholder}
             multiline

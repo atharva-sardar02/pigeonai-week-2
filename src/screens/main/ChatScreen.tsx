@@ -17,6 +17,7 @@ import { useAuth } from '../../store/context/AuthContext';
 import { useMessages } from '../../hooks/useMessages';
 import { useUserDisplayName } from '../../hooks/useUserProfile';
 import { usePresence } from '../../hooks/usePresence';
+import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import * as FirestoreService from '../../services/firebase/firestoreService';
 import { COLORS } from '../../utils/constants';
 import { MainStackParamList, Conversation } from '../../types';
@@ -34,6 +35,7 @@ type ChatScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'C
  * - Show message history with real-time updates
  * - Send new messages
  * - Optimistic UI updates
+ * - Typing indicators
  * - Loading states
  * - Error handling
  */
@@ -72,6 +74,9 @@ export const ChatScreen: React.FC = () => {
 
   // Get other user's presence status (online/offline & last seen)
   const { isOnline, lastSeen } = usePresence(otherUserId);
+
+  // Get typing indicator status
+  const { typingUsers, setTyping } = useTypingIndicator(conversationId);
 
   // Fetch conversation if not provided
   useEffect(() => {
@@ -208,6 +213,7 @@ export const ChatScreen: React.FC = () => {
           onTitlePress={handleHeaderTap}
           isOnline={isOnline}
           lastSeen={lastSeen}
+          typingUserIds={typingUsers}
           getUserDisplayName={getUserDisplayName}
         />
 
@@ -225,6 +231,7 @@ export const ChatScreen: React.FC = () => {
         {/* Message Input */}
         <MessageInput
           onSend={handleSend}
+          onTypingChange={setTyping}
           onImagePick={handleImagePick}
           sending={sending}
         />
