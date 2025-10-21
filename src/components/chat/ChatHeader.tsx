@@ -118,27 +118,20 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
   // Format last seen time
   const getStatusText = (): string => {
-    // Priority 1: Show typing with user names for groups
+    // Priority 1: Show typing indicator
     if (typingUserIds.length > 0) {
       if (isGroup && getUserDisplayName) {
-        // For groups, show who is typing
+        // For groups, show who is messaging
         if (typingUserIds.length === 1) {
-          const text = `${getUserDisplayName(typingUserIds[0])} is typing`;
-          console.log('🔤 Group typing (1 user):', text);
-          return text;
+          return `${getUserDisplayName(typingUserIds[0])} is messaging`;
         } else if (typingUserIds.length === 2) {
-          const text = `${getUserDisplayName(typingUserIds[0])} and ${getUserDisplayName(typingUserIds[1])} are typing`;
-          console.log('🔤 Group typing (2 users):', text);
-          return text;
+          return `${getUserDisplayName(typingUserIds[0])} and ${getUserDisplayName(typingUserIds[1])} are messaging`;
         } else {
-          const text = `${typingUserIds.length} people are typing`;
-          console.log('🔤 Group typing (3+ users):', text);
-          return text;
+          return `${typingUserIds.length} people are messaging`;
         }
       }
-      // For DMs, just show "typing"
-      console.log('🔤 DM typing');
-      return 'typing';
+      // For DMs, just show "messaging"
+      return 'messaging';
     }
     
     // Priority 2: Show online status
@@ -357,7 +350,7 @@ const styles = StyleSheet.create({
   },
   typingText: {
     fontSize: SIZES.fontSmall,
-    color: COLORS.primary,
+    color: '#FFFFFF', // White color for visibility on dark background
     fontStyle: 'italic',
   },
   typingTextGroup: {

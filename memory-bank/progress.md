@@ -212,6 +212,12 @@
 - ✅ Clean logout (no permission errors)
 - ✅ All bugs fixed (logout error, SQLite concurrency, timestamps)
 
+**Current Issue (Debugging)**:
+- 🐛 Typing indicator shows inconsistently on one device (word "typing" missing)
+- Added debug logging to ChatHeader getStatusText() to diagnose
+- User reported issue persists after app reload
+- Suspected caching issue on device
+
 ---
 
 ## What's In Progress 🟡

@@ -15,11 +15,16 @@
   - ✅ All 9 tasks completed (Tasks 3.1-3.9)
   - ✅ Models, services, context, hooks, security rules deployed
   - ✅ Firestore rules and indexes deployed to production
-- 🎨 **UI UPDATE COMPLETE**: Color scheme matched to pigeon icon background (`#060C1D`)
-- 🟡 **PR #4 IN PROGRESS**: Chat UI & Real-Time Sync
-  - ✅ Tasks 4.1-4.13: Complete (Message Bubble, List, Input, Chat Screen, Conversation List, NewChat, Navigation, Date Formatter)
-  - ✅ Task 4.14: Avatar Component, UserDetails Screen, User Profile Caching **COMPLETE**
+- ✅ **PR #4 COMPLETE**: Chat UI & Real-Time Sync
+  - ✅ All core tasks complete
+  - ✅ Avatar Component, UserDetails Screen, User Profile Caching
   - ⏸️ Tasks 4.15-4.17: Testing tasks (deferred)
+- ✅ **PR #5 COMPLETE**: Presence & Typing Indicators
+  - ✅ Tasks 5.1-5.10, 5.13: All core functionality working
+  - 🐛 **Current Issue**: Debugging typing indicator inconsistency on one device
+  - Added debug logging to diagnose missing "typing" word
+  - ⏸️ Tasks 5.11-5.12: Unit tests (deferred)
+- 🎯 **NEXT**: PR #6 (Read Receipts & Message States) after fixing current bug
 
 ### PR #3 Accomplishments
 

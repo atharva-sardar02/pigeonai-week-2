@@ -1047,7 +1047,16 @@ pigeonai-week-2/
     4. Close keyboard → "typing" clears, shows "Online" ✅
     5. Reopen keyboard with text → "typing..." reappears ✅
 
-**PR Description**: "Implement presence system (online/offline, last seen) and typing indicators with real-time updates. Typing indicator shows in chat header with animated dots. Presence integrated into chat header and conversation list. All manual tests passing."
+- [ ] **Task 5.14: Debug Typing Indicator Inconsistency** 🐛 IN PROGRESS
+  - **Issue**: On one device, word "typing" missing from indicator (only shows names and dots)
+  - **Changes Made**:
+    - Added console logging to ChatHeader getStatusText() function
+    - Logs: "🔤 Group typing (1 user): John is typing", etc.
+  - **Status**: Debugging - waiting for console logs from both devices
+  - **Files Modified**:
+    - `src/components/chat/ChatHeader.tsx`
+
+**PR Description**: "Implement presence system (online/offline, last seen) and typing indicators with real-time updates. Typing indicator shows in chat header with animated dots. Presence integrated into chat header and conversation list. Currently debugging typing indicator inconsistency on one device."
 
 ---
 
