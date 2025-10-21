@@ -119,55 +119,64 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
             
             // CRITICAL: Use a single atomic update to prevent any race conditions
             setMessages((prevMessages) => {
-              // Create a Map of ALL message IDs we currently have (for deduplication)
-              const existingIds = new Set(prevMessages.map(m => m.id));
+              // Create a Map of existing messages by ID for quick lookup
+              const existingMessagesMap = new Map(prevMessages.map(m => [m.id, m]));
               
-              // Filter Firestore messages to only truly new ones
-              const newMessages = firestoreMessages.filter(msg => {
-                // Skip if we already have this message in state
-                if (existingIds.has(msg.id)) {
-                  return false;
+              // Process all Firestore messages
+              const updatedMessages: typeof prevMessages = [];
+              const processedIds = new Set<string>();
+              
+              // First, process all messages from Firestore (new or updated)
+              for (const firestoreMsg of firestoreMessages) {
+                const existingMsg = existingMessagesMap.get(firestoreMsg.id);
+                
+                if (existingMsg) {
+                  // Message exists - check if it's been updated (e.g., readBy changed)
+                  const hasChanges = 
+                    JSON.stringify(existingMsg.readBy) !== JSON.stringify(firestoreMsg.readBy) ||
+                    existingMsg.status !== firestoreMsg.status;
+                  
+                  if (hasChanges) {
+                    // Update the message with new data
+                    updatedMessages.push(firestoreMsg);
+                  } else {
+                    // No changes, keep existing
+                    updatedMessages.push(existingMsg);
+                  }
+                } else {
+                  // New message from Firestore
+                  updatedMessages.push(firestoreMsg);
+                  messageIdsRef.current.add(firestoreMsg.id);
                 }
-                return true;
-              });
+                
+                processedIds.add(firestoreMsg.id);
+              }
               
-              // Find temp messages that should be replaced by real messages
-              const realMessageIds = new Set(firestoreMessages.map(m => m.id));
-              const tempMessages = prevMessages.filter(msg => {
-                if (!msg.id.startsWith('temp_')) return false;
-                
-                // Check if this temp message has a real counterpart by matching
-                // content, sender, and timestamp (within 2 seconds)
-                const hasDuplicate = firestoreMessages.some(realMsg => 
-                  realMsg.senderId === msg.senderId &&
-                  realMsg.content === msg.content &&
-                  Math.abs(realMsg.timestamp.getTime() - msg.timestamp.getTime()) < 2000
-                );
-                
-                if (hasDuplicate) {
-                  // Remove temp ID from tracking
-                  messageIdsRef.current.delete(msg.id);
-                  return false;
+              // Then, add any temp/optimistic messages that aren't in Firestore yet
+              for (const prevMsg of prevMessages) {
+                if (prevMsg.id.startsWith('temp_') && !processedIds.has(prevMsg.id)) {
+                  // Check if this temp message has been replaced by a real one
+                  const hasRealVersion = firestoreMessages.some(realMsg => 
+                    realMsg.senderId === prevMsg.senderId &&
+                    realMsg.content === prevMsg.content &&
+                    Math.abs(realMsg.timestamp.getTime() - prevMsg.timestamp.getTime()) < 2000
+                  );
+                  
+                  if (!hasRealVersion) {
+                    // Keep the temp message
+                    updatedMessages.push(prevMsg);
+                  } else {
+                    // Remove temp ID from tracking
+                    messageIdsRef.current.delete(prevMsg.id);
+                  }
                 }
-                
-                return true;
-              });
-              
-              // Merge: existing messages + temp messages + new real messages
-              // But exclude temp messages and messages that are being replaced
-              const keptMessages = prevMessages.filter(msg => 
-                !msg.id.startsWith('temp_') && !newMessages.some(nm => nm.id === msg.id)
-              );
-              
-              const finalMessages = [...keptMessages, ...tempMessages, ...newMessages];
+              }
               
               // Final deduplication using Map (safety net)
-              const uniqueMap = new Map<string, typeof finalMessages[0]>();
-              for (const msg of finalMessages) {
+              const uniqueMap = new Map<string, typeof updatedMessages[0]>();
+              for (const msg of updatedMessages) {
                 if (!uniqueMap.has(msg.id)) {
                   uniqueMap.set(msg.id, msg);
-                  // Add to tracking ref
-                  messageIdsRef.current.add(msg.id);
                 }
               }
               
