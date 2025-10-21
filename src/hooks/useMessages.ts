@@ -256,9 +256,9 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
         messageIdsRef.current.add(tempId);
 
         // Step 2: Add to UI immediately (optimistic update)
-        // Add to END of array (newest messages at bottom)
+        // Add to BEGINNING of array (for inverted list - newest messages at top/index 0)
         setMessages((prev) => {
-          const updated = [...prev, optimisticMessage];
+          const updated = [optimisticMessage, ...prev];
           return updated;
         });
 

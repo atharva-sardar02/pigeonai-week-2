@@ -44,30 +44,11 @@ export const MessageList: React.FC<MessageListProps> = ({
   isGroupChat = false,
 }) => {
   const flatListRef = useRef<FlatList>(null);
-  const isInitialMount = useRef(true);
 
-  // Scroll to bottom on initial load (when messages first arrive)
-  useEffect(() => {
-    if (messages.length > 0 && isInitialMount.current) {
-      isInitialMount.current = false;
-      // Scroll to end (bottom) after initial render
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: false });
-      }, 100);
-    }
-  }, [messages.length]);
-
-  // Auto-scroll to bottom when new messages arrive
-  const previousMessageCount = useRef(messages.length);
-  useEffect(() => {
-    if (messages.length > previousMessageCount.current && !isInitialMount.current) {
-      // New message arrived - smoothly scroll to bottom
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    }
-    previousMessageCount.current = messages.length;
-  }, [messages.length]);
+  // Reverse messages for inverted list (newest at top visually, but bottom of screen)
+  const reversedMessages = React.useMemo(() => {
+    return [...messages].reverse();
+  }, [messages]);
 
   // Render individual message
   const renderMessage = ({ item }: { item: Message }) => {
@@ -125,7 +106,7 @@ export const MessageList: React.FC<MessageListProps> = ({
     const seen = new Set<string>();
     const filtered: Message[] = [];
     
-    for (const msg of messages) {
+    for (const msg of reversedMessages) {
       if (seen.has(msg.id)) {
         console.warn('Duplicate message ID found in MessageList:', msg.id);
         continue;
@@ -135,7 +116,7 @@ export const MessageList: React.FC<MessageListProps> = ({
     }
     
     return filtered;
-  }, [messages]);
+  }, [reversedMessages]);
 
   return (
     <FlatList
@@ -149,6 +130,7 @@ export const MessageList: React.FC<MessageListProps> = ({
       ListFooterComponent={renderFooter}
       onEndReached={onLoadMore}
       onEndReachedThreshold={0.5}
+      inverted={true}
       refreshControl={
         onRefresh ? (
           <RefreshControl
@@ -178,6 +160,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: SIZES.paddingLarge * 2,
+    transform: [{ scaleY: -1 }, { scaleX: -1 }], // Flip both vertically and horizontally for inverted list
   },
   emptyIcon: {
     fontSize: 64,

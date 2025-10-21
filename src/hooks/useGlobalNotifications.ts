@@ -198,7 +198,11 @@ export function useGlobalNotifications() {
               }
             },
             (error) => {
-              console.error('Error in message listener:', error);
+              // Silently ignore permission errors for new conversations
+              // They will be retried when conversation is fully created
+              if (error.message && !error.message.includes('Permission denied')) {
+                console.error('Error in message listener:', error);
+              }
             }
           );
 
