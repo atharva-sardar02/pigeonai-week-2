@@ -20,7 +20,8 @@ export function createConversation(
   type: ConversationType = 'dm',
   name?: string,
   icon?: string,
-  adminIds?: string[]
+  adminIds?: string[],
+  groupId?: string
 ): Conversation {
   const now = new Date();
   
@@ -34,6 +35,7 @@ export function createConversation(
     ...(name && { name }),
     ...(icon && { icon }),
     ...(adminIds && { adminIds }),
+    ...(groupId && { groupId }),
     unreadCount: {},
   };
 }
@@ -57,6 +59,7 @@ export function fromFirestore(doc: any): Conversation {
     name: data.name,
     icon: data.icon,
     adminIds: data.adminIds,
+    groupId: data.groupId,
   };
 }
 
@@ -99,6 +102,10 @@ export function toFirestore(conversation: Conversation): any {
   
   if (conversation.adminIds && conversation.adminIds.length > 0) {
     firestoreData.adminIds = conversation.adminIds;
+  }
+
+  if (conversation.groupId) {
+    firestoreData.groupId = conversation.groupId;
   }
 
   return firestoreData;

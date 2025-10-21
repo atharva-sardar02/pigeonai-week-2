@@ -11,7 +11,7 @@ import { UserProfile } from '../types';
  */
 
 // Global cache for user profiles (persists across component mounts)
-const userProfileCache: Map<string, UserProfile> = new Map();
+export const userProfileCache: Map<string, UserProfile> = new Map();
 
 export function useUserProfile(userId: string | null | undefined) {
   const [user, setUser] = useState<UserProfile | null>(null);

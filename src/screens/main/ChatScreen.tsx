@@ -15,7 +15,7 @@ import { MessageList } from '../../components/chat/MessageList';
 import { MessageInput } from '../../components/chat/MessageInput';
 import { useAuth } from '../../store/context/AuthContext';
 import { useMessages } from '../../hooks/useMessages';
-import { useUserDisplayName } from '../../hooks/useUserProfile';
+import { useUserDisplayName, userProfileCache } from '../../hooks/useUserProfile';
 import { usePresence } from '../../hooks/usePresence';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import * as FirestoreService from '../../services/firebase/firestoreService';
@@ -156,12 +156,16 @@ export const ChatScreen: React.FC = () => {
     }
   };
 
-  // Get user display name for header
+  // Get user display name for header (used for typing indicators in groups)
   const getUserDisplayName = (userId: string): string => {
+    // For DMs, use the cached other user display name
     if (userId === otherUserId) {
       return otherUserDisplayName;
     }
-    return 'User';
+    
+    // For groups or other users, get from global cache
+    const cachedProfile = userProfileCache.get(userId);
+    return cachedProfile?.displayName || 'User';
   };
 
   // Show loading state
@@ -225,6 +229,7 @@ export const ChatScreen: React.FC = () => {
             loading={loading}
             onRefresh={refreshMessages}
             refreshing={loading}
+            isGroupChat={conversation.type === 'group'}
           />
         </View>
 

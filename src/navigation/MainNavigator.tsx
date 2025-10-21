@@ -6,6 +6,7 @@ import { ChatScreen } from '../screens/main/ChatScreen';
 import { NewChatScreen } from '../screens/main/NewChatScreen';
 import { ProfileScreen } from '../screens/main/ProfileScreen';
 import { UserDetailsScreen } from '../screens/main/UserDetailsScreen';
+import { CreateGroupScreen } from '../screens/group/CreateGroupScreen';
 import { COLORS } from '../utils/constants';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -80,23 +81,23 @@ export const MainNavigator: React.FC = () => {
         }}
       />
 
-      {/* Group Details Screen (Future - PR #7) */}
+      {/* Create Group Screen (PR #9) */}
+      <Stack.Screen
+        name="CreateGroup"
+        component={CreateGroupScreen}
+        options={{
+          title: 'New Group',
+          animation: 'slide_from_bottom',
+        }}
+      />
+
+      {/* Group Details Screen (Future - PR #9) */}
       {/* <Stack.Screen
         name="GroupDetails"
         component={GroupDetailsScreen}
         options={{
           title: 'Group Details',
           animation: 'slide_from_right',
-        }}
-      /> */}
-
-      {/* Create Group Screen (Future - PR #7) */}
-      {/* <Stack.Screen
-        name="CreateGroup"
-        component={CreateGroupScreen}
-        options={{
-          title: 'New Group',
-          animation: 'slide_from_bottom',
         }}
       /> */}
     </Stack.Navigator>

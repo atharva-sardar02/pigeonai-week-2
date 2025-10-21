@@ -16,6 +16,8 @@ import {
   Timestamp,
   Unsubscribe,
   writeBatch,
+  arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { Message, Conversation, MessageStatus } from '../../types';
@@ -950,5 +952,265 @@ export function listenToTyping(
   } catch (error: any) {
     console.error('Error setting up typing listener:', error);
     throw new Error(error.message || 'Failed to set up typing listener');
+  }
+}
+
+// ============================================================================
+// GROUP OPERATIONS
+// ============================================================================
+
+/**
+ * Create a new group
+ * @param name - Group name
+ * @param memberIds - Array of user IDs (including creator)
+ * @param createdBy - Creator user ID
+ * @param iconUrl - Optional group icon URL
+ * @param description - Optional group description
+ * @returns Group ID
+ */
+export async function createGroup(
+  name: string,
+  memberIds: string[],
+  createdBy: string,
+  iconUrl?: string,
+  description?: string
+): Promise<string> {
+  try {
+    const groupData = {
+      name,
+      description: description || null,
+      iconUrl: iconUrl || null,
+      adminIds: [createdBy], // Creator is the first admin
+      memberIds,
+      createdBy,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    const groupRef = await addDoc(collection(db, FIREBASE_COLLECTIONS.GROUPS), groupData);
+    console.log(`✅ Group created: ${groupRef.id}`);
+    return groupRef.id;
+  } catch (error: any) {
+    console.error('Error creating group:', error);
+    throw new Error(error.message || 'Failed to create group');
+  }
+}
+
+/**
+ * Get a group by ID
+ * @param groupId - The group ID
+ * @returns Group object or null if not found
+ */
+export async function getGroup(groupId: string): Promise<any | null> {
+  try {
+    const groupRef = doc(db, FIREBASE_COLLECTIONS.GROUPS, groupId);
+    const groupSnap = await getDoc(groupRef);
+
+    if (!groupSnap.exists()) {
+      return null;
+    }
+
+    const data = groupSnap.data();
+    return {
+      id: groupSnap.id,
+      name: data.name || '',
+      description: data.description,
+      iconUrl: data.iconUrl,
+      adminIds: data.adminIds || [],
+      memberIds: data.memberIds || [],
+      createdBy: data.createdBy || '',
+      createdAt: data.createdAt?.toDate() || new Date(),
+      updatedAt: data.updatedAt?.toDate() || new Date(),
+    };
+  } catch (error: any) {
+    console.error('Error getting group:', error);
+    throw new Error(error.message || 'Failed to get group');
+  }
+}
+
+/**
+ * Update group information
+ * @param groupId - The group ID
+ * @param updates - Fields to update
+ */
+export async function updateGroup(
+  groupId: string,
+  updates: {
+    name?: string;
+    description?: string;
+    iconUrl?: string;
+  }
+): Promise<void> {
+  try {
+    const groupRef = doc(db, FIREBASE_COLLECTIONS.GROUPS, groupId);
+    
+    const updateData: any = {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    };
+
+    await updateDoc(groupRef, updateData);
+    console.log(`✅ Group updated: ${groupId}`);
+  } catch (error: any) {
+    console.error('Error updating group:', error);
+    throw new Error(error.message || 'Failed to update group');
+  }
+}
+
+/**
+ * Add a member to a group
+ * @param groupId - The group ID
+ * @param userId - User ID to add
+ */
+export async function addGroupMember(
+  groupId: string,
+  userId: string
+): Promise<void> {
+  try {
+    const groupRef = doc(db, FIREBASE_COLLECTIONS.GROUPS, groupId);
+    
+    await updateDoc(groupRef, {
+      memberIds: arrayUnion(userId),
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log(`✅ Member ${userId} added to group ${groupId}`);
+  } catch (error: any) {
+    console.error('Error adding group member:', error);
+    throw new Error(error.message || 'Failed to add group member');
+  }
+}
+
+/**
+ * Remove a member from a group
+ * @param groupId - The group ID
+ * @param userId - User ID to remove
+ */
+export async function removeGroupMember(
+  groupId: string,
+  userId: string
+): Promise<void> {
+  try {
+    const groupRef = doc(db, FIREBASE_COLLECTIONS.GROUPS, groupId);
+    
+    await updateDoc(groupRef, {
+      memberIds: arrayRemove(userId),
+      adminIds: arrayRemove(userId), // Also remove from admins if they were one
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log(`✅ Member ${userId} removed from group ${groupId}`);
+  } catch (error: any) {
+    console.error('Error removing group member:', error);
+    throw new Error(error.message || 'Failed to remove group member');
+  }
+}
+
+/**
+ * Promote a member to admin
+ * @param groupId - The group ID
+ * @param userId - User ID to promote
+ */
+export async function promoteToGroupAdmin(
+  groupId: string,
+  userId: string
+): Promise<void> {
+  try {
+    const groupRef = doc(db, FIREBASE_COLLECTIONS.GROUPS, groupId);
+    
+    await updateDoc(groupRef, {
+      adminIds: arrayUnion(userId),
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log(`✅ User ${userId} promoted to admin in group ${groupId}`);
+  } catch (error: any) {
+    console.error('Error promoting to admin:', error);
+    throw new Error(error.message || 'Failed to promote to admin');
+  }
+}
+
+/**
+ * Demote an admin to regular member
+ * @param groupId - The group ID
+ * @param userId - User ID to demote
+ */
+export async function demoteFromGroupAdmin(
+  groupId: string,
+  userId: string
+): Promise<void> {
+  try {
+    const groupRef = doc(db, FIREBASE_COLLECTIONS.GROUPS, groupId);
+    
+    await updateDoc(groupRef, {
+      adminIds: arrayRemove(userId),
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log(`✅ User ${userId} demoted from admin in group ${groupId}`);
+  } catch (error: any) {
+    console.error('Error demoting from admin:', error);
+    throw new Error(error.message || 'Failed to demote from admin');
+  }
+}
+
+/**
+ * Leave a group (remove yourself as member)
+ * @param groupId - The group ID
+ * @param userId - User ID leaving the group
+ */
+export async function leaveGroup(
+  groupId: string,
+  userId: string
+): Promise<void> {
+  try {
+    await removeGroupMember(groupId, userId);
+    console.log(`✅ User ${userId} left group ${groupId}`);
+  } catch (error: any) {
+    console.error('Error leaving group:', error);
+    throw new Error(error.message || 'Failed to leave group');
+  }
+}
+
+/**
+ * Create a group conversation (links a group to a conversation)
+ * @param groupId - The group ID
+ * @param memberIds - Array of member user IDs
+ * @param groupName - Group name
+ * @param groupIcon - Optional group icon
+ * @param createdBy - Creator user ID
+ * @returns Conversation ID
+ */
+export async function createGroupConversation(
+  groupId: string,
+  memberIds: string[],
+  groupName: string,
+  groupIcon?: string,
+  createdBy?: string
+): Promise<string> {
+  try {
+    const conversationData = {
+      type: 'group',
+      participants: memberIds,
+      groupId,
+      name: groupName,
+      icon: groupIcon || null,
+      adminIds: [createdBy || memberIds[0]], // First member or creator is admin
+      createdBy: createdBy || memberIds[0],
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      unreadCount: {},
+    };
+
+    const conversationRef = await addDoc(
+      collection(db, FIREBASE_COLLECTIONS.CONVERSATIONS),
+      conversationData
+    );
+
+    console.log(`✅ Group conversation created: ${conversationRef.id}`);
+    return conversationRef.id;
+  } catch (error: any) {
+    console.error('Error creating group conversation:', error);
+    throw new Error(error.message || 'Failed to create group conversation');
   }
 }

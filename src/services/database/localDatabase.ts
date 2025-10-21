@@ -366,8 +366,8 @@ export async function insertConversation(conversation: Conversation): Promise<vo
         JSON.stringify(conversation.unreadCount),
         conversation.createdAt.getTime(),
         conversation.updatedAt.getTime(),
-        conversation.groupName || null,
-        conversation.groupIcon || null,
+        conversation.name || null, // Map name to groupName column
+        conversation.icon || null, // Map icon to groupIcon column
         conversation.adminIds ? JSON.stringify(conversation.adminIds) : null,
       ]
     );
@@ -404,13 +404,13 @@ export async function updateConversation(
       setClauses.push('updatedAt = ?');
       values.push(updates.updatedAt.getTime());
     }
-    if (updates.groupName !== undefined) {
-      setClauses.push('groupName = ?');
-      values.push(updates.groupName);
+    if (updates.name !== undefined) {
+      setClauses.push('groupName = ?'); // Map name to groupName column
+      values.push(updates.name);
     }
-    if (updates.groupIcon !== undefined) {
-      setClauses.push('groupIcon = ?');
-      values.push(updates.groupIcon);
+    if (updates.icon !== undefined) {
+      setClauses.push('groupIcon = ?'); // Map icon to groupIcon column
+      values.push(updates.icon);
     }
     if (updates.participants !== undefined) {
       setClauses.push('participants = ?');
@@ -451,8 +451,9 @@ export async function getConversations(userId?: string): Promise<Conversation[]>
       unreadCount: JSON.parse(row.unreadCount),
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
-      groupName: row.groupName,
-      groupIcon: row.groupIcon,
+      createdBy: row.createdBy || row.participants[0], // Add createdBy field
+      name: row.groupName, // Map groupName column to name
+      icon: row.groupIcon, // Map groupIcon column to icon
       adminIds: row.adminIds ? JSON.parse(row.adminIds) : undefined,
     }));
 
@@ -491,8 +492,9 @@ export async function getConversation(conversationId: string): Promise<Conversat
       unreadCount: JSON.parse(row.unreadCount),
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
-      groupName: row.groupName,
-      groupIcon: row.groupIcon,
+      createdBy: row.createdBy || row.participants[0], // Add createdBy field
+      name: row.groupName, // Map groupName column to name
+      icon: row.groupIcon, // Map groupIcon column to icon
       adminIds: row.adminIds ? JSON.parse(row.adminIds) : undefined,
     };
   } catch (error) {

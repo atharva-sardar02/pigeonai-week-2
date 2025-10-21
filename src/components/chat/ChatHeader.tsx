@@ -118,9 +118,27 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
   // Format last seen time
   const getStatusText = (): string => {
-    // Priority 1: Show typing if anyone is typing
+    // Priority 1: Show typing with user names for groups
     if (typingUserIds.length > 0) {
-      return 'typing'; // Just "typing" - dots will be animated separately
+      if (isGroup && getUserDisplayName) {
+        // For groups, show who is typing
+        if (typingUserIds.length === 1) {
+          const text = `${getUserDisplayName(typingUserIds[0])} is typing`;
+          console.log('🔤 Group typing (1 user):', text);
+          return text;
+        } else if (typingUserIds.length === 2) {
+          const text = `${getUserDisplayName(typingUserIds[0])} and ${getUserDisplayName(typingUserIds[1])} are typing`;
+          console.log('🔤 Group typing (2 users):', text);
+          return text;
+        } else {
+          const text = `${typingUserIds.length} people are typing`;
+          console.log('🔤 Group typing (3+ users):', text);
+          return text;
+        }
+      }
+      // For DMs, just show "typing"
+      console.log('🔤 DM typing');
+      return 'typing';
     }
     
     // Priority 2: Show online status
@@ -169,9 +187,39 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         {/* Status/Subtitle */}
         <View style={styles.statusContainer}>
           {isGroup ? (
-            <Text style={styles.status}>
-              {participantCount} participants
-            </Text>
+            <>
+              {/* Group: Show typing status with animation or participant count */}
+              {typingUserIds.length > 0 ? (
+                <View style={styles.typingContainer}>
+                  <Text style={styles.typingText}>
+                    {getStatusText()}
+                  </Text>
+                  {/* Animated dots */}
+                  <Animated.View
+                    style={[
+                      styles.typingDot,
+                      { opacity: getDotOpacity(dot1) },
+                    ]}
+                  />
+                  <Animated.View
+                    style={[
+                      styles.typingDot,
+                      { opacity: getDotOpacity(dot2) },
+                    ]}
+                  />
+                  <Animated.View
+                    style={[
+                      styles.typingDot,
+                      { opacity: getDotOpacity(dot3) },
+                    ]}
+                  />
+                </View>
+              ) : (
+                <Text style={styles.status}>
+                  {participantCount} participants
+                </Text>
+              )}
+            </>
           ) : (
             <>
               {/* Show green dot only if online AND not typing */}
@@ -309,6 +357,10 @@ const styles = StyleSheet.create({
   },
   typingText: {
     fontSize: SIZES.fontSmall,
+    color: COLORS.primary,
+    fontStyle: 'italic',
+  },
+  typingTextGroup: {
     color: COLORS.primary,
     fontStyle: 'italic',
   },

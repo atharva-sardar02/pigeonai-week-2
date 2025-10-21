@@ -42,10 +42,12 @@ export interface Conversation {
   unreadCount: { [userId: string]: number };
   createdAt: Date;
   updatedAt: Date;
+  createdBy: string;
   // Group-specific fields
-  groupName?: string;
-  groupIcon?: string;
-  adminIds?: string[];
+  groupId?: string; // Reference to Group document (for future extensibility)
+  name?: string; // Group name or custom conversation name
+  icon?: string; // Group icon URL
+  adminIds?: string[]; // Admin user IDs (for groups)
 }
 
 // Group Interface

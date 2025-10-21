@@ -18,6 +18,7 @@ interface MessageListProps {
   onLoadMore?: () => void;
   onRefresh?: () => void;
   refreshing?: boolean;
+  isGroupChat?: boolean; // New prop for group chat support
 }
 
 /**
@@ -40,6 +41,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   onLoadMore,
   onRefresh,
   refreshing = false,
+  isGroupChat = false,
 }) => {
   const flatListRef = useRef<FlatList>(null);
   const isInitialMount = useRef(true);
@@ -74,7 +76,8 @@ export const MessageList: React.FC<MessageListProps> = ({
     return (
       <MessageBubble 
         message={item} 
-        isOwnMessage={isOwnMessage} 
+        isOwnMessage={isOwnMessage}
+        isGroupChat={isGroupChat}
       />
     );
   };

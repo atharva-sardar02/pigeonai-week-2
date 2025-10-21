@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Message } from '../../types';
-import { COLORS, SIZES } from '../../utils/constants';
+import { COLORS, SIZES, SPACING, TYPOGRAPHY } from '../../utils/constants';
 import * as MessageModel from '../../models/Message';
+import { useUserDisplayName } from '../../hooks/useUserProfile';
 
 interface MessageBubbleProps {
   message: Message;
   isOwnMessage: boolean;
+  isGroupChat?: boolean; // New prop to indicate if this is a group chat
 }
 
 /**
@@ -20,14 +22,20 @@ interface MessageBubbleProps {
  * - Timestamp display
  * - Status indicators (checkmarks for sent messages)
  * - Support for text and image messages
+ * - Sender name display for group chats
  */
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isOwnMessage,
+  isGroupChat = false,
 }) => {
   const bubbleStyle = isOwnMessage ? styles.sentBubble : styles.receivedBubble;
   const textStyle = isOwnMessage ? styles.sentText : styles.receivedText;
   const containerStyle = isOwnMessage ? styles.sentContainer : styles.receivedContainer;
+
+  // Get sender name for group chats (only for received messages)
+  const senderDisplayName = useUserDisplayName(message.senderId);
+  const showSenderName = isGroupChat && !isOwnMessage;
 
   // Format timestamp
   const timestamp = MessageModel.formatTimestamp(message.timestamp);
@@ -53,6 +61,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   return (
     <View style={containerStyle}>
       <View style={[styles.bubble, bubbleStyle]}>
+        {/* Sender Name (for group chats, received messages only) */}
+        {showSenderName && (
+          <Text style={styles.senderName}>
+            {senderDisplayName}
+          </Text>
+        )}
+
         {/* Message Content */}
         {message.type === 'text' && (
           <Text style={[styles.messageText, textStyle]}>
@@ -111,6 +126,12 @@ const styles = StyleSheet.create({
   receivedBubble: {
     backgroundColor: COLORS.receivedBubble, // #1A2533 (dark tertiary)
     borderBottomLeftRadius: 4,
+  },
+  senderName: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold as any,
+    color: COLORS.primary,
+    marginBottom: SPACING.xs,
   },
   messageText: {
     fontSize: SIZES.fontMedium,

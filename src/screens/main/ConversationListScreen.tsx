@@ -9,6 +9,7 @@ import {
   RefreshControl,
   ViewStyle,
   TextStyle,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -73,6 +74,37 @@ export function ConversationListScreen({
    */
   const handleNewChat = () => {
     navigation.navigate('NewChat');
+  };
+
+  /**
+   * Navigate to create group screen
+   */
+  const handleNewGroup = () => {
+    navigation.navigate('CreateGroup');
+  };
+
+  /**
+   * Show options menu for new conversation
+   */
+  const handleNewConversation = () => {
+    Alert.alert(
+      'New Conversation',
+      'What would you like to create?',
+      [
+        {
+          text: 'New Chat',
+          onPress: handleNewChat,
+        },
+        {
+          text: 'New Group',
+          onPress: handleNewGroup,
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
   };
 
   /**
@@ -168,10 +200,10 @@ export function ConversationListScreen({
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Floating Action Button (New Chat) */}
+      {/* Floating Action Button (New Chat/Group) */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={handleNewChat}
+        onPress={handleNewConversation}
         activeOpacity={0.8}
       >
         <Ionicons name="add" size={28} color={COLORS.buttonPrimaryText} />
