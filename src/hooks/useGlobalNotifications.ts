@@ -137,11 +137,22 @@ export function useGlobalNotifications() {
       async (conversations) => {
         // On first load, mark all existing messages as "seen" to avoid notifying for old messages
         if (!isInitialized.current) {
+          console.log(`🔄 [Global] Initializing for user ${user.uid.substring(0, 8)} - marking existing messages as seen...`);
+          
           // For each conversation, get current messages and mark them as processed
+          let totalMessages = 0;
           for (const conv of conversations) {
             try {
-              const messages = await FirestoreService.getMessages(conv.id);
-              messages.forEach(msg => processedMessageIds.current.add(msg.id));
+              // IMPORTANT: Get ALL messages (no limit) to mark them all as seen
+              const messages = await FirestoreService.getMessages(conv.id, 9999);
+              console.log(`  📦 Conv ${conv.id.substring(0, 8)}: ${messages.length} messages`);
+              
+              messages.forEach(msg => {
+                processedMessageIds.current.add(msg.id);
+                console.log(`    ✓ Marked ${msg.id.substring(0, 8)} from ${msg.senderId.substring(0, 8)} as seen`);
+              });
+              
+              totalMessages += messages.length;
               
               // Set initial last seen timestamp
               if (messages.length > 0) {
@@ -151,11 +162,15 @@ export function useGlobalNotifications() {
                 lastSeenTimestamps.current.set(conv.id, latestMessage.timestamp);
               }
             } catch (error) {
-              console.error('Error loading initial messages:', error);
+              console.error(`Error loading initial messages for ${conv.id}:`, error);
             }
           }
           
           isInitialized.current = true;
+          console.log(`✅ [Global] Initialization complete for user ${user.uid.substring(0, 8)} - ${totalMessages} total messages marked as seen`);
+          console.log(`📊 [Global] processedMessageIds size: ${processedMessageIds.current.size}`);
+          
+          // Now proceed to set up listeners (fall through to code below)
         }
 
         // For each conversation, set up a listener if we don't have one already
@@ -165,23 +180,39 @@ export function useGlobalNotifications() {
             continue;
           }
 
+          console.log(`📡 [Global] Setting up listener for conversation ${conv.id.substring(0, 8)}`);
+
           // Listen to messages in this conversation
           const messageUnsubscribe = FirestoreService.listenToMessages(
             conv.id,
             async (messages) => {
               // Only process if initialized
               if (!isInitialized.current) {
+                console.log(`⏸️  [Global] Conv ${conv.id.substring(0, 8)}: Skipping - not initialized`);
                 return;
               }
 
+              console.log(`📨 [Global] Conv ${conv.id.substring(0, 8)}: Listener fired with ${messages.length} messages`);
+
               // Find truly NEW messages (not in our processed set)
-              const newMessages = messages.filter(msg => 
-                !processedMessageIds.current.has(msg.id) && 
-                msg.senderId !== user.uid
-              );
+              const newMessages = messages.filter(msg => {
+                const isProcessed = processedMessageIds.current.has(msg.id);
+                const isFromOther = msg.senderId !== user.uid;
+                const isNew = !isProcessed && isFromOther;
+                
+                if (!isNew && !isProcessed) {
+                  console.log(`  ⏭️  ${msg.id.substring(0, 8)}: Skip (isProcessed=${isProcessed}, fromOther=${isFromOther})`);
+                }
+                
+                return isNew;
+              });
+
+              console.log(`  🔔 [Global] Found ${newMessages.length} NEW messages to notify`);
 
               if (newMessages.length > 0) {
                 for (const msg of newMessages) {
+                  console.log(`  📤 [Global] Notifying: "${msg.content}" from ${msg.senderId.substring(0, 8)}`);
+                  
                   // Mark as processed immediately to avoid duplicates
                   processedMessageIds.current.add(msg.id);
 
