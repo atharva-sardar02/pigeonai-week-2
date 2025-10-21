@@ -8,6 +8,7 @@ export interface User {
   createdAt: Date | null;
   lastSeen: Date | null;
   isOnline: boolean;
+  fcmTokens?: string[]; // Push notification tokens (supports multiple devices)
 }
 
 // Message Status Types
@@ -113,5 +114,6 @@ export type MainStackParamList = {
   UserDetails: { userId: string };
   GroupDetails: { groupId: string };
   CreateGroup: undefined;
+  NotificationTest: undefined; // Temporary test screen
 };
 

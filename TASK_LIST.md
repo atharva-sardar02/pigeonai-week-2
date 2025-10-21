@@ -1520,13 +1520,24 @@ pigeonai-week-2/
 
 ### Tasks
 
-- [ ] **Task 10.1: Configure Firebase Cloud Messaging**
+- [x] **Task 10.1: Configure Firebase Cloud Messaging**
   - **Action**: Set up FCM in Firebase Console
   - **Steps**:
     1. iOS: Upload APNs certificate or key
     2. Android: FCM auto-configured
   - **Files Modified**:
-    - `app.config.js` (add FCM plugin config)
+    - `app.config.js` (add FCM plugin config - already configured)
+    - `eas.json` (created with FCM config)
+  - **Files Created**:
+    - `docs/FCM_SETUP_GUIDE.md` (comprehensive setup guide)
+    - `docs/FCM_QUICKSTART.md` (5-minute quick start)
+    - `docs/FCM_CHECKLIST.md` (step-by-step checklist)
+    - `android/app/README.md` (Android FCM file placement)
+    - `ios/README.md` (iOS FCM file placement)
+  - **Directories Created**:
+    - `android/app/` (for google-services.json)
+    - `ios/` (for GoogleService-Info.plist)
+  - **Status**: ✅ Complete - Documentation and setup ready, awaiting user to download FCM config files from Firebase Console
 
 - [ ] **Task 10.2: Implement Notification Service**
   - **Files Created**:
@@ -1590,10 +1601,18 @@ pigeonai-week-2/
   - **Logic**: OS handles background notifications automatically
   - **Note**: May not work reliably on all devices
 
-- [ ] **Task 10.11: Update Firestore Rules for FCM Tokens**
+- [x] **Task 10.11: Update Firestore Rules for FCM Tokens**
   - **Files Modified**:
     - `firebase/firestore.rules`
   - **Rule**: Only user can write their own FCM tokens
+  - **Security Measures**:
+    - ✅ Field whitelisting (only allow updating safe fields)
+    - ✅ Type validation (fcmTokens must be an array)
+    - ✅ Ownership validation (users can only update their own profile)
+    - ✅ Protection against privilege escalation
+  - **Files Created**:
+    - `docs/FIRESTORE_SECURITY_RULES.md` (security documentation)
+  - **Status**: ✅ Complete - Rules deployed to Firebase
 
 - [ ] **Task 10.12: Write Unit Tests for Notification Service**
   - **Files Created**:

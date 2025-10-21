@@ -151,6 +151,23 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
 
         {/* Menu Items */}
         <View style={styles.menuSection}>
+          {/* Test Notifications (Temporary - Dev Only) */}
+          <TouchableOpacity
+            style={[styles.menuItem, styles.testMenuItem]}
+            onPress={() => navigation.navigate('NotificationTest')}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="flask-outline"
+              size={24}
+              color={COLORS.primary}
+            />
+            <Text style={[styles.menuItemText, styles.testMenuItemText]}>
+              🧪 Test Notifications
+            </Text>
+            <Text style={styles.testBadge}>DEV</Text>
+          </TouchableOpacity>
+
           {/* Account Settings (Future) */}
           <TouchableOpacity
             style={styles.menuItem}
@@ -366,6 +383,25 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.xs,
     color: COLORS.textTertiary,
     fontStyle: 'italic',
+  } as TextStyle,
+
+  testMenuItem: {
+    backgroundColor: COLORS.primary + '10',
+  } as ViewStyle,
+
+  testMenuItemText: {
+    color: COLORS.primary,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold as TextStyle['fontWeight'],
+  } as TextStyle,
+
+  testBadge: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    fontWeight: TYPOGRAPHY.fontWeight.bold as TextStyle['fontWeight'],
+    color: COLORS.background,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.xs,
+    paddingVertical: 2,
+    borderRadius: 4,
   } as TextStyle,
 
   storageSection: {

@@ -41,10 +41,16 @@ Thumbs.db
 *.tmp
 *.temp
 
-# Firebase (we'll use .env instead)
-google-services.json
-GoogleService-Info.plist
+# Firebase config files (INCLUDED in git - not secrets!)
+# These files configure FCM and should be committed
+# Security comes from Firestore rules, not these files
+# google-services.json       ← Should be committed
+# GoogleService-Info.plist   ← Should be committed
+
+# Firebase local emulator and debug files
 .firebase/
 firebase-debug.log
 firestore-debug.log
+ui-debug.log
+database-debug.log
 

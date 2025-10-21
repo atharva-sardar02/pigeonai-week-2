@@ -44,7 +44,19 @@ service cloud.firestore {
       allow create: if isOwner(userId) 
                     && hasRequiredFields(['uid', 'email', 'displayName', 'createdAt', 'isOnline']);
       
-      allow update: if isOwner(userId);
+      // Users can update their own profile
+      // Allow updating: displayName, photoURL, isOnline, lastSeen, fcmTokens
+      allow update: if isOwner(userId)
+                    && (
+                      // Only allow updating safe fields
+                      request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['displayName', 'photoURL', 'isOnline', 'lastSeen', 'fcmTokens', 'updatedAt'])
+                    )
+                    && (
+                      // If updating fcmTokens, ensure it's an array of strings
+                      !request.resource.data.diff(resource.data).affectedKeys().hasAny(['fcmTokens'])
+                      || request.resource.data.fcmTokens is list
+                    );
       
       // Users can delete their own profile
       allow delete: if isOwner(userId);

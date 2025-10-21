@@ -97,7 +97,43 @@ EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
 EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-### 5. Create Free EAS Account (Required for Expo Go)
+### 5. Configure Push Notifications (FCM)
+
+**⚠️ Important**: Push notifications do NOT work in Expo Go (SDK 53+). You must build with EAS Build to test notifications.
+
+#### Quick Setup (5 minutes):
+
+1. **Register Android app in Firebase Console**:
+   - Go to [Firebase Console](https://console.firebase.google.com/) → Your project
+   - **Settings** → **Project settings** → **Your apps**
+   - Click **Add app** → **Android**
+   - Package name: `com.pigeonai.app`
+   - Click **Register app**
+   - **Download `google-services.json`**
+   - Place in: `android/app/google-services.json`
+
+2. **Enable FCM API**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Select your Firebase project
+   - Search: "Firebase Cloud Messaging API"
+   - Click **Enable**
+
+3. **Build with EAS** (to test notifications):
+   ```bash
+   npm install -g eas-cli
+   eas login
+   eas build:configure
+   eas build --profile development --platform android
+   ```
+
+**📚 Detailed guides**:
+- Quick: `docs/FCM_QUICKSTART.md`
+- Full: `docs/FCM_SETUP_GUIDE.md`
+- Checklist: `docs/FCM_CHECKLIST.md`
+
+**For iOS**: See `docs/FCM_SETUP_GUIDE.md` (requires Apple Developer account - $99/year)
+
+### 6. Create Free EAS Account (Required for Expo Go)
 
 Expo Go now requires an EAS account even for local development:
 
@@ -112,7 +148,7 @@ npx expo login
 
 Also login in the Expo Go app on your phone (Profile tab).
 
-### 6. Run the App
+### 7. Run the App
 
 ```bash
 npm start

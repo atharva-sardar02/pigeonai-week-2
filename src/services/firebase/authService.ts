@@ -326,3 +326,71 @@ export const reloadUser = async (): Promise<void> => {
   }
 };
 
+/**
+ * Save device push notification token to Firestore
+ * Stores token in an array to support multiple devices per user
+ * @param userId - The user's ID
+ * @param token - The Expo Push Token
+ */
+export const saveDeviceToken = async (
+  userId: string,
+  token: string
+): Promise<void> => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      const existingTokens = userData.fcmTokens || [];
+
+      // Only add token if it doesn't already exist
+      if (!existingTokens.includes(token)) {
+        await updateDoc(userRef, {
+          fcmTokens: [...existingTokens, token],
+          updatedAt: serverTimestamp(),
+        });
+        console.log('✅ Device token saved to Firestore');
+      } else {
+        console.log('ℹ️ Device token already exists in Firestore');
+      }
+    }
+  } catch (error: any) {
+    console.error('❌ Error saving device token:', error);
+    throw new Error(error.message || 'Failed to save device token');
+  }
+};
+
+/**
+ * Remove device push notification token from Firestore
+ * Called on logout to stop receiving notifications on this device
+ * @param userId - The user's ID
+ * @param token - The Expo Push Token to remove
+ */
+export const removeDeviceToken = async (
+  userId: string,
+  token: string
+): Promise<void> => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      const existingTokens = userData.fcmTokens || [];
+
+      // Remove the token from the array
+      const updatedTokens = existingTokens.filter((t: string) => t !== token);
+
+      await updateDoc(userRef, {
+        fcmTokens: updatedTokens,
+        updatedAt: serverTimestamp(),
+      });
+      console.log('✅ Device token removed from Firestore');
+    }
+  } catch (error: any) {
+    console.error('❌ Error removing device token:', error);
+    throw new Error(error.message || 'Failed to remove device token');
+  }
+};
+

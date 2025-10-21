@@ -9,7 +9,15 @@ export default {
     newArchEnabled: true,
     plugins: [
       'expo-asset',
-      'expo-font'
+      'expo-font',
+      [
+        'expo-notifications',
+        {
+          icon: './assets/icon.png',
+          color: '#3B82F6',
+          sounds: [],
+        }
+      ]
     ],
     splash: {
       image: './assets/splash-icon.png',
@@ -26,10 +34,15 @@ export default {
         backgroundColor: '#060C1D',
       },
       package: 'com.pigeonai.app',
+      permissions: [
+        'RECEIVE_BOOT_COMPLETED',
+        'VIBRATE',
+        'android.permission.POST_NOTIFICATIONS'
+      ],
     },
     extra: {
       eas: {
-        projectId: 'your-eas-project-id',
+        // projectId will be auto-generated on first build
       },
     },
   },

@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { forwardRef } from 'react';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../store/context/AuthContext';
 import { AuthNavigator } from './AuthNavigator';
@@ -17,8 +17,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  * - Shows Splash screen while checking auth state
  * - Shows Auth screens if user is not logged in
  * - Shows Main screens if user is logged in
+ * - Accepts a ref for programmatic navigation (for push notifications)
  */
-export const AppNavigator: React.FC = () => {
+export const AppNavigator = forwardRef<NavigationContainerRef<any>>((props, ref) => {
   const { user, loading, initializing } = useAuth();
 
   // Show splash while initially checking auth or during sign in/out
@@ -26,6 +27,7 @@ export const AppNavigator: React.FC = () => {
 
   return (
     <NavigationContainer
+      ref={ref}
       theme={{
         dark: true,
         colors: {
@@ -76,4 +78,4 @@ export const AppNavigator: React.FC = () => {
       </Stack.Navigator>
     </NavigationContainer>
   );
-};
+});

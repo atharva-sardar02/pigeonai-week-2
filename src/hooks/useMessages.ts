@@ -72,7 +72,6 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
     // Cleanup function: Unsubscribe from Firestore listener
     return () => {
       if (unsubscribe) {
-        console.log(`Cleaning up message listener for conversation: ${conversationId}`);
         unsubscribe();
         setUnsubscribe(null);
       }
@@ -116,12 +115,10 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
           conversationId,
           async (firestoreMessages) => {
             // Real-time update received
-            console.log(`📨 Firestore listener fired: ${firestoreMessages.length} messages`);
+            // Note: Global notifications are handled by useGlobalNotifications hook
             
             // CRITICAL: Use a single atomic update to prevent any race conditions
             setMessages((prevMessages) => {
-              console.log(`  Current state has: ${prevMessages.length} messages`);
-              
               // Create a Map of ALL message IDs we currently have (for deduplication)
               const existingIds = new Set(prevMessages.map(m => m.id));
               
@@ -133,8 +130,6 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
                 }
                 return true;
               });
-              
-              console.log(`  Found ${newMessages.length} new messages to add`);
               
               // Find temp messages that should be replaced by real messages
               const realMessageIds = new Set(firestoreMessages.map(m => m.id));
@@ -150,7 +145,6 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
                 );
                 
                 if (hasDuplicate) {
-                  console.log(`  Removing temp message: ${msg.id}`);
                   // Remove temp ID from tracking
                   messageIdsRef.current.delete(msg.id);
                   return false;
@@ -158,8 +152,6 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
                 
                 return true;
               });
-              
-              console.log(`  Keeping ${tempMessages.length} temp messages`);
               
               // Merge: existing messages + temp messages + new real messages
               // But exclude temp messages and messages that are being replaced
@@ -169,8 +161,6 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
               
               const finalMessages = [...keptMessages, ...tempMessages, ...newMessages];
               
-              console.log(`  Before deduplication: ${finalMessages.length} messages`);
-              
               // Final deduplication using Map (safety net)
               const uniqueMap = new Map<string, typeof finalMessages[0]>();
               for (const msg of finalMessages) {
@@ -178,36 +168,15 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
                   uniqueMap.set(msg.id, msg);
                   // Add to tracking ref
                   messageIdsRef.current.add(msg.id);
-                } else {
-                  console.warn(`⚠️ Duplicate detected during merge: ${msg.id}`);
                 }
               }
               
               const uniqueMessages = Array.from(uniqueMap.values());
               
-              console.log(`  After deduplication: ${uniqueMessages.length} messages`);
-              
               // Sort by timestamp (oldest first)
               const sorted = uniqueMessages.sort((a, b) => 
                 a.timestamp.getTime() - b.timestamp.getTime()
               );
-              
-              // Final check: Ensure no duplicate IDs in the returned array
-              const finalIds = new Set<string>();
-              const hasDuplicates = sorted.some(msg => {
-                if (finalIds.has(msg.id)) {
-                  console.error(`🚨 DUPLICATE ID IN FINAL ARRAY: ${msg.id}`);
-                  return true;
-                }
-                finalIds.add(msg.id);
-                return false;
-              });
-              
-              if (hasDuplicates) {
-                console.error('🚨 CRITICAL: Duplicates found in final message array!');
-              } else {
-                console.log(`  ✅ Final array has ${sorted.length} unique messages`);
-              }
               
               return sorted;
             });
@@ -286,17 +255,10 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
         // Track this temp ID in our ref to prevent duplicates
         messageIdsRef.current.add(tempId);
 
-        console.log(`📤 Sending optimistic message:`);
-        console.log(`  ID: ${tempId}`);
-        console.log(`  Timestamp: ${optimisticMessage.timestamp.toISOString()}`);
-        console.log(`  Timestamp (ms): ${optimisticMessage.timestamp.getTime()}`);
-
         // Step 2: Add to UI immediately (optimistic update)
         // Add to END of array (newest messages at bottom)
         setMessages((prev) => {
           const updated = [...prev, optimisticMessage];
-          console.log(`  Total messages after add: ${updated.length}`);
-          console.log(`  Last message timestamp: ${updated[updated.length - 1]?.timestamp.toISOString()}`);
           return updated;
         });
 

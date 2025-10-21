@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { User as FirebaseUser } from 'firebase/auth';
 import * as authService from '../../services/firebase/authService';
 import * as LocalDatabase from '../../services/database/localDatabase';
+import * as NotificationService from '../../services/notifications/notificationService';
 import { clearUserProfileCache } from '../../hooks/useUserProfile';
 import { User, AuthContextType } from '../../types';
 
@@ -74,6 +75,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
+   * Register device for push notifications and save token to Firestore
+   * Silently fails in Expo Go (uses local notifications instead)
+   */
+  const registerPushNotifications = async (userId: string) => {
+    try {
+      // Register and get token
+      const token = await NotificationService.registerForPushNotifications();
+      
+      if (token) {
+        // Save token to Firestore
+        await authService.saveDeviceToken(userId, token);
+      }
+      // If no token (Expo Go), silently continue - local notifications will work
+    } catch (error) {
+      // Silently fail - not critical for app functionality
+      // Local notifications will still work in development
+    }
+  };
+
+  /**
    * Handle auth state changes
    */
   useEffect(() => {
@@ -86,6 +107,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Set up presence system
         if (firebaseUser.uid) {
           await authService.setupPresence(firebaseUser.uid);
+          
+          // Register for push notifications after successful login
+          // Wait a moment to let the user see they're logged in
+          setTimeout(() => {
+            registerPushNotifications(firebaseUser.uid);
+          }, 1000);
         }
       } else {
         // User is signed out

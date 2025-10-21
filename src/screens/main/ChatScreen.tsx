@@ -19,6 +19,8 @@ import { useUserDisplayName, userProfileCache } from '../../hooks/useUserProfile
 import { usePresence } from '../../hooks/usePresence';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import * as FirestoreService from '../../services/firebase/firestoreService';
+import * as NotificationService from '../../services/notifications/notificationService';
+import { shouldUseLocalNotifications } from '../../services/notifications/localNotificationHelper';
 import { COLORS } from '../../utils/constants';
 import { MainStackParamList, Conversation } from '../../types';
 
@@ -121,6 +123,51 @@ export const ChatScreen: React.FC = () => {
     try {
       setSending(true);
       await sendMessage(content, 'text');
+      
+      // Send push notifications to other participants
+      if (conversation) {
+        // Get recipients (all participants except current user)
+        const recipients = conversation.participants.filter(p => p !== user.uid);
+        
+        if (recipients.length > 0) {
+          // Get sender's display name
+          const senderName = user.displayName || 'Someone';
+          
+          // Determine notification title based on conversation type
+          let notificationTitle = senderName;
+          if (conversation.type === 'group' && conversation.name) {
+            notificationTitle = conversation.name;
+          }
+          
+          // Truncate message preview to 100 characters
+          const messagePreview = content.length > 100 
+            ? content.substring(0, 100) + '...' 
+            : content;
+          
+          // Notification body
+          const notificationBody = conversation.type === 'group'
+            ? `${senderName}: ${messagePreview}`
+            : messagePreview;
+          
+          // Send remote push notification (only in EAS Build)
+          // In Expo Go, useMessages hook handles local notifications via Firestore listener
+          if (!shouldUseLocalNotifications()) {
+            NotificationService.sendPushNotificationToUsers(
+              recipients,
+              notificationTitle,
+              notificationBody,
+              {
+                screen: 'Chat',
+                conversationId: conversation.id,
+                senderId: user.uid,
+              }
+            ).catch(err => {
+              // Don't throw - notifications are optional
+              console.error('Failed to send push notifications:', err);
+            });
+          }
+        }
+      }
     } catch (err) {
       console.error('Failed to send message:', err);
       // Error is already handled by useMessages hook

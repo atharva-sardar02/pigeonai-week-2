@@ -7,6 +7,7 @@ import { NewChatScreen } from '../screens/main/NewChatScreen';
 import { ProfileScreen } from '../screens/main/ProfileScreen';
 import { UserDetailsScreen } from '../screens/main/UserDetailsScreen';
 import { CreateGroupScreen } from '../screens/group/CreateGroupScreen';
+import { NotificationTestScreen } from '../screens/test/NotificationTestScreen';
 import { COLORS } from '../utils/constants';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -88,6 +89,16 @@ export const MainNavigator: React.FC = () => {
         options={{
           title: 'New Group',
           animation: 'slide_from_bottom',
+        }}
+      />
+
+      {/* Notification Test Screen (Temporary - for testing without EAS Build) */}
+      <Stack.Screen
+        name="NotificationTest"
+        component={NotificationTestScreen}
+        options={{
+          title: 'Test Notifications',
+          animation: 'slide_from_right',
         }}
       />
 
