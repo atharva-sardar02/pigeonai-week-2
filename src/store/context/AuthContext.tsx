@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
-import { AppState, AppStateStatus } from 'react-native';
 import * as authService from '../../services/firebase/authService';
 import * as LocalDatabase from '../../services/database/localDatabase';
 import { clearUserProfileCache } from '../../hooks/useUserProfile';
@@ -104,49 +103,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [initializing]);
 
   /**
-   * Handle app state changes (foreground/background)
-   * Update user presence based on app state
+   * NOTE: Presence management (online/offline status) is now handled by PresenceContext
+   * This includes:
+   * - App state changes (foreground/background)
+   * - Component unmount
+   * See: src/store/context/PresenceContext.tsx
    */
-  useEffect(() => {
-    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-      if (!user) return;
-
-      try {
-        if (nextAppState === 'active') {
-          // App came to foreground - set user as online
-          await authService.setUserOnlineStatus(user.uid, true);
-        } else if (nextAppState === 'background' || nextAppState === 'inactive') {
-          // App went to background - set user as offline
-          await authService.setUserOnlineStatus(user.uid, false);
-        }
-      } catch (err) {
-        // Don't block app state changes if status update fails
-        console.warn('Failed to update online status on app state change:', err);
-      }
-    };
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-    return () => {
-      subscription.remove();
-    };
-  }, [user]);
-
-  /**
-   * Handle app unmount/close
-   * Set user as offline when app is closed
-   */
-  useEffect(() => {
-    return () => {
-      if (user) {
-        // Try to set user offline when component unmounts
-        // This is best-effort and may not always succeed
-        authService.setUserOnlineStatus(user.uid, false).catch((err) => {
-          console.warn('Failed to update online status on unmount:', err);
-        });
-      }
-    };
-  }, [user]);
 
   /**
    * Sign up a new user
