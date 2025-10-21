@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { useAuth } from '../store/context/AuthContext';
 import * as FirestoreService from '../services/firebase/firestoreService';
 import { triggerLocalNotification, shouldUseLocalNotifications } from '../services/notifications/localNotificationHelper';
@@ -7,6 +8,7 @@ import { userProfileCache } from './useUserProfile';
 /**
  * Global notification hook
  * Listens to ALL conversations and triggers notifications for new messages
+ * Also checks for missed messages when user comes online
  * Works everywhere in the app, not just in specific chat screens
  */
 export function useGlobalNotifications() {
@@ -14,6 +16,106 @@ export function useGlobalNotifications() {
   const processedMessageIds = useRef(new Set<string>());
   const isInitialized = useRef(false);
   const activeListeners = useRef(new Map<string, () => void>());
+  const lastSeenTimestamps = useRef(new Map<string, Date>());
+  const appState = useRef(AppState.currentState);
+
+  // Check for missed messages when user comes online
+  const checkMissedMessages = async () => {
+    if (!user) return;
+
+    console.log('🔍 Checking for missed messages...');
+
+    try {
+      const conversations = await FirestoreService.getConversations(user.uid);
+
+      for (const conv of conversations) {
+        try {
+          const messages = await FirestoreService.getMessages(conv.id);
+          
+          // Get last seen timestamp for this conversation
+          const lastSeen = lastSeenTimestamps.current.get(conv.id);
+          
+          console.log(`📊 Conv ${conv.id.substring(0, 8)}: ${messages.length} total, lastSeen: ${lastSeen?.toISOString() || 'none'}`);
+          
+          // Find messages that arrived while user was offline
+          const missedMessages = messages.filter(msg => {
+            const isFromOther = msg.senderId !== user.uid;
+            const isNotProcessed = !processedMessageIds.current.has(msg.id);
+            const isAfterLastSeen = lastSeen ? msg.timestamp > lastSeen : false;
+            
+            console.log(`  📨 ${msg.id.substring(0, 8)}: fromOther=${isFromOther}, notProcessed=${isNotProcessed}, afterLastSeen=${isAfterLastSeen}, msgTime=${msg.timestamp.toISOString()}`);
+            
+            return isFromOther && isNotProcessed && isAfterLastSeen;
+          });
+
+          console.log(`✅ Found ${missedMessages.length} missed messages`);
+
+          // Sort by timestamp (oldest first)
+          missedMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+          // Trigger notifications for missed messages
+          for (const msg of missedMessages) {
+            console.log(`📤 Notifying: "${msg.content}" from ${msg.senderId}`);
+            
+            // Mark as processed
+            processedMessageIds.current.add(msg.id);
+
+            // Get sender info
+            const senderProfile = userProfileCache.get(msg.senderId);
+            const senderName = senderProfile?.displayName || 'Someone';
+
+            // Trigger notification
+            try {
+              await triggerLocalNotification(
+                senderName,
+                msg.content,
+                conv.id,
+                msg.senderId
+              );
+              
+              // Small delay between notifications to avoid overwhelming
+              await new Promise(resolve => setTimeout(resolve, 500));
+            } catch (error) {
+              console.error('Error triggering missed message notification:', error);
+            }
+          }
+
+          // Update last seen timestamp to NOW (not latest message time)
+          if (missedMessages.length > 0) {
+            lastSeenTimestamps.current.set(conv.id, new Date());
+            console.log(`⏰ Updated lastSeen for ${conv.id.substring(0, 8)} to NOW`);
+          }
+        } catch (error) {
+          console.error(`Error checking missed messages for ${conv.id}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking missed messages:', error);
+    }
+  };
+
+  // Listen for app state changes to detect when user comes online
+  useEffect(() => {
+    if (!user || !shouldUseLocalNotifications()) {
+      return;
+    }
+
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      // App moved to foreground (user came online)
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        console.log('📱 User came online - checking for missed messages...');
+        await checkMissedMessages();
+      }
+
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user || !shouldUseLocalNotifications()) {
@@ -31,6 +133,14 @@ export function useGlobalNotifications() {
             try {
               const messages = await FirestoreService.getMessages(conv.id);
               messages.forEach(msg => processedMessageIds.current.add(msg.id));
+              
+              // Set initial last seen timestamp
+              if (messages.length > 0) {
+                const latestMessage = messages.reduce((latest, msg) => 
+                  msg.timestamp > latest.timestamp ? msg : latest
+                );
+                lastSeenTimestamps.current.set(conv.id, latestMessage.timestamp);
+              }
             } catch (error) {
               console.error('Error loading initial messages:', error);
             }
@@ -82,6 +192,9 @@ export function useGlobalNotifications() {
                     console.error('Error triggering notification:', error);
                   }
                 }
+                
+                // Update last seen timestamp to NOW
+                lastSeenTimestamps.current.set(conv.id, new Date());
               }
             },
             (error) => {
@@ -119,6 +232,7 @@ export function useGlobalNotifications() {
       // Clear state
       activeListeners.current.clear();
       processedMessageIds.current.clear();
+      lastSeenTimestamps.current.clear();
       isInitialized.current = false;
     };
   }, [user]);
