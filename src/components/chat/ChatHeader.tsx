@@ -7,6 +7,7 @@ import {
   Platform,
   Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Conversation } from '../../types';
 import { COLORS, SIZES } from '../../utils/constants';
 import { formatMessageTime } from '../../utils/dateFormatter';
@@ -16,6 +17,8 @@ interface ChatHeaderProps {
   currentUserId: string;
   onBack: () => void;
   onTitlePress?: () => void; // New prop for tapping on the header
+  onSummarize?: () => void; // New prop for AI summarization
+  onExtractActionItems?: () => void; // New prop for AI action item extraction
   isOnline?: boolean;
   lastSeen?: Date | null;
   typingUserIds?: string[]; // New prop for typing users
@@ -39,6 +42,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   currentUserId,
   onBack,
   onTitlePress,
+  onSummarize,
+  onExtractActionItems,
   isOnline = false,
   lastSeen = null,
   typingUserIds = [],
@@ -256,6 +261,28 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         </View>
       </TouchableOpacity>
 
+      {/* AI Summarize Button */}
+      {onSummarize && (
+        <TouchableOpacity
+          style={styles.aiButton}
+          onPress={onSummarize}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="sparkles" size={22} color={COLORS.primary} />
+        </TouchableOpacity>
+      )}
+
+      {/* AI Action Items Button */}
+      {onExtractActionItems && (
+        <TouchableOpacity
+          style={styles.aiButton}
+          onPress={onExtractActionItems}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="checkbox-outline" size={22} color={COLORS.primary} />
+        </TouchableOpacity>
+      )}
+
       {/* More Options Button (Future) */}
       <TouchableOpacity
         style={styles.moreButton}
@@ -368,6 +395,13 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: COLORS.online,
+  },
+  aiButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: SIZES.paddingSmall,
   },
   moreButton: {
     width: 40,

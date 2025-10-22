@@ -10,8 +10,11 @@ export const COLORS = {
   
   // Status Colors
   success: '#34C759',
+  successLight: '#D1F2DD',       // Light green background
   warning: '#FF9500',
+  warningLight: '#FFE5B4',       // Light yellow background
   error: '#FF3B30',
+  errorLight: '#FFD6D6',         // Light red background
   info: '#4A9FF5',               // Matching pigeon blue
   
   // Background Colors (Dark Mode - Matching Icon Background)

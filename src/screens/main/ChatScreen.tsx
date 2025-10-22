@@ -6,6 +6,7 @@ import {
   Platform,
   ActivityIndicator,
   Text,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
@@ -13,6 +14,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChatHeader } from '../../components/chat/ChatHeader';
 import { MessageList } from '../../components/chat/MessageList';
 import { MessageInput } from '../../components/chat/MessageInput';
+import SummaryModal from '../../components/ai/SummaryModal';
+import ActionItemsList from '../../components/ai/ActionItemsList';
 import { useAuth } from '../../store/context/AuthContext';
 import { useMessages } from '../../hooks/useMessages';
 import { useUserDisplayName, userProfileCache } from '../../hooks/useUserProfile';
@@ -21,6 +24,8 @@ import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import * as FirestoreService from '../../services/firebase/firestoreService';
 import * as NotificationService from '../../services/notifications/notificationService';
 import { shouldUseLocalNotifications } from '../../services/notifications/localNotificationHelper';
+import { summarizeConversation, extractActionItems } from '../../services/ai/aiService';
+import { ActionItem } from '../../models/ActionItem';
 import { COLORS } from '../../utils/constants';
 import { MainStackParamList, Conversation } from '../../types';
 
@@ -65,6 +70,36 @@ export const ChatScreen: React.FC = () => {
   } = useMessages(conversationId);
 
   const [sending, setSending] = useState(false);
+
+  // AI Summarization state
+  const [summaryModalVisible, setSummaryModalVisible] = useState(false);
+  const [summaryData, setSummaryData] = useState<{
+    summary: string | null;
+    loading: boolean;
+    error: string | null;
+    messageCount?: number;
+    cached?: boolean;
+    duration?: number;
+  }>({
+    summary: null,
+    loading: false,
+    error: null,
+  });
+
+  // AI Action Items state
+  const [actionItemsModalVisible, setActionItemsModalVisible] = useState(false);
+  const [actionItemsData, setActionItemsData] = useState<{
+    items: ActionItem[];
+    loading: boolean;
+    error: string | null;
+    messageCount?: number;
+    cached?: boolean;
+    duration?: number;
+  }>({
+    items: [],
+    loading: false,
+    error: null,
+  });
 
   // Get the other participant's ID for direct messages
   const otherUserId = conversation?.type === 'dm' || conversation?.type === 'direct'
@@ -217,6 +252,153 @@ export const ChatScreen: React.FC = () => {
     return cachedProfile?.displayName || 'User';
   };
 
+  // Handle AI Summarization
+  const handleSummarize = async () => {
+    if (messages.length === 0) {
+      Alert.alert('No Messages', 'There are no messages to summarize in this conversation.');
+      return;
+    }
+
+    // Open modal and start loading
+    setSummaryModalVisible(true);
+    setSummaryData({
+      summary: null,
+      loading: true,
+      error: null,
+    });
+
+    try {
+      // Call AI service to generate summary
+      const result = await summarizeConversation(conversationId, 100);
+
+      if (result.success && result.data) {
+        setSummaryData({
+          summary: result.data.summary,
+          loading: false,
+          error: null,
+          messageCount: result.data.messageCount,
+          cached: result.data.cached,
+          duration: result.data.duration,
+        });
+      } else {
+        setSummaryData({
+          summary: null,
+          loading: false,
+          error: result.error || 'Failed to generate summary',
+        });
+      }
+    } catch (err: any) {
+      console.error('Summarization error:', err);
+      setSummaryData({
+        summary: null,
+        loading: false,
+        error: err.message || 'An unexpected error occurred',
+      });
+    }
+  };
+
+  // Handle closing summary modal
+  const handleCloseSummary = () => {
+    setSummaryModalVisible(false);
+    // Reset summary data after modal closes
+    setTimeout(() => {
+      setSummaryData({
+        summary: null,
+        loading: false,
+        error: null,
+      });
+    }, 300); // Wait for modal animation
+  };
+
+  // Handle AI Action Items Extraction
+  const handleExtractActionItems = async () => {
+    if (messages.length === 0) {
+      Alert.alert('No Messages', 'There are no messages to analyze in this conversation.');
+      return;
+    }
+
+    // Open modal and start loading
+    setActionItemsModalVisible(true);
+    setActionItemsData({
+      items: [],
+      loading: true,
+      error: null,
+    });
+
+    try {
+      // Call AI service to extract action items
+      const result = await extractActionItems(conversationId, 100);
+
+      if (result.success && result.data) {
+        // Transform API response to ActionItem format
+        const items: ActionItem[] = result.data.actionItems.map((item: any, index: number) => ({
+          ...item,
+          id: `${conversationId}-${index}`,
+          conversationId,
+          deadline: item.deadline ? new Date(item.deadline) : null,
+          completed: false,
+          createdAt: new Date(),
+        }));
+
+        setActionItemsData({
+          items,
+          loading: false,
+          error: null,
+          messageCount: result.data.messageCount,
+          cached: result.data.cached,
+          duration: result.data.duration,
+        });
+      } else {
+        setActionItemsData({
+          items: [],
+          loading: false,
+          error: result.error || 'Failed to extract action items',
+        });
+      }
+    } catch (err: any) {
+      console.error('Action items extraction error:', err);
+      setActionItemsData({
+        items: [],
+        loading: false,
+        error: err.message || 'An unexpected error occurred',
+      });
+    }
+  };
+
+  // Handle closing action items modal
+  const handleCloseActionItems = () => {
+    setActionItemsModalVisible(false);
+    // Reset action items data after modal closes
+    setTimeout(() => {
+      setActionItemsData({
+        items: [],
+        loading: false,
+        error: null,
+      });
+    }, 300); // Wait for modal animation
+  };
+
+  // Handle toggling action item completion
+  const handleToggleActionItemComplete = (item: ActionItem) => {
+    // Update the action item's completed status
+    setActionItemsData(prev => ({
+      ...prev,
+      items: prev.items.map(i =>
+        i.id === item.id
+          ? { ...i, completed: !i.completed, completedAt: !i.completed ? new Date() : undefined }
+          : i
+      ),
+    }));
+  };
+
+  // Handle navigating to source message (TODO: implement scrolling)
+  const handleNavigateToMessage = (messageId: string) => {
+    // TODO: Implement message scrolling in MessageList
+    // For now, just close the modal
+    handleCloseActionItems();
+    Alert.alert('Navigation', `Would navigate to message: ${messageId}`);
+  };
+
   // Show loading state
   if (loadingConversation || !conversation) {
     return (
@@ -264,6 +446,8 @@ export const ChatScreen: React.FC = () => {
           currentUserId={user?.uid || ''}
           onBack={handleBack}
           onTitlePress={handleHeaderTap}
+          onSummarize={handleSummarize}
+          onExtractActionItems={handleExtractActionItems}
           isOnline={isOnline}
           lastSeen={lastSeen}
           typingUserIds={typingUsers}
@@ -288,6 +472,33 @@ export const ChatScreen: React.FC = () => {
           onTypingChange={setTyping}
           onImagePick={handleImagePick}
           sending={sending}
+        />
+
+        {/* AI Summary Modal */}
+        <SummaryModal
+          visible={summaryModalVisible}
+          onClose={handleCloseSummary}
+          summary={summaryData.summary}
+          loading={summaryData.loading}
+          error={summaryData.error}
+          messageCount={summaryData.messageCount}
+          cached={summaryData.cached}
+          duration={summaryData.duration}
+        />
+
+        {/* AI Action Items Modal */}
+        <ActionItemsList
+          visible={actionItemsModalVisible}
+          onClose={handleCloseActionItems}
+          actionItems={actionItemsData.items}
+          loading={actionItemsData.loading}
+          error={actionItemsData.error}
+          messageCount={actionItemsData.messageCount}
+          cached={actionItemsData.cached}
+          duration={actionItemsData.duration}
+          currentUserId={user?.uid}
+          onToggleComplete={handleToggleActionItemComplete}
+          onNavigateToMessage={handleNavigateToMessage}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
