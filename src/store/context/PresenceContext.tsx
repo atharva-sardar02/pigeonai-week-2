@@ -55,15 +55,16 @@ export const PresenceProvider: React.FC<PresenceProviderProps> = ({ children }) 
       }
 
       try {
-        // App moved to foreground
-        if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App moved to foreground (from any background/inactive state)
+        if (nextAppState === 'active' && appState.current !== 'active') {
           console.log('🟢 App moved to foreground - setting user online');
           await FirestoreService.updatePresence(userId, true);
         }
 
-        // App moved to background
-        if (appState.current === 'active' && nextAppState.match(/inactive|background/)) {
-          console.log('🔴 App moved to background - setting user offline');
+        // App moved to background or inactive (from active state)
+        // This covers: home button, power button, app switcher, etc.
+        if (appState.current === 'active' && nextAppState !== 'active') {
+          console.log(`🔴 App moved to ${nextAppState} - setting user offline`);
           await FirestoreService.updatePresence(userId, false, new Date());
         }
 
