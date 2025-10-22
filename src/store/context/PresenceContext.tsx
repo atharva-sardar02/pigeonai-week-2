@@ -29,7 +29,7 @@ interface PresenceProviderProps {
 
 export const PresenceProvider: React.FC<PresenceProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  const appState = useRef(AppState.currentState);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
   const hasSetInitialPresence = useRef(false); // Track if we've set initial presence
   const userIdRef = useRef<string | null>(null); // Stable reference to user ID
 
@@ -44,6 +44,10 @@ export const PresenceProvider: React.FC<PresenceProviderProps> = ({ children }) 
    */
   useEffect(() => {
     console.log('📱 PresenceContext: Setting up AppState listener');
+    console.log('📱 Initial AppState:', AppState.currentState);
+    
+    // Initialize with current state
+    appState.current = AppState.currentState;
     
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       const userId = userIdRef.current;
@@ -51,6 +55,7 @@ export const PresenceProvider: React.FC<PresenceProviderProps> = ({ children }) 
       
       if (!userId) {
         console.log('⚠️ No user, skipping presence update');
+        appState.current = nextAppState; // Still update the ref
         return;
       }
 
