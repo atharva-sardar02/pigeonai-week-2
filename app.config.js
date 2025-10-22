@@ -7,6 +7,12 @@ export default {
     icon: './assets/icon.png',
     userInterfaceStyle: 'dark',
     newArchEnabled: true,
+    updates: {
+      url: 'https://u.expo.dev/1df9d352-7f2d-4127-b73c-c12fe1922269',
+    },
+    runtimeVersion: {
+      policy: 'appVersion',
+    },
     plugins: [
       'expo-asset',
       'expo-font',
@@ -34,6 +40,7 @@ export default {
         backgroundColor: '#060C1D',
       },
       package: 'com.pigeonai.app',
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON || './android/app/google-services.json',
       permissions: [
         'RECEIVE_BOOT_COMPLETED',
         'VIBRATE',
@@ -42,7 +49,7 @@ export default {
     },
     extra: {
       eas: {
-        // projectId will be auto-generated on first build
+        projectId: '1df9d352-7f2d-4127-b73c-c12fe1922269',
       },
     },
   },
