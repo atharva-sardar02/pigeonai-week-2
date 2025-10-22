@@ -27,17 +27,30 @@ Notifications.setNotificationHandler({
 export async function requestPermissions(): Promise<boolean> {
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    console.log('📱 Current permission status:', existingStatus);
+    
     let finalStatus = existingStatus;
 
     // If permission not already granted, ask user
     if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
+      console.log('📱 Requesting notification permissions...');
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+        },
+      });
       finalStatus = status;
+      console.log('📱 New permission status:', finalStatus);
     }
 
     if (finalStatus !== 'granted') {
+      console.log('⚠️ Notification permissions not granted');
       return false;
     }
+    
+    console.log('✅ Notification permissions granted');
     
     // Set up notification channel for Android
     if (Platform.OS === 'android') {
@@ -48,11 +61,12 @@ export async function requestPermissions(): Promise<boolean> {
         lightColor: '#3B82F6',
         sound: 'default',
       });
+      console.log('✅ Android notification channel created');
     }
 
     return true;
   } catch (error) {
-    // Silently fail
+    console.error('❌ Error requesting permissions:', error);
     return false;
   }
 }

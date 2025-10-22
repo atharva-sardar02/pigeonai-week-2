@@ -94,19 +94,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('✅ FCM token saved to Firestore successfully!');
         
         // Show success alert in production (temporary for debugging)
-        Alert.alert('Debug', `Token saved: ${token.substring(0, 30)}...`);
+        Alert.alert('✅ Notifications Ready', `Token registered successfully!`);
       } else {
-        console.log('⚠️  No FCM token received (likely Expo Go)');
+        console.log('⚠️  No FCM token received');
         
         // Show failure alert in production (temporary for debugging)
-        Alert.alert('Debug', 'No token received - check permissions');
+        Alert.alert('⚠️ Notifications Disabled', 'Please enable notification permissions in device settings:\n\nSettings > Apps > Pigeon AI > Notifications');
       }
       // If no token (Expo Go), silently continue - local notifications will work
     } catch (error) {
       console.error('❌ Failed to register push notifications:', error);
       
       // Show error alert in production (temporary for debugging)
-      Alert.alert('Debug Error', String(error));
+      Alert.alert('❌ Notification Error', String(error));
       // Silently fail - not critical for app functionality
       // Local notifications will still work in development
     }
