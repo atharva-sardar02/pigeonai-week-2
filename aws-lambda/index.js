@@ -66,11 +66,25 @@ exports.handler = async (event) => {
     const conversation = conversationSnap.data();
     const participants = conversation?.participants || [];
     const senderId = message.senderId;
+    // Check if it's a group: Firestore stores "type": "group" not "isGroup"
+    const isGroupChat = conversation?.type === 'group';
+    const groupName = conversation?.name || 'Group Chat';
+
+    console.log(`🔍 Conversation type: ${isGroupChat ? 'GROUP' : 'DM'}`);
+    console.log(`🔍 Group name: ${groupName}`);
+    console.log(`🔍 Full conversation data:`, JSON.stringify(conversation, null, 2));
 
     // Get sender's profile for display name
     const senderRef = db.collection('users').doc(senderId);
     const senderSnap = await senderRef.get();
     const senderName = senderSnap.exists ? (senderSnap.data()?.displayName || 'Someone') : 'Someone';
+    
+    console.log(`🔍 Sender name: ${senderName}`);
+    
+    // Build notification title based on conversation type
+    const notificationTitle = isGroupChat ? `${groupName} - ${senderName}` : senderName;
+    
+    console.log(`🔍 Final notification title: ${notificationTitle}`);
 
     // Find recipients (all participants except sender)
     const recipientIds = participants.filter(id => id !== senderId);
@@ -125,7 +139,7 @@ exports.handler = async (event) => {
       // Prepare notification payload
       const notificationPayload = {
         notification: {
-          title: senderName,
+          title: notificationTitle,
           body: message.content.length > 100 
             ? message.content.substring(0, 100) + '...' 
             : message.content,
@@ -141,6 +155,10 @@ exports.handler = async (event) => {
           notification: {
             sound: 'default',
             channelId: 'default',
+            // Always show notification, even when app is in foreground
+            visibility: 'public',
+            defaultSound: true,
+            defaultVibrateTimings: true,
           }
         },
         apns: {
@@ -199,7 +217,7 @@ exports.handler = async (event) => {
       const expoMessages = expoTokens.map(token => ({
         to: token,
         sound: 'default',
-        title: senderName,
+        title: notificationTitle,
         body: message.content.length > 100 
           ? message.content.substring(0, 100) + '...' 
           : message.content,

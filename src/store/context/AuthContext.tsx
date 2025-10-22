@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { Alert } from 'react-native';
 import { User as FirebaseUser } from 'firebase/auth';
 import * as authService from '../../services/firebase/authService';
 import * as LocalDatabase from '../../services/database/localDatabase';
@@ -96,24 +95,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('🔔 Saving FCM token to Firestore...');
         await authService.saveDeviceToken(userId, token);
         console.log('✅ FCM token saved to Firestore successfully!');
-        
-        // Show success alert in production (temporary for debugging)
-        Alert.alert('✅ Notifications Ready', `Token registered successfully!\n\nPermission: ${currentStatus}`);
       } else {
         console.log('⚠️  No FCM token received');
-        
-        // Show detailed failure alert
-        Alert.alert(
-          '⚠️ Notifications Disabled', 
-          `Permission Status: ${currentStatus}\n\nIf notifications are enabled in settings but this message appears, try:\n\n1. Uninstall the app\n2. Reinstall\n3. Allow notifications when prompted`
-        );
       }
       // If no token (Expo Go), silently continue - local notifications will work
     } catch (error) {
       console.error('❌ Failed to register push notifications:', error);
-      
-      // Show error alert in production (temporary for debugging)
-      Alert.alert('❌ Notification Error', String(error));
       // Silently fail - not critical for app functionality
       // Local notifications will still work in development
     }
