@@ -26,9 +26,13 @@ A production-quality cross-platform messaging application built with React Nativ
 - **Group Typing** - "John and Sarah are messaging..." for multiple typers
 
 ### ✅ Push Notifications
+- **AWS Lambda Server-Side** - Push notifications handled by AWS Lambda (free!)
+- **Firebase Cloud Messaging** - Native FCM integration for production APK
+- **Group Format** - "Group Name - User Name: message"
+- **DM Format** - "User Name: message"
+- **Works Everywhere** - Foreground, background, and closed states
 - **Global Notifications** - Get notified of new messages anywhere in the app
 - **Missed Messages** - Notified of messages received while offline
-- **Hybrid System** - Local notifications in Expo Go, remote push in EAS Build
 - **Smart Filtering** - No notification spam, only new messages from others
 
 ### ✅ User Experience
@@ -64,7 +68,9 @@ A production-quality cross-platform messaging application built with React Nativ
 ### Backend
 - **Firebase Authentication** - User authentication and sessions
 - **Firebase Firestore** - Real-time database (us-east4 region)
-- **Firebase Cloud Messaging** - Push notifications
+- **Firebase Cloud Messaging** - Push notifications (via AWS Lambda)
+- **AWS Lambda** - Server-side push notification handler (free tier)
+- **API Gateway** - HTTP endpoint to trigger Lambda
 - **Firebase Storage** - Image and media storage (ready)
 - **Firebase Cloud Functions** - Serverless backend (ready for AI features)
 
@@ -191,21 +197,21 @@ firebase init
 firebase deploy --only firestore:rules,firestore:indexes
 ```
 
-### 6. Configure Push Notifications (FCM) - Optional for Expo Go
+### 6. Configure Push Notifications (AWS Lambda + FCM) - Production Only
 
-**⚠️ Important**: Push notifications do **NOT** work in Expo Go (SDK 53+). The app uses **local notifications** in Expo Go for development and testing. To test **remote push notifications**, you must build with EAS Build.
+**⚠️ Important**: Push notifications do **NOT** work in Expo Go (SDK 53+). The app uses **local notifications** in Expo Go for development and testing. To test **remote push notifications**, you must build with EAS Build or Android Studio.
 
 For development in Expo Go, skip to step 7. For production builds with full push notifications:
 
-#### Quick Setup (5 minutes):
+#### Step 1: Firebase Setup (5 minutes)
 
 1. **Register Android app** in Firebase Console:
    - Settings → Project settings → Your apps
    - Click **Add app** → **Android**
-   - Package name: `com.anonymous.pigeonaweek2` (or your package name from `app.config.js`)
+   - Package name: `com.pigeonai.app` (or your package name from `app.config.js`)
    - Click **Register app**
    - **Download `google-services.json`**
-   - Place in: `android/app/google-services.json`
+   - Place in project root: `./google-services.json` (not `android/app/`)
 
 2. **Enable FCM API** in Google Cloud Console:
    - Go to [Google Cloud Console](https://console.cloud.google.com/)
@@ -213,19 +219,70 @@ For development in Expo Go, skip to step 7. For production builds with full push
    - Search: "Firebase Cloud Messaging API"
    - Click **Enable**
 
-3. **Build with EAS** to test notifications:
-   ```bash
-   npm install -g eas-cli
-   eas login
-   eas build:configure
-   eas build --profile preview --platform android
-   ```
+3. **Get Firebase Admin SDK credentials**:
+   - Firebase Console → Project settings → Service accounts
+   - Click "Generate new private key"
+   - Save as `serviceAccountKey.json` (keep secure, don't commit!)
 
-**📚 Detailed guides**:
-- Quick: [`docs/FCM_QUICKSTART.md`](docs/FCM_QUICKSTART.md)
-- Full: [`docs/FCM_SETUP_GUIDE.md`](docs/FCM_SETUP_GUIDE.md)
-- Checklist: [`docs/FCM_CHECKLIST.md`](docs/FCM_CHECKLIST.md)
-- Hybrid System: [`docs/HYBRID_NOTIFICATIONS.md`](docs/HYBRID_NOTIFICATIONS.md)
+#### Step 2: AWS Lambda Setup (10 minutes)
+
+1. **Create Lambda function** in AWS Console:
+   - Service: Lambda
+   - Create function → Author from scratch
+   - Name: `pigeonai-push-notifications`
+   - Runtime: Node.js 22.x
+   - Create function
+
+2. **Set environment variables** in Lambda:
+   - Configuration → Environment variables
+   - Add Firebase credentials from `serviceAccountKey.json`:
+     - `FIREBASE_PROJECT_ID`
+     - `FIREBASE_PRIVATE_KEY`
+     - `FIREBASE_CLIENT_EMAIL`
+     - `FIREBASE_DATABASE_URL`
+
+3. **Upload Lambda code**:
+   ```bash
+   cd aws-lambda
+   npm install
+   # Windows PowerShell:
+   Compress-Archive -Path index.js,package.json,package-lock.json,node_modules -DestinationPath function.zip -Force
+   # Mac/Linux:
+   zip -r function.zip index.js package.json package-lock.json node_modules
+   ```
+   - Upload `function.zip` to Lambda (Actions → Upload from → .zip file)
+
+4. **Create API Gateway**:
+   - API Gateway → Create API → HTTP API
+   - Add route: POST `/send-notification`
+   - Integration: Lambda function (select your function)
+   - Deploy
+   - Copy the Invoke URL
+
+5. **Add Lambda URL to your app**:
+   - Add to `.env`:
+     ```
+     EXPO_PUBLIC_LAMBDA_NOTIFICATION_URL=https://xxxxx.execute-api.us-east-1.amazonaws.com
+     ```
+
+**📚 Detailed guide**: [`docs/AWS_LAMBDA_SETUP.md`](docs/AWS_LAMBDA_SETUP.md)
+
+#### Step 3: Build APK
+
+**Option A: Android Studio (Faster):**
+```powershell
+cd android
+.\gradlew assembleRelease
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+**Option B: EAS Build (Cloud):**
+```bash
+npm install -g eas-cli
+eas login
+eas build:configure
+eas build --profile preview --platform android
+```
 
 **For iOS**: See [`docs/FCM_SETUP_GUIDE.md`](docs/FCM_SETUP_GUIDE.md) (requires Apple Developer account - $99/year)
 
@@ -324,18 +381,27 @@ pigeonai-week-2/
 │   ├── types/                # TypeScript type definitions
 │   └── assets/               # Images, fonts, app icon
 ├── docs/                     # Documentation
+│   ├── AWS_LAMBDA_SETUP.md   # AWS Lambda setup guide
+│   ├── NOTIFICATION_SYSTEM_COMPLETE.md # Notification architecture
 │   ├── FCM_SETUP_GUIDE.md    # Comprehensive FCM guide
 │   ├── FCM_QUICKSTART.md     # Quick FCM setup
 │   ├── HYBRID_NOTIFICATIONS.md # Hybrid notification system
 │   └── ...                   # More detailed guides
+├── aws-lambda/              # AWS Lambda function
+│   ├── index.js             # Lambda handler (FCM + Expo Push)
+│   ├── package.json         # Lambda dependencies
+│   └── function.zip         # Deployment package
 ├── firebase/                 # Firebase configuration
 │   ├── firestore.rules       # Firestore security rules
 │   └── firestore.indexes.json # Firestore indexes
-├── android/                  # Android native files (for EAS Build)
+├── android/                  # Android native files
+│   ├── gradle.properties    # Gradle configuration (hermesEnabled)
+│   └── local.properties     # SDK path (local builds)
 ├── ios/                      # iOS native files (for EAS Build)
 ├── memory-bank/              # Project memory (for AI assistant context)
 ├── App.tsx                   # Main app entry point
 ├── app.config.js             # Expo configuration
+├── google-services.json      # Firebase Android config (in root for EAS)
 ├── eas.json                  # EAS Build configuration
 ├── package.json              # Dependencies
 ├── tsconfig.json             # TypeScript configuration
@@ -499,7 +565,9 @@ EXPO_PUBLIC_FIREBASE_APP_ID
 - Just share the QR code!
 - Users with Expo Go can scan and use immediately
 
-### For Production (EAS Build)
+### For Production - Two Options
+
+#### Option 1: EAS Build (Cloud - Easiest)
 
 **Android APK:**
 ```bash
@@ -509,13 +577,44 @@ eas build:configure
 eas build --profile preview --platform android
 ```
 
+Wait 10-15 minutes for build to complete, then download APK and install on device.
+
 **iOS (requires Apple Developer account - $99/year):**
 ```bash
 eas build --profile preview --platform ios
 eas submit --platform ios  # Submit to TestFlight
 ```
 
-**Full documentation**: https://docs.expo.dev/build/introduction/
+#### Option 2: Local Android Studio Build (Faster for Testing)
+
+**Prerequisites:**
+- Android Studio installed
+- Android SDK configured
+- 8GB+ RAM recommended
+
+**Build Steps:**
+```powershell
+# Navigate to android folder
+cd android
+
+# Build release APK
+.\gradlew assembleRelease
+
+# APK location: 
+# android/app/build/outputs/apk/release/app-release.apk
+```
+
+**Install on device:**
+```powershell
+# Via ADB (USB or WiFi)
+adb install -r android/app/build/outputs/apk/release/app-release.apk
+
+# Or transfer APK via WhatsApp/email and install manually
+```
+
+**Full documentation**: 
+- EAS Build: https://docs.expo.dev/build/introduction/
+- AWS Lambda Setup: `docs/AWS_LAMBDA_SETUP.md`
 
 ## 🎯 Roadmap
 
@@ -529,7 +628,9 @@ eas submit --platform ios  # Submit to TestFlight
 - [x] Read receipts (real-time)
 - [x] Online/offline status
 - [x] Typing indicators
-- [x] Push notifications (hybrid system)
+- [x] Push notifications (AWS Lambda + FCM)
+- [x] Production APK build (Android Studio)
+- [x] Server-side notification system
 - [x] Group creation and management
 - [x] Group details screen
 - [x] Dark mode UI
@@ -559,10 +660,12 @@ eas submit --platform ios  # Submit to TestFlight
 ## 📚 Documentation
 
 - **Setup Guides**:
+  - [AWS Lambda Setup](docs/AWS_LAMBDA_SETUP.md) ⭐ NEW
   - [FCM Quick Start](docs/FCM_QUICKSTART.md)
   - [FCM Full Setup Guide](docs/FCM_SETUP_GUIDE.md)
   - [FCM Checklist](docs/FCM_CHECKLIST.md)
 - **Architecture**:
+  - [Notification System Complete](docs/NOTIFICATION_SYSTEM_COMPLETE.md) ⭐ NEW
   - [Hybrid Notification System](docs/HYBRID_NOTIFICATIONS.md)
   - [Push Notifications Overview](docs/PUSH_NOTIFICATIONS.md)
   - [Background Notifications](docs/BACKGROUND_NOTIFICATIONS.md)
@@ -581,6 +684,8 @@ eas submit --platform ios  # Submit to TestFlight
 - ✅ **Thread-safe SQLite** - Operation queue prevents concurrency errors
 - ✅ **Real-time updates** - Presence, typing, and read receipts update live
 - ✅ **Professional UI** - Dark mode theme with polished design
+- ✅ **Production-ready APK** - Built and tested on physical devices
+- ✅ **Free push notification system** - AWS Lambda + Firebase Spark (no Blaze plan needed)
 - ✅ **Comprehensive docs** - Detailed guides for all major features
 
 ## 📄 License

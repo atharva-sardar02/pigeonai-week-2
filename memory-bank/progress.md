@@ -1,29 +1,31 @@
 # Progress: Pigeon AI
 
 **Project Start**: October 20, 2025  
-**Current Sprint**: MVP (24 hours+)  
-**Status**: 🟢 7 PRs Complete + UI Enhancements (Project Setup, Auth, Data Layer, Chat UI, Presence & Typing, Group Chat, Push Notifications, UI Polish)
+**Current Sprint**: Phase 2 - AI Features & Rubric Compliance  
+**Status**: 🟢 MVP Complete (7 PRs) + Production Deployment + Phase 2 Planning Complete
 
 ---
 
 ## What's Complete ✅
 
-### Planning & Documentation (100%)
+### Phase 1: MVP (100% Complete)
+
+#### Planning & Documentation (100%)
 - [x] Requirements document reviewed and understood
 - [x] Product Requirements Document (PRD) created
-- [x] PRD Updated based on user feedback
+- [x] PRD Updated for Phase 2 (October 22)
 - [x] Memory Bank initialized and updated (all 6 core files)
 - [x] .cursor/rules directory created for project intelligence
-- [x] Task List created (TASK_LIST.md)
+- [x] Task List created (TASK_LIST.md) - Updated for Phase 2
 - [x] Comprehensive documentation for all major features
 
-### Decisions Finalized
+#### Decisions Finalized
 - [x] Platform chosen: React Native + Expo
 - [x] Backend selected: Firebase (Firestore, Auth, Storage, Cloud Messaging)
-- [x] Deployment: Expo Go (QR code sharing) + EAS Build
-- [x] Persona selection: DEFERRED to post-MVP
-- [x] AI features: NOT in MVP (will implement after messaging infrastructure is solid)
-- [x] Project structure: 12 PRs covering complete MVP
+- [x] Deployment: Expo Go (QR code sharing) + EAS Build + Production APK
+- [x] **Persona selected**: Remote Team Professional (October 22) ✅
+- [x] AI features: 6 features planned (5 required + 1 advanced)
+- [x] Project structure: 25 PRs total (12 MVP + 13 Phase 2)
 
 ### PR #1: Project Setup & Configuration (COMPLETE ✅)
 - [x] Expo SDK 54 project initialized
@@ -121,7 +123,7 @@
 - [x] Task 9.15: Group Admin Management
 - [x] Task 9.16: Manual Testing - Group Chat
 
-### PR #10: Push Notifications (COMPLETE ✅)
+### PR #10: Push Notifications (COMPLETE ✅) + Production Deployment
 - [x] Task 10.1: Configure Firebase Cloud Messaging
   - [x] Created comprehensive FCM documentation
   - [x] Created `android/` and `ios/` directories with READMEs
@@ -132,18 +134,41 @@
 - [x] Task 10.4: Request Notification Permissions
 - [x] Task 10.5: Register Device for Push Notifications
 - [x] Task 10.6: Save Device Token to Firestore
-- [x] Task 10.7: Implement In-App Notification Handler
+- [x] Task 10.7: Implement In-App Notification Handler (removed banner, kept system notifications)
 - [x] Task 10.8: Implement Notification Navigation
-- [x] Task 10.9: Send Push Notifications on New Messages
+- [x] Task 10.9: Send Push Notifications on New Messages (via AWS Lambda)
 - [x] Task 10.10: Test Push Notifications
 - [x] Task 10.11: Update Firestore Rules for FCM Tokens
-- [x] **Hybrid Notification System**: Local for Expo Go, Remote for EAS Build
+- [x] Task 10.13: Manual Test in Production APK ✅ COMPLETE
+- [x] **AWS Lambda Server-Side System**: 
+  - [x] Created Lambda function with Firebase Admin SDK
+  - [x] API Gateway configured for webhook
+  - [x] FCM + Expo Push Token support
+  - [x] Group notification format: "Group Name - User Name"
+  - [x] DM notification format: "User Name: message"
+  - [x] Works in foreground, background, and closed states
+  - [x] Automatic invalid token cleanup
+- [x] **Production APK Build**:
+  - [x] Android Studio Gradle build configured
+  - [x] Fixed `hermesEnabled` and `gradle.properties`
+  - [x] Moved `google-services.json` to root for EAS
+  - [x] Installed `expo-device` for reliable device detection
+  - [x] FCM tokens working in production APK
+  - [x] APK tested on physical devices via ADB
+- [x] **Notification System Improvements**:
+  - [x] Removed in-app banner (system notifications only)
+  - [x] Fixed notification handler for OS-level notifications
+  - [x] Removed popup alerts on token registration
+  - [x] Fixed group detection: `type === 'group'`
+- [x] **Presence System Enhancements**:
+  - [x] Refactored with `isOnlineRef` for reliable state tracking
+  - [x] Fixed home/power button detection
+  - [x] Added `Promise.race` timeout for offline updates
+- [x] **Hybrid Notification System**: Local for Expo Go, Remote for production
 - [x] **Global Notification Listener**: Notifications work app-wide, not just in chat
 - [x] **Missed Message Notifications**: Notifies for messages received while offline
-- [x] **EAS Build Configuration**: Ready for production builds
 - [x] **Clean Console Output**: Removed all debug logs
 - [ ] Task 10.12: Unit Tests (deferred)
-- [ ] Task 10.13: Manual Test in EAS Build
 
 ### UI Enhancements (COMPLETE ✅)
 - [x] Logo added to ConversationListScreen header
@@ -211,17 +236,54 @@
 - [ ] Demo video creation
 - [ ] Final documentation polish
 
-### Phase 2: AI Features (Post-MVP)
+### Phase 2: AI Features & Rubric Compliance (Planning Complete)
 
-**Not Started - Deferred to Post-MVP**
-- [ ] AI Chat Interface
-- [ ] Cloud Functions Setup
-- [ ] Feature 1: Thread Summarization
-- [ ] Feature 2: Action Item Extraction
-- [ ] Feature 3: Smart Semantic Search
-- [ ] Feature 4: Priority Message Detection
-- [ ] Feature 5: Decision Tracking
-- [ ] Feature 6: Proactive Scheduling Assistant (Advanced)
+**PR #13: Persona Selection & Brainlift Document (COMPLETE ✅)**
+- [x] Persona selected: Remote Team Professional
+- [x] Brainlift document created (`docs/PERSONA_BRAINLIFT.md`)
+  - 1-page document with persona profile (Alex Chen)
+  - 5 pain points: Information overload, missed action items, lost decisions, priority confusion, scheduling chaos
+  - Feature-pain point mapping for all 5 AI features
+  - Technical decisions documented (GPT-4, Cloud Functions, RAG, structured outputs)
+  - Success metrics defined (>90% accuracy, <2s response time)
+- [x] Implementation guide created (`docs/REMOTE_TEAM_PROFESSIONAL_IMPLEMENTATION.md`, 60 pages)
+  - Complete specifications for all 6 AI features
+  - Copy-paste ready GPT-4 prompts with examples
+  - Expected inputs/outputs for testing
+  - Backend architecture (Cloud Functions + OpenAI)
+  - Frontend UI specifications
+  - RAG pipeline architecture (embeddings + cosine similarity)
+  - Multi-step scheduling agent (LangChain with 5 tools)
+  - Testing strategy (>90% accuracy validation)
+  - Demo video script (5 minutes)
+  - OpenAI API cost estimates (~$50-100 for MVP)
+- [x] Persona selection guide created (`docs/PERSONA_SELECTION_GUIDE.md`)
+  - Comparison of all 4 personas with scoring
+  - Implementation difficulty ranking (easiest → hardest)
+  - Justification for Remote Team Professional choice
+- [x] Phase 2 summary created (`docs/PHASE_2_SETUP_COMPLETE.md`)
+- [x] TASK_LIST.md updated with all Phase 2 PRs (#13-#25)
+- [x] PRD.md updated with Phase 2 timeline and priorities
+
+**Next PRs (Ready to Implement)**:
+- [ ] PR #14: Image Sharing UI (3-4 hours) - Optional
+- [ ] PR #15: Cloud Functions Setup (2-3 hours) - **START HERE** - Required for all AI features
+- [ ] PR #16: Thread Summarization (3-4 hours)
+- [ ] PR #17: Action Item Extraction (3-4 hours)
+- [ ] PR #18: Semantic Search + RAG (3-4 hours)
+- [ ] PR #19: Priority Detection (3 hours)
+- [ ] PR #20: Decision Tracking (3-4 hours)
+- [ ] PR #21: Multi-Step Scheduling Agent (5-6 hours)
+- [ ] PR #22: RAG Documentation (2-3 hours)
+- [ ] PR #23: Testing & QA (4-5 hours)
+- [ ] PR #24: UI Polish (2-3 hours)
+- [ ] PR #25: Production APK + Demo Video + Submission (3-4 hours)
+
+---
+
+## What's In Progress 🟡
+
+**Phase 2 Implementation**: Ready to start with PR #15 (Cloud Functions setup)
 
 ---
 
@@ -308,7 +370,12 @@
 - [x] EAS Build configured
 
 ### Production Environment
-- [ ] EAS Build APK created (pending Task 10.13)
+- [x] Production APK built via Android Studio Gradle ✅
+- [x] FCM tokens working in production APK ✅
+- [x] AWS Lambda deployed for push notifications ✅
+- [x] API Gateway configured and tested ✅
+- [x] APK tested on physical devices ✅
+- [ ] EAS Build APK created (alternative method)
 - [ ] iOS build (future)
 - [ ] Firebase project: pigeonai-prod (future)
 - [ ] Public TestFlight link (future)
@@ -329,6 +396,7 @@
 | Presence & Typing (PR #5) | 2 hours | 3 hours | ✅ Complete |
 | Group Chat (PR #9) | 3-4 hours | 4 hours | ✅ Complete |
 | Push Notifications (PR #10) | 2-3 hours | 5 hours | ✅ Complete |
+| AWS Lambda + Production APK | N/A | 4 hours | ✅ Complete |
 | UI Enhancements | N/A | 2 hours | ✅ Complete |
 | Read Receipts (PR #6) | 2 hours | Partial | 🟡 In Progress |
 | Image Sharing (PR #7) | 2-3 hours | - | 🔜 Pending |
@@ -336,8 +404,8 @@
 | UI Polish (PR #11) | 2-3 hours | Partial | 🟡 In Progress |
 | Testing & Fixes (PR #12) | 2-3 hours | Ongoing | 🟡 In Progress |
 
-**Total Time Spent**: ~30 hours  
-**MVP Status**: Core features complete, polish and testing remaining
+**Total Time Spent**: ~34 hours  
+**MVP Status**: Core features complete + Production APK deployed, polish and testing remaining
 
 ---
 
@@ -355,12 +423,30 @@
 
 ## Next Session Priorities 🎯
 
-1. **Complete README.md** with comprehensive setup guide
-2. **Image Sharing (PR #7)**: Implement upload and display
-3. **UI Polish (PR #11)**: Error boundaries, loading states
-4. **Testing (PR #12)**: Manual testing scenarios, demo video
-5. **EAS Build (Task 10.13)**: Build and test production APK
-6. **AI Features**: Begin implementation (post-MVP)
+**Phase 2 Ready to Start**: All documentation complete, persona selected, prompts ready
+
+**Implementation Order (45-55 hours)**:
+1. ✅ **PR #13**: Review brainlift doc (1 hour) - Document already created
+2. **PR #15**: Cloud Functions Setup (2-3 hours) - **START HERE** - Required for all AI
+3. **PR #16**: Thread Summarization (3-4 hours) - Easiest AI feature
+4. **PR #17**: Action Item Extraction (3-4 hours) - Structured output
+5. **PR #18**: Semantic Search + RAG (3-4 hours) - Vector embeddings
+6. **PR #19**: Priority Detection (3 hours) - Simple classification
+7. **PR #20**: Decision Tracking (3-4 hours) - Similar to action items
+8. **PR #21**: Multi-Step Scheduling Agent (5-6 hours) - LangChain
+9. **PR #22**: RAG Documentation (2-3 hours) - Architecture docs
+10. **PR #23**: Testing & QA (4-5 hours) - Accuracy validation
+11. **PR #24**: UI Polish (2-3 hours) - Professional design
+12. **PR #25**: Production APK + Demo Video + Submission (3-4 hours each)
+
+**Target Score**: 90-95/100 points
+
+**Key Resources**:
+- `docs/PERSONA_BRAINLIFT.md` - Submit for PR #13
+- `docs/REMOTE_TEAM_PROFESSIONAL_IMPLEMENTATION.md` - Implementation bible (60 pages)
+- `docs/PERSONA_SELECTION_GUIDE.md` - Context for persona choice
+- `TASK_LIST.md` - Track 140+ tasks
+- `PRD.md` - Phase 2 roadmap
 
 ---
 
@@ -375,12 +461,15 @@
 **Major Achievements**:
 - ✅ Real-time messaging with zero message loss
 - ✅ Complete group chat functionality
-- ✅ Push notifications with hybrid system (Expo Go + EAS Build)
+- ✅ Push notifications with AWS Lambda + FCM (free tier!)
+- ✅ Production APK built and tested on physical devices
+- ✅ Server-side notification system (Lambda + API Gateway)
 - ✅ Presence and typing indicators
 - ✅ Professional UI with dark mode
 - ✅ All major bugs fixed
-- ✅ Comprehensive documentation
+- ✅ Comprehensive documentation (AWS Lambda, FCM, notifications)
+- ✅ **Phase 2 Planning Complete**: Persona selected, all AI features documented, prompts ready
 
 ---
 
-**Last Updated**: October 21, 2025, 11:00 PM CT
+**Last Updated**: October 22, 2025, 12:00 AM IST (Midnight) - AWS Infrastructure Planning Complete

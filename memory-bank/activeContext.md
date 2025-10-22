@@ -1,14 +1,85 @@
 # Active Context: Pigeon AI
 
-**Last Updated**: October 21, 2025 - Multiple PRs Complete ✅  
-**Current Phase**: Development - Push Notifications & UI Enhancements Complete  
-**Status**: ✅ Auth Complete, ✅ Data Layer Complete, ✅ Chat UI Complete, ✅ Presence Complete, ✅ Group Chat Complete, ✅ Push Notifications Complete, ✅ UI Enhancements Complete
+**Last Updated**: October 22, 2025 - Phase 2 Planning Complete ✅  
+**Current Phase**: Phase 2 - AI Features & Rubric Compliance  
+**Status**: ✅ MVP Complete, ✅ Production APK Deployed, ✅ Persona Selected (Remote Team Professional), ✅ Phase 2 Fully Documented
 
 ---
 
 ## Current Focus
 
-### Completed Today (October 21, 2025)
+### Completed Today (October 22, 2025)
+
+#### **Phase 2 Planning & Persona Selection**
+- ✅ **Persona Selected**: Remote Team Professional
+  - Alex Chen, Senior Software Engineer on distributed team (PST, GMT, IST)
+  - Pain points: Information overload, missed action items, lost decisions, priority confusion, scheduling chaos
+  - Chosen for easiest implementation (40-45 hours), highest rubric score potential (34/35)
+- ✅ **Infrastructure Strategy Finalized**: Hybrid Firebase + AWS
+  - Firebase (Spark Plan - Free): Auth, Firestore, FCM, Storage
+  - AWS (Unlimited Plan): Lambda (AI processing), OpenSearch (vectors), ElastiCache (caching), API Gateway
+  - Rationale: Firebase excels at real-time, AWS excels at compute. Best performance, zero cost concerns
+- ✅ **Brainlift Document Created**: `docs/PERSONA_BRAINLIFT.md` (rubric requirement)
+  - 1-page document with persona profile, pain points, feature mapping, technical decisions
+  - Ready to submit for PR #13
+- ✅ **Implementation Guide Created**: `docs/REMOTE_TEAM_PROFESSIONAL_IMPLEMENTATION.md` (60 pages)
+  - Complete specifications for all 6 AI features
+  - Copy-paste ready GPT-4 prompts with examples
+  - Expected inputs/outputs for testing
+  - **Updated for AWS Lambda** (not Firebase Cloud Functions)
+  - AWS OpenSearch for RAG pipeline (vector embeddings)
+  - ElastiCache Redis for caching AI responses
+  - Frontend UI specifications
+  - Testing strategy (>90% accuracy)
+  - Demo video script
+- ✅ **Persona Selection Guide**: `docs/PERSONA_SELECTION_GUIDE.md`
+  - Comparison of all 4 personas
+  - Implementation difficulty ranking
+  - Justification for Remote Team Professional choice
+- ✅ **Phase 2 Summary**: `docs/PHASE_2_SETUP_COMPLETE.md`
+  - What's ready, what's next, timeline breakdown
+- ✅ **TASK_LIST.md Updated**: All PRs #13-#25 with detailed tasks
+- ✅ **PRD.md Updated**: Phase 2 section complete with timeline
+- ✅ **techContext.md Updated**: AWS infrastructure added to tech stack
+
+### Completed Earlier Today
+
+#### **Production APK Build & Deployment**
+- ✅ Built production APK using Android Studio Gradle
+- ✅ Fixed Android build configuration (`hermesEnabled`, `gradle.properties`)
+- ✅ Configured Firebase for APK (moved `google-services.json` to root)
+- ✅ Installed `expo-device` for reliable device detection
+- ✅ FCM token generation working in production APK
+- ✅ APK installable on physical devices via ADB or WhatsApp transfer
+- ✅ Removed deprecated dependencies (`react-native-gifted-chat`, `react-native-reanimated`)
+
+#### **AWS Lambda Push Notification System**
+- ✅ Created AWS Lambda function for server-side push notifications
+- ✅ Integrated Firebase Admin SDK in Lambda
+- ✅ Configured API Gateway to trigger Lambda on message send
+- ✅ Lambda reads FCM tokens from Firestore and sends push notifications
+- ✅ Supports both FCM tokens (native) and Expo Push Tokens (fallback)
+- ✅ Removes invalid tokens automatically
+- ✅ **Group notification format**: "Group Name - User Name: message"
+- ✅ **DM notification format**: "User Name: message"
+- ✅ Lambda deployed with `function.zip` (includes node_modules)
+- ✅ Environment variables configured in AWS Lambda (Firebase credentials)
+
+#### **Notification System Improvements**
+- ✅ Removed in-app notification banner (only system notifications now)
+- ✅ System notifications show in tray when app is open, background, or closed
+- ✅ Fixed notification handler to allow OS-level notifications
+- ✅ Removed popup alerts on token registration (silent background operation)
+- ✅ Fixed group detection: `conversation?.type === 'group'` instead of `isGroup`
+- ✅ Added debug logging to Lambda for troubleshooting
+
+#### **Presence System Enhancements**
+- ✅ Refactored presence detection with `isOnlineRef` for reliable state tracking
+- ✅ Fixed home button/power button detection
+- ✅ Added `Promise.race` with timeout for offline updates before app suspension
+- ✅ Improved AppState listener logic
+
+### Completed Previously (October 21, 2025)
 
 #### **Push Notifications (PR #10 - COMPLETE ✅)**
 - ✅ Task 10.1: FCM Configuration complete
@@ -43,16 +114,26 @@
 - ✅ **PR #10 COMPLETE**: Push Notifications (Tasks 10.1-10.11, Hybrid System)
 - ✅ **UI Enhancements COMPLETE**: Logo, FAB menu, Group Details, Keyboard handling, Timestamp improvements
 
-### Next Steps
+### Next Steps - Phase 2 Implementation
 
-- Tasks 5.11-5.12: Unit Tests (deferred)
-- Task 10.12: Unit Tests for Notification Service (deferred)
-- Task 10.13: Manual Test Notifications in EAS Build
-- PR #6: Read Receipts & Message States (partially implemented)
-- PR #7: Image Sharing (future)
-- PR #8: Offline Support (partially implemented with local DB and queue)
-- PR #11: UI Polish & Error Handling (partially done)
-- PR #12: Testing, Bug Fixes & Documentation
+**Ready to Start**: All documentation complete, prompts ready, persona selected
+
+**Implementation Order (45-55 hours)**:
+1. **PR #13**: Review brainlift doc (1 hour) - ✅ Document already created
+2. **PR #14**: Image Sharing UI (3-4 hours) - Optional, can defer
+3. **PR #15**: Cloud Functions Setup (2-3 hours) - **START HERE** - Required for all AI features
+4. **PR #16**: Thread Summarization (3-4 hours) - Easiest AI feature
+5. **PR #17**: Action Item Extraction (3-4 hours) - Structured output
+6. **PR #18**: Semantic Search + RAG (3-4 hours) - Vector embeddings
+7. **PR #19**: Priority Detection (3 hours) - Simple classification
+8. **PR #20**: Decision Tracking (3-4 hours) - Similar to action items
+9. **PR #21**: Multi-Step Scheduling Agent (5-6 hours) - LangChain
+10. **PR #22**: RAG Documentation (2-3 hours) - Architecture docs
+11. **PR #23**: Testing & QA (4-5 hours) - Accuracy validation
+12. **PR #24**: UI Polish (2-3 hours) - Professional design
+13. **PR #25**: Production APK + Demo Video + Submission (3-4 hours each)
+
+**Target Score**: 90-95/100 points
 
 ---
 
@@ -84,11 +165,25 @@
   - "(You)" indicator
   - Leave Group button
 
-### Push Notifications (PR #10)
-- **Hybrid System**:
-  - Local notifications in Expo Go for development
-  - Remote push notifications in EAS Build for production
-  - Environment detection (`Constants.appOwnership`)
+### Push Notifications (PR #10) - AWS Lambda System
+- **Production Architecture**:
+  - AWS Lambda handles all push notifications server-side
+  - API Gateway exposes Lambda endpoint for React Native app
+  - Lambda uses Firebase Admin SDK to send FCM notifications
+  - React Native app calls Lambda after sending message to Firestore
+  - Avoids Firebase Cloud Functions (requires Blaze plan)
+  - Free solution using AWS Lambda + Firebase Spark plan
+- **Token Management**:
+  - FCM tokens generated in APK using `expo-notifications`
+  - Fallback to Expo Push Tokens if FCM unavailable
+  - Tokens stored in Firestore (`users/{userId}/fcmTokens`)
+  - Lambda reads tokens and sends to all recipients
+  - Invalid tokens automatically removed by Lambda
+- **Notification Format**:
+  - **DM**: "User Name: message"
+  - **Group**: "Group Name - User Name: message"
+  - Truncates messages longer than 100 characters
+  - Works in foreground, background, and closed states
 - **Global Notification Listener**:
   - Single listener for all conversations
   - Tracks last seen message per conversation
@@ -98,16 +193,10 @@
   - Checks for messages received while offline
   - Notifies when user comes online
   - Prevents spam on first login/reload
-- **FCM Integration**:
-  - Firebase Cloud Messaging configured
-  - Device token registration
-  - Firestore security rules for FCM tokens
-  - Clean error handling (silent in Expo Go)
 - **Documentation**:
-  - Comprehensive guides for FCM setup
-  - Hybrid notification system explained
-  - Testing without build instructions
-  - Migration path to direct FCM documented
+  - AWS Lambda setup guide (`docs/AWS_LAMBDA_SETUP.md`)
+  - Notification system explained (`docs/NOTIFICATION_SYSTEM_COMPLETE.md`)
+  - Hybrid local/remote system for development
 
 ### Performance Optimizations
 - **Zero Duplicate Messages**: Advanced deduplication with `useRef` tracking
@@ -198,18 +287,26 @@
 
 ## Key Files Modified Today
 
-### Notifications
-- `App.tsx`: Added `GlobalNotificationListener`, `LogBox.ignoreLogs()`, console filters
-- `src/hooks/useGlobalNotifications.ts`: Global notification listener with missed message handling
-- `src/components/GlobalNotificationListener.tsx`: Wrapper component for global notifications
-- `src/services/notifications/notificationService.ts`: Complete notification service (cleaned logs)
-- `src/services/notifications/localNotificationHelper.ts`: Local notification helpers
-- `src/services/firebase/authService.ts`: Device token management
-- `src/store/context/AuthContext.tsx`: Silent push registration on login
-- `src/components/common/NotificationBanner.tsx`: In-app notification banner
-- `app.config.js`: FCM configuration, notification permissions
-- `eas.json`: EAS Build configuration
-- `firebase/firestore.rules`: Security rules for FCM tokens
+### AWS Lambda & Push Notifications
+- `aws-lambda/index.js`: Complete Lambda function with Firebase Admin SDK, FCM + Expo Push support
+- `aws-lambda/package.json`: Lambda dependencies (firebase-admin, axios)
+- `aws-lambda/function.zip`: Deployment package with node_modules
+- `src/services/notifications/lambdaNotificationService.ts`: React Native service to call Lambda
+- `src/hooks/useMessages.ts`: Calls Lambda after sending message to Firestore
+- `App.tsx`: Removed NotificationBanner component, cleaned up banner state
+- `src/services/notifications/notificationService.ts`: Fixed notification handler for system notifications
+- `src/store/context/AuthContext.tsx`: Removed popup alerts, silent token registration
+
+### Android Build Configuration
+- `android/gradle.properties`: Added `hermesEnabled=true`, increased JVM memory
+- `android/local.properties`: Added SDK path for local builds
+- `app.config.js`: Moved `googleServicesFile` to root path
+- `google-services.json`: Moved from `android/app/` to root for EAS Build
+- `package.json`: Removed deprecated dependencies, added `expo-device`
+
+### Documentation
+- `docs/AWS_LAMBDA_SETUP.md`: Complete AWS Lambda setup guide
+- `docs/NOTIFICATION_SYSTEM_COMPLETE.md`: Hybrid notification system explanation
 
 ### UI Enhancements
 - `src/screens/main/ConversationListScreen.tsx`: Logo, expandable FAB menu
@@ -301,18 +398,21 @@
 ✅ "(You)" indicator beside current user  
 
 ### Push Notifications
-✅ Local notifications in Expo Go (development)  
-✅ Remote push notifications in EAS Build (production)  
+✅ AWS Lambda server-side push notification system  
+✅ Firebase Admin SDK integration  
+✅ API Gateway webhook to trigger Lambda  
+✅ FCM token generation in production APK  
+✅ Expo Push Token fallback  
+✅ Automatic invalid token cleanup  
+✅ Group notifications: "Group Name - User Name"  
+✅ DM notifications: "User Name: message"  
+✅ Works in foreground, background, and closed states  
 ✅ Global notification listener (works anywhere in app)  
-✅ Notifications for new messages from others  
 ✅ Missed message notifications when coming online  
 ✅ No notification spam on first login/reload  
-✅ Device token registration and management  
-✅ FCM integration complete  
-✅ Firestore security rules for tokens  
-✅ Clean error handling (silent in Expo Go)  
-✅ In-app notification banner (foreground)  
-✅ Navigation on notification tap
+✅ System notifications only (no in-app banner)  
+✅ Navigation on notification tap  
+✅ Production APK deployed and tested
 
 ### UI/UX
 ✅ Dark mode theme throughout  
@@ -418,4 +518,4 @@
 
 ---
 
-**Last Updated**: October 21, 2025, 11:00 PM CT
+**Last Updated**: October 22, 2025, 12:00 AM IST (Midnight) - AWS Infrastructure Planning Complete

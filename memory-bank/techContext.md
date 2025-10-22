@@ -68,7 +68,13 @@
 
 ### Backend Infrastructure
 
-**Backend-as-a-Service**: Firebase
+**Backend-as-a-Service**: Firebase (Spark Plan - Free)  
+**Serverless Compute**: AWS Lambda (Unlimited Plan)  
+**API Gateway**: AWS API Gateway
+
+**Infrastructure Split Strategy**:
+- **Firebase (Free Tier)**: Authentication, Firestore Database, Cloud Messaging, Storage
+- **AWS (Unlimited)**: All AI processing, Vector storage, Caching, Rate limiting
 
 **Firebase Services Used**:
 
@@ -84,79 +90,126 @@
    - Real-time listeners (WebSocket under the hood)
    - Horizontal scalability
    - Collections: `users`, `conversations`, `messages`, `groups`
+   - Used for: Message storage, user data, conversation metadata
 
-3. **Firebase Cloud Functions**
-   - Node.js serverless functions
-   - AI API calls (keeps API keys secure)
-   - Push notification triggers
-   - Message processing pipelines
-   - Runs on Google Cloud infrastructure
-
-4. **Firebase Cloud Messaging (FCM)**
+3. **Firebase Cloud Messaging (FCM)**
    - Push notifications
    - Abstracts Apple Push Notification service (APNs)
    - Background message handling
+   - Integrated with AWS Lambda (server-side push)
 
-5. **Firebase Storage**
+4. **Firebase Storage**
    - Image and media file storage
    - CDN for fast global access
    - Secure upload/download with auth
 
-**Why Firebase**:
-- Real-time sync is built-in (saves weeks of work)
-- Offline support handled automatically
-- Generous free tier (Spark plan)
-- Scales to millions of users
-- Security rules for access control
-- Excellent documentation and iOS SDK
-- Fast setup (hours, not days)
+**AWS Services Used**:
 
-**Alternative Considered**: Custom backend (Node.js + PostgreSQL + WebSockets) would give more control but requires significantly more infrastructure work.
+1. **AWS Lambda**
+   - Serverless compute for all AI processing
+   - Push notification delivery (already implemented)
+   - Thread summarization, action items, priority detection
+   - Decision tracking, semantic search
+   - Multi-step scheduling agent
+   - No cold starts with provisioned concurrency
+
+2. **AWS API Gateway**
+   - REST API endpoints for all AI features
+   - Built-in rate limiting and throttling
+   - Request/response caching
+   - CORS configuration
+   - Custom domain support
+
+3. **AWS OpenSearch** (for RAG pipeline)
+   - Vector database for semantic search
+   - Better performance than Firestore for embeddings
+   - Full-text search + vector search
+   - k-NN search for similarity matching
+   - Stores: Message embeddings (1536-dim vectors)
+
+4. **AWS ElastiCache (Redis)**
+   - AI response caching (1-2 hour TTL)
+   - Sub-millisecond response times
+   - Reduces OpenAI API costs
+   - Stores: Summaries, action items, search results
+
+5. **AWS S3** (optional)
+   - Backup storage for large files
+   - CloudFront CDN integration
+
+**Why This Hybrid Architecture**:
+- Firebase free tier limits: 50K reads/day, 20K writes/day
+- Firebase Cloud Functions requires Blaze plan for AI features
+- AWS unlimited plan = no cost concerns, better performance
+- Firebase excels at real-time sync, AWS excels at compute
+- Best of both worlds: Firebase for data, AWS for processing
+
+**Alternative Considered**: Full Firebase (Cloud Functions) would work but requires paid Blaze plan. AWS Lambda is free with unlimited plan.
 
 ### AI & Agent Infrastructure
 
 **LLM Provider**: OpenAI  
 **Model**: GPT-4-turbo (for quality) and GPT-3.5-turbo (for speed/cost)  
-**Agent Framework**: AI SDK by Vercel
+**Agent Framework**: LangChain (for multi-step agent)  
+**Compute**: AWS Lambda (serverless)  
+**Vector Storage**: AWS OpenSearch  
+**Caching**: AWS ElastiCache (Redis)
 
 **AI Architecture**:
 
 ```
-User Request → Firebase Cloud Function → AI SDK → OpenAI API
-                          ↓
-                  Retrieves conversation history (RAG)
-                          ↓
-                  Generates response
-                          ↓
-                  Returns to client
+React Native App
+    ↓
+AWS API Gateway (auth, rate limiting, caching)
+    ↓
+AWS Lambda (AI processing)
+    ↓
+├─ OpenAI API (GPT-4, GPT-3.5, text-embedding-3-small)
+├─ AWS OpenSearch (vector embeddings for RAG)
+├─ ElastiCache Redis (response caching)
+└─ Firebase Firestore (read messages for context)
 ```
 
 **RAG (Retrieval-Augmented Generation) Pipeline**:
-- User asks AI: "Summarize my conversation with Sarah"
-- Cloud Function retrieves last 100 messages from Firestore
-- Function sends messages + prompt to OpenAI
-- OpenAI returns summary
-- Function sends summary back to app
+1. User asks AI: "Summarize my conversation with Sarah"
+2. AWS Lambda fetches last 100 messages from Firestore
+3. Lambda generates embedding for query (OpenAI embeddings)
+4. Lambda queries OpenSearch for similar messages (k-NN search)
+5. Lambda sends messages + prompt to OpenAI GPT-4
+6. OpenAI returns summary
+7. Lambda caches result in Redis (1-hour TTL)
+8. Lambda returns summary to app
+
+**Vector Embeddings (for Semantic Search)**:
+- Model: OpenAI `text-embedding-3-small` (1536 dimensions)
+- Storage: AWS OpenSearch (vector database)
+- Background job: Lambda generates embeddings on message send
+- Firestore trigger → Lambda → OpenAI embeddings → OpenSearch
+- Search: Cosine similarity via OpenSearch k-NN
 
 **Function Calling / Tool Use**:
-AI agent has access to these "tools":
-- `getConversation(userId, limit)` - Retrieve messages
-- `searchMessages(query)` - Semantic search
-- `extractActionItems(conversationId)` - Parse todos
-- `getUserProfile(userId)` - Get user info
-- `suggestMeetingTimes(participants)` - Scheduling assistant
+AI agent (scheduling assistant) has access to these "tools":
+- `extractSchedulingDetails(messages)` - Parse meeting info
+- `findConflicts(participants, proposedTimes)` - Check availability
+- `suggestAlternativeTimes(participants, constraints)` - Propose times
+- `generateMeetingProposal(details)` - Create calendar invite
+- `confirmMeeting(details)` - Finalize meeting
 
 **Why This Stack**:
-- OpenAI's function calling is mature and reliable
-- AI SDK by Vercel simplifies agent orchestration
-- Cloud Functions keep API keys secure (never in client)
-- Serverless = no infrastructure management
+- AWS Lambda: Free (unlimited plan), no cold starts, faster than Cloud Functions
+- AWS OpenSearch: Better vector search performance than Firestore
+- ElastiCache Redis: Sub-millisecond caching, reduces OpenAI costs
+- OpenAI function calling: Mature and reliable for agents
+- LangChain: Simplifies multi-step agent orchestration
+- API Gateway: Built-in rate limiting, caching, throttling
 
 **Cost Management**:
 - GPT-4: ~$0.03/1K input tokens, ~$0.06/1K output tokens
 - GPT-3.5: ~$0.0015/1K input tokens, ~$0.002/1K output tokens
-- Strategy: Use GPT-3.5 for simple tasks, GPT-4 for complex reasoning
-- Implement caching for common queries
+- Embeddings: ~$0.0001/1K tokens
+- Strategy: Cache responses in Redis (1-2 hour TTL)
+- AWS costs: $0 (unlimited plan)
+- OpenAI budget: ~$50-100 for MVP testing
 
 ### Data Persistence
 
