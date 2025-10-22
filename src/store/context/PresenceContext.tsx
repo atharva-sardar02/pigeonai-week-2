@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, BackHandler } from 'react-native';
 import { useAuth } from './AuthContext';
 import * as FirestoreService from '../../services/firebase/firestoreService';
 
@@ -32,10 +32,14 @@ export const PresenceProvider: React.FC<PresenceProviderProps> = ({ children }) 
   const appState = useRef<AppStateStatus>(AppState.currentState);
   const hasSetInitialPresence = useRef(false); // Track if we've set initial presence
   const userIdRef = useRef<string | null>(null); // Stable reference to user ID
+  const isOnlineRef = useRef<boolean>(false); // Track current online status to prevent redundant updates
 
   // Update userIdRef when user changes
   useEffect(() => {
     userIdRef.current = user?.uid || null;
+    if (!user) {
+      isOnlineRef.current = false; // Reset online status on logout
+    }
   }, [user]);
 
   /**
@@ -49,34 +53,46 @@ export const PresenceProvider: React.FC<PresenceProviderProps> = ({ children }) 
     // Initialize with current state
     appState.current = AppState.currentState;
     
-    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      // Log everything in one call to avoid buffering issues
+      console.log('📱 === AppState Handler Start ===');
+      console.log(`📱 Transition: ${appState.current} → ${nextAppState}`);
+      console.log(`📱 UserID: ${userIdRef.current?.substring(0, 8) || 'NULL'}`);
+      console.log(`📱 Currently online: ${isOnlineRef.current}`);
+      
       const userId = userIdRef.current;
-      console.log(`📱 AppState change: ${appState.current} → ${nextAppState}, user: ${userId || 'none'}`);
       
       if (!userId) {
-        console.log('⚠️ No user, skipping presence update');
-        appState.current = nextAppState; // Still update the ref
+        console.log('⚠️ No user, skipping');
+        appState.current = nextAppState;
         return;
       }
 
-      try {
-        // App moved to foreground (from any background/inactive state)
-        if (nextAppState === 'active' && appState.current !== 'active') {
-          console.log('🟢 App moved to foreground - setting user online');
-          await FirestoreService.updatePresence(userId, true);
-        }
+      // Execute presence update asynchronously (fire-and-forget)
+      (async () => {
+        try {
+          // App is now active/foreground
+          if (nextAppState === 'active' && !isOnlineRef.current) {
+            console.log('🟢 Setting online');
+            isOnlineRef.current = true;
+            await FirestoreService.updatePresence(userId, true);
+            console.log('✅ Online updated');
+          }
 
-        // App moved to background or inactive (from active state)
-        // This covers: home button, power button, app switcher, etc.
-        if (appState.current === 'active' && nextAppState !== 'active') {
-          console.log(`🔴 App moved to ${nextAppState} - setting user offline`);
-          await FirestoreService.updatePresence(userId, false, new Date());
+          // App is now background/inactive
+          if (nextAppState !== 'active' && isOnlineRef.current) {
+            console.log('🔴 Setting offline');
+            isOnlineRef.current = false;
+            await FirestoreService.updatePresence(userId, false, new Date());
+            console.log('✅ Offline updated');
+          }
+        } catch (error) {
+          console.error('❌ Presence error:', error);
         }
+      })().catch(err => console.error('❌ Handler error:', err));
 
-        appState.current = nextAppState;
-      } catch (error) {
-        console.error('❌ Error updating presence on app state change:', error);
-      }
+      appState.current = nextAppState;
+      console.log('📱 === AppState Handler End ===');
     };
 
     // Subscribe to app state changes
@@ -97,6 +113,7 @@ export const PresenceProvider: React.FC<PresenceProviderProps> = ({ children }) 
         try {
           console.log('🟢 User logged in - setting online');
           await FirestoreService.updatePresence(user.uid, true);
+          isOnlineRef.current = true; // Track that user is online
           hasSetInitialPresence.current = true;
         } catch (error) {
           console.error('Error setting initial presence:', error);
