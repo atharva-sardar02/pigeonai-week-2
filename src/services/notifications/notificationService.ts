@@ -58,8 +58,8 @@ export async function requestPermissions(): Promise<boolean> {
 }
 
 /**
- * Get the Expo Push Token for this device
- * @returns Promise with the Expo Push Token or null
+ * Get the FCM Push Token for this device
+ * @returns Promise with the FCM Push Token or null
  */
 export async function getDeviceToken(): Promise<string | null> {
   try {
@@ -68,14 +68,14 @@ export async function getDeviceToken(): Promise<string | null> {
       return null;
     }
 
-    // Get the Expo Push Token
-    const token = await Notifications.getExpoPushTokenAsync({
-      projectId: Constants.expoConfig?.extra?.eas?.projectId,
-    });
+    // Get the FCM token (Firebase Cloud Messaging)
+    // This requires google-services.json to be configured
+    const token = await Notifications.getDevicePushTokenAsync();
 
+    console.log('📱 Got FCM token:', token.data.substring(0, 20) + '...');
     return token.data;
   } catch (error) {
-    // Silently handle Expo Go limitation (SDK 53+)
+    console.error('❌ Failed to get FCM token:', error);
     return null;
   }
 }
