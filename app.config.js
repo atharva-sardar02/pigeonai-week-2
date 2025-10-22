@@ -16,6 +16,7 @@ export default {
     plugins: [
       'expo-asset',
       'expo-font',
+      'expo-dev-client', // Enables development builds with native features
       [
         'expo-notifications',
         {

@@ -121,21 +121,32 @@ export async function getDeviceToken(): Promise<string | null> {
  */
 export async function registerForPushNotifications(): Promise<string | null> {
   try {
+    console.log('📱 [STEP 1] Requesting permissions...');
+    
     // Step 1: Request permissions
     const hasPermission = await requestPermissions();
+    console.log(`📱 [STEP 1 RESULT] Permission granted: ${hasPermission}`);
+    
     if (!hasPermission) {
+      console.log('❌ Permissions not granted, aborting');
       return null;
     }
 
+    console.log('📱 [STEP 2] Getting device token...');
+    
     // Step 2: Get device token
     const token = await getDeviceToken();
+    console.log(`📱 [STEP 2 RESULT] Token received: ${token ? 'YES' : 'NO'}`);
+    
     if (!token) {
+      console.log('❌ Token generation failed');
       return null;
     }
 
+    console.log('✅ Registration complete!');
     return token;
   } catch (error) {
-    // Silently fail
+    console.error('❌ FATAL: Registration error:', error);
     return null;
   }
 }
