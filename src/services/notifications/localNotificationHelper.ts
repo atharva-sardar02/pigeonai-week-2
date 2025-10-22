@@ -11,7 +11,10 @@ export const isExpoGo = (): boolean => {
 
 /**
  * Trigger a local notification for a new message
- * Used in development (Expo Go) to simulate push notifications
+ * Used in ALL environments:
+ * - Expo Go: Shows local notifications
+ * - EAS Build (foreground): Shows local notifications
+ * - EAS Build (background/closed): Remote push notifications handle this automatically
  * 
  * @param senderName - Name of the message sender
  * @param messageContent - Content of the message
@@ -25,11 +28,6 @@ export const triggerLocalNotification = async (
   senderId: string
 ): Promise<void> => {
   try {
-    // Check if we should use local notifications (Expo Go) or rely on remote push (EAS Build)
-    if (!isExpoGo()) {
-      return; // Remote push notifications will handle this in EAS Build
-    }
-
     await Notifications.scheduleNotificationAsync({
       content: {
         title: senderName,

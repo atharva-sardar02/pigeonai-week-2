@@ -97,7 +97,7 @@ export function useGlobalNotifications() {
 
   // Listen for app state changes to detect when user comes online
   useEffect(() => {
-    if (!user || !shouldUseLocalNotifications()) {
+    if (!user) {
       return;
     }
 
@@ -127,7 +127,7 @@ export function useGlobalNotifications() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !shouldUseLocalNotifications()) {
+    if (!user) {
       return;
     }
 
