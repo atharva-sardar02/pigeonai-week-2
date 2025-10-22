@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "664625981885",
+    "project_id": "pigeonai-dev",
+    "storage_bucket": "pigeonai-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:664625981885:android:7d734ff13f8204b3448ad4",
+        "android_client_info": {
+          "package_name": "com.pigeonai.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "664625981885-hlivnvpho0u5md3ahmv3h4qmsmcv28nt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCn4yeI5wyMBPusO_0ftht16RbgaYUR-k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "664625981885-hlivnvpho0u5md3ahmv3h4qmsmcv28nt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
