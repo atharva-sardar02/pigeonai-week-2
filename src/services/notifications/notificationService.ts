@@ -80,37 +80,34 @@ export async function requestPermissions(): Promise<boolean> {
  */
 export async function getDeviceToken(): Promise<string | null> {
   try {
-    // Check if running on physical device
-    if (!Constants.isDevice) {
-      console.log('⚠️ Not a physical device, skipping FCM token');
-      return null;
-    }
-
-    console.log('📱 Attempting to get push token...');
+    console.log('📱 [STEP 3] Device check - isDevice:', Constants.isDevice);
+    console.log('📱 [STEP 4] Attempting to get FCM push token...');
     
     // Try to get FCM token first (for EAS Build with google-services.json)
     try {
       const fcmToken = await Notifications.getDevicePushTokenAsync();
-      console.log('📱 Got FCM token:', fcmToken.data.substring(0, 20) + '...');
+      console.log('📱 [STEP 5] ✅ Got FCM token:', fcmToken.data.substring(0, 20) + '...');
       console.log('📱 Full token length:', fcmToken.data.length);
       return fcmToken.data;
-    } catch (fcmError) {
-      console.log('⚠️ FCM token failed, trying Expo push token:', fcmError);
+    } catch (fcmError: any) {
+      console.log('📱 [STEP 5] ⚠️ FCM token failed:', fcmError?.message || fcmError);
+      console.log('📱 [STEP 6] Trying Expo push token as fallback...');
       
       // Fallback to Expo Push Token
       const projectId = Constants.expoConfig?.extra?.eas?.projectId;
       if (!projectId) {
-        console.error('❌ No project ID found');
+        console.error('❌ No project ID found for Expo push token');
         return null;
       }
       
+      console.log('📱 [STEP 7] Project ID found:', projectId);
       const expoToken = await Notifications.getExpoPushTokenAsync({ projectId });
-      console.log('📱 Got Expo push token:', expoToken.data);
+      console.log('📱 [STEP 8] ✅ Got Expo push token:', expoToken.data);
       return expoToken.data;
     }
-  } catch (error) {
-    console.error('❌ Failed to get push token:', error);
-    console.error('❌ Error details:', JSON.stringify(error, null, 2));
+  } catch (error: any) {
+    console.error('❌ FATAL: Failed to get any push token:', error?.message || error);
+    console.error('❌ Error stack:', error?.stack);
     return null;
   }
 }
