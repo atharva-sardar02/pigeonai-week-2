@@ -19,6 +19,8 @@ interface ChatHeaderProps {
   onTitlePress?: () => void; // New prop for tapping on the header
   onSummarize?: () => void; // New prop for AI summarization
   onExtractActionItems?: () => void; // New prop for AI action item extraction
+  onSearch?: () => void; // New prop for semantic search
+  onFilterPriority?: () => void; // New prop for priority filter (PR #19)
   isOnline?: boolean;
   lastSeen?: Date | null;
   typingUserIds?: string[]; // New prop for typing users
@@ -44,6 +46,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onTitlePress,
   onSummarize,
   onExtractActionItems,
+  onSearch,
+  onFilterPriority,
   isOnline = false,
   lastSeen = null,
   typingUserIds = [],
@@ -280,6 +284,28 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="checkbox-outline" size={22} color={COLORS.primary} />
+        </TouchableOpacity>
+      )}
+
+      {/* AI Semantic Search Button */}
+      {onSearch && (
+        <TouchableOpacity
+          style={styles.aiButton}
+          onPress={onSearch}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="search-outline" size={22} color={COLORS.primary} />
+        </TouchableOpacity>
+      )}
+
+      {/* AI Priority Filter Button (PR #19) */}
+      {onFilterPriority && (
+        <TouchableOpacity
+          style={styles.aiButton}
+          onPress={onFilterPriority}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="filter-outline" size={22} color={COLORS.primary} />
         </TouchableOpacity>
       )}
 

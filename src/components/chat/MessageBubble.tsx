@@ -61,6 +61,22 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   return (
     <View style={containerStyle}>
       <View style={[styles.bubble, bubbleStyle]}>
+        {/* Priority Badge (PR #19) */}
+        {message.priority && message.priority !== 'low' && (
+          <View style={[
+            styles.priorityBadge,
+            message.priority === 'high' ? styles.priorityHigh : styles.priorityMedium,
+            isOwnMessage && styles.priorityBadgeSent
+          ]}>
+            <Text style={styles.priorityIcon}>
+              {message.priority === 'high' ? '🔴' : '🟡'}
+            </Text>
+            <Text style={styles.priorityLabel}>
+              {message.priority === 'high' ? 'Urgent' : 'Important'}
+            </Text>
+          </View>
+        )}
+
         {/* Sender Name (for group chats, received messages only) */}
         {showSenderName && (
           <Text style={styles.senderName}>
@@ -168,6 +184,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.error,
     fontWeight: 'bold',
+  },
+  // PR #19: Priority Badge Styles
+  priorityBadge: {
+    position: 'absolute',
+    top: -10,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  priorityBadgeSent: {
+    right: 8,
+  },
+  priorityHigh: {
+    backgroundColor: '#EF4444', // red-500
+  },
+  priorityMedium: {
+    backgroundColor: '#F59E0B', // amber-500
+  },
+  priorityIcon: {
+    fontSize: 10,
+  },
+  priorityLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
   },
 });
 

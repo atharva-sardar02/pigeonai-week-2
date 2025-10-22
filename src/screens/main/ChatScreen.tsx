@@ -16,6 +16,8 @@ import { MessageList } from '../../components/chat/MessageList';
 import { MessageInput } from '../../components/chat/MessageInput';
 import SummaryModal from '../../components/ai/SummaryModal';
 import ActionItemsList from '../../components/ai/ActionItemsList';
+import SearchModal, { SearchResultData } from '../../components/ai/SearchModal';
+import { PriorityFilterModal } from '../../components/ai/PriorityFilterModal';
 import { useAuth } from '../../store/context/AuthContext';
 import { useMessages } from '../../hooks/useMessages';
 import { useUserDisplayName, userProfileCache } from '../../hooks/useUserProfile';
@@ -24,7 +26,7 @@ import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import * as FirestoreService from '../../services/firebase/firestoreService';
 import * as NotificationService from '../../services/notifications/notificationService';
 import { shouldUseLocalNotifications } from '../../services/notifications/localNotificationHelper';
-import { summarizeConversation, extractActionItems } from '../../services/ai/aiService';
+import { summarizeConversation, extractActionItems, searchMessages } from '../../services/ai/aiService';
 import { ActionItem } from '../../models/ActionItem';
 import { COLORS } from '../../utils/constants';
 import { MainStackParamList, Conversation } from '../../types';
@@ -100,6 +102,12 @@ export const ChatScreen: React.FC = () => {
     loading: false,
     error: null,
   });
+
+  // AI Semantic Search state
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
+
+  // AI Priority Filter state (PR #19)
+  const [priorityFilterVisible, setPriorityFilterVisible] = useState(false);
 
   // Get the other participant's ID for direct messages
   const otherUserId = conversation?.type === 'dm' || conversation?.type === 'direct'
@@ -396,7 +404,41 @@ export const ChatScreen: React.FC = () => {
     // TODO: Implement message scrolling in MessageList
     // For now, just close the modal
     handleCloseActionItems();
+    handleCloseSearch();
     Alert.alert('Navigation', `Would navigate to message: ${messageId}`);
+  };
+
+  // Handle opening search modal
+  const handleOpenSearch = () => {
+    if (messages.length === 0) {
+      Alert.alert('No Messages', 'There are no messages to search in this conversation.');
+      return;
+    }
+    setSearchModalVisible(true);
+  };
+
+  // Handle closing search modal
+  const handleCloseSearch = () => {
+    setSearchModalVisible(false);
+  };
+
+  // Handle search query
+  const handleSearch = async (query: string): Promise<SearchResultData | null> => {
+    try {
+      // Call AI service for semantic search
+      const result = await searchMessages(query, conversationId, 5, 0.7);
+
+      if (result.success && result.data) {
+        return result.data as SearchResultData;
+      } else {
+        Alert.alert('Search Error', result.error || 'Failed to search messages');
+        return null;
+      }
+    } catch (err: any) {
+      console.error('Search error:', err);
+      Alert.alert('Search Error', err.message || 'An unexpected error occurred');
+      return null;
+    }
   };
 
   // Show loading state
@@ -448,6 +490,8 @@ export const ChatScreen: React.FC = () => {
           onTitlePress={handleHeaderTap}
           onSummarize={handleSummarize}
           onExtractActionItems={handleExtractActionItems}
+          onSearch={handleOpenSearch}
+          onFilterPriority={() => setPriorityFilterVisible(true)}
           isOnline={isOnline}
           lastSeen={lastSeen}
           typingUserIds={typingUsers}
@@ -498,6 +542,23 @@ export const ChatScreen: React.FC = () => {
           duration={actionItemsData.duration}
           currentUserId={user?.uid}
           onToggleComplete={handleToggleActionItemComplete}
+          onNavigateToMessage={handleNavigateToMessage}
+        />
+
+        {/* AI Semantic Search Modal */}
+        <SearchModal
+          visible={searchModalVisible}
+          conversationId={conversationId}
+          onClose={handleCloseSearch}
+          onSearch={handleSearch}
+          onNavigateToMessage={handleNavigateToMessage}
+        />
+
+        {/* AI Priority Filter Modal (PR #19) */}
+        <PriorityFilterModal
+          visible={priorityFilterVisible}
+          messages={messages}
+          onClose={() => setPriorityFilterVisible(false)}
           onNavigateToMessage={handleNavigateToMessage}
         />
       </KeyboardAvoidingView>

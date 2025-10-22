@@ -17,6 +17,18 @@ export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed'
 // Message Type
 export type MessageType = 'text' | 'image';
 
+// Message Priority Types (PR #19)
+export type MessagePriority = 'high' | 'medium' | 'low';
+
+// Priority Metadata Interface (PR #19)
+export interface PriorityMetadata {
+  label: string;
+  color: string;
+  icon: string;
+  description: string;
+  notificationImportance: 'high' | 'default' | 'low';
+}
+
 // Message Interface
 export interface Message {
   id: string;
@@ -28,6 +40,8 @@ export interface Message {
   type: MessageType;
   imageUrl?: string;
   readBy?: { [userId: string]: Date };
+  priority?: MessagePriority; // PR #19: AI-detected priority level
+  priorityMetadata?: PriorityMetadata; // PR #19: Priority display metadata
 }
 
 // Conversation Type

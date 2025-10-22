@@ -8,6 +8,9 @@
 // AI Function Handlers
 const summarizeHandler = require('./summarize');
 const actionItemsHandler = require('./actionItems');
+const searchHandler = require('./search');
+const embeddingHandler = require('./generateEmbedding');
+const priorityHandler = require('./priorityDetection');
 
 /**
  * Main Lambda Handler
@@ -37,34 +40,34 @@ exports.handler = async (event) => {
       return await actionItemsHandler.handler(event);
     }
     
-    // Semantic Search (PR #18 - TODO)
+    // Semantic Search (PR #18)
     if (path === '/ai/search' || path.endsWith('/ai/search')) {
-      return {
-        statusCode: 501,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({
-          error: 'Not Implemented',
-          message: 'Semantic search will be implemented in PR #18',
-        }),
-      };
+      console.log('🤖 Routing to semantic search handler');
+      return await searchHandler.handler(event);
     }
     
-    // Priority Detection (PR #19 - TODO)
+    // Generate Embedding (PR #18 - background job)
+    if (path === '/ai/generate-embedding' || path.endsWith('/ai/generate-embedding')) {
+      console.log('🤖 Routing to embedding generation handler');
+      return await embeddingHandler.handler(event);
+    }
+    
+    // Batch Generate Embeddings (PR #18 - backfill tool)
+    if (path === '/ai/batch-generate-embeddings' || path.endsWith('/ai/batch-generate-embeddings')) {
+      console.log('🤖 Routing to batch embedding generation handler');
+      return await embeddingHandler.batchHandler(event);
+    }
+    
+    // Priority Detection (PR #19)
     if (path === '/ai/detect-priority' || path.endsWith('/ai/detect-priority')) {
-      return {
-        statusCode: 501,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({
-          error: 'Not Implemented',
-          message: 'Priority detection will be implemented in PR #19',
-        }),
-      };
+      console.log('🤖 Routing to priority detection handler');
+      return await priorityHandler.detectPriority(event);
+    }
+    
+    // Batch Priority Detection (PR #19)
+    if (path === '/ai/batch-detect-priority' || path.endsWith('/ai/batch-detect-priority')) {
+      console.log('🤖 Routing to batch priority detection handler');
+      return await priorityHandler.batchDetectPriority(event);
     }
     
     // Decision Tracking (PR #20 - TODO)
