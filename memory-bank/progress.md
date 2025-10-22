@@ -236,7 +236,7 @@
 - [ ] Demo video creation
 - [ ] Final documentation polish
 
-### Phase 2: AI Features & Rubric Compliance (Planning Complete)
+### Phase 2: AI Features & Rubric Compliance (In Progress)
 
 **PR #13: Persona Selection & Brainlift Document (COMPLETE ✅)**
 - [x] Persona selected: Remote Team Professional
@@ -265,9 +265,30 @@
 - [x] TASK_LIST.md updated with all Phase 2 PRs (#13-#25)
 - [x] PRD.md updated with Phase 2 timeline and priorities
 
-**Next PRs (Ready to Implement)**:
+**PR #15: AWS Infrastructure Setup for AI Features (IN PROGRESS 🟡)**
+- [x] **Task 15.1**: Set Up AWS OpenSearch Cluster ✅
+  - Created domain: `pigeonai-embeddings` (OpenSearch 3.1)
+  - Configuration: 3-node Multi-AZ, t3.small.search, 10GB EBS per node
+  - Endpoint: `https://search-pigeonai-embeddings-sefdb6usfwni6dhjxdmoqsn7zi.us-east-1.es.amazonaws.com`
+  - Created index: `message_embeddings` with k-NN vector search (1536 dimensions, FAISS engine, cosine similarity)
+  - Files: `aws-lambda/opensearch/create-index.js`, `test-vector-search.js`, `README.md`
+- [x] **Task 15.2**: Set Up AWS ElastiCache Redis ✅
+  - Created cache: `pigeonai-cache` (Serverless Valkey 8)
+  - Endpoint: `pigeonai-cache-ggng2r.serverless.use1.cache.amazonaws.com:6379`
+  - Security group configured (port 6379 inbound rule)
+  - Files: `aws-lambda/redis/redisClient.js`, `test-cache.js`, `package.json`, `README.md`, `TESTING.md`
+  - TTL config: Summaries 1h, Actions 2h, Search 30m, Decisions 2h
+- [ ] **Task 15.3**: Create API Gateway REST API
+- [ ] **Task 15.4**: Configure IAM Roles for Lambda
+- [ ] **Task 15.5**: Install Lambda Dependencies
+- [ ] **Task 15.6**: Create Base Lambda Function Template
+- [ ] **Task 15.7**: Configure Environment Variables
+- [ ] **Task 15.8**: Test with Existing Push Notification Lambda
+- [ ] **Task 15.9**: Create React Native AI Service
+- [ ] **Task 15.10**: Document AWS Infrastructure
+
+**Next PRs (Ready After PR #15)**:
 - [ ] PR #14: Image Sharing UI (3-4 hours) - Optional
-- [ ] PR #15: Cloud Functions Setup (2-3 hours) - **START HERE** - Required for all AI features
 - [ ] PR #16: Thread Summarization (3-4 hours)
 - [ ] PR #17: Action Item Extraction (3-4 hours)
 - [ ] PR #18: Semantic Search + RAG (3-4 hours)
@@ -283,7 +304,10 @@
 
 ## What's In Progress 🟡
 
-**Phase 2 Implementation**: Ready to start with PR #15 (Cloud Functions setup)
+**PR #15: AWS Infrastructure Setup for AI Features**
+- ✅ Task 15.1: OpenSearch cluster setup complete
+- ✅ Task 15.2: ElastiCache Redis setup complete
+- 🔜 Task 15.3: API Gateway REST API (next)
 
 ---
 

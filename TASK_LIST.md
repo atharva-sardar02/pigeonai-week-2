@@ -1,4 +1,4 @@
-# Pigeon AI - MVP Task List
+  # Pigeon AI - MVP Task List
 
 **Project Structure**: React Native + Expo + Firebase  
 **Total PRs**: 12 (covering complete MVP in 24 hours)  

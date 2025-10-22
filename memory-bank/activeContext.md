@@ -1,12 +1,91 @@
 # Active Context: Pigeon AI
 
-**Last Updated**: October 22, 2025 - Phase 2 Planning Complete ✅  
+**Last Updated**: October 22, 2025 - PR #15 Tasks 15.1 & 15.2 Complete ✅  
 **Current Phase**: Phase 2 - AI Features & Rubric Compliance  
-**Status**: ✅ MVP Complete, ✅ Production APK Deployed, ✅ Persona Selected (Remote Team Professional), ✅ Phase 2 Fully Documented
+**Status**: ✅ MVP Complete, ✅ Production APK Deployed, ✅ Persona Selected (Remote Team Professional), ✅ Phase 2 Fully Documented, ✅ AWS Infrastructure Setup In Progress
 
 ---
 
 ## Current Focus
+
+### Just Completed (October 22, 2025)
+
+#### **PR #15: AWS Infrastructure Setup (Tasks 15.1 & 15.2 COMPLETE ✅)**
+
+**Task 15.1: AWS OpenSearch Cluster Setup ✅**
+- ✅ Created OpenSearch domain: `pigeonai-embeddings`
+  - Version: OpenSearch 3.1 (latest)
+  - Deployment: Easy create, 3-node Multi-AZ cluster
+  - Network: Public access, IPv4 only
+  - Instance: t3.small.search (2 vCPU, 4GB RAM) × 3 nodes
+  - Storage: 10GB EBS per node (30GB total)
+  - Endpoint: `https://search-pigeonai-embeddings-sefdb6usfwni6dhjxdmoqsn7zi.us-east-1.es.amazonaws.com`
+  - Access: Public with HTTP basic auth
+  - Credentials: admin / PigeonAI2025!
+- ✅ Created index: `message_embeddings`
+  - k-NN enabled for vector search
+  - Mapping: `embedding` field with type `knn_vector` (1536 dimensions)
+  - Method: HNSW (Hierarchical Navigable Small World)
+  - Engine: FAISS (Facebook AI Similarity Search) - optimized for OpenSearch 3.x
+  - Distance metric: Cosine similarity
+  - Shards: 1 primary, 2 replicas (3 total copies for Multi-AZ)
+- ✅ Tested vector search functionality
+  - Created `aws-lambda/opensearch/create-index.js` (index creation script)
+  - Created `aws-lambda/opensearch/test-vector-search.js` (test script)
+  - Created `aws-lambda/opensearch/README.md` (documentation)
+  - Index created successfully, ready for embeddings
+- **Key Learnings**:
+  - OpenSearch 3.x requires FAISS engine (nmslib deprecated)
+  - Multi-AZ requires replicas = nodes - 1 (2 replicas for 3-node cluster)
+  - Easy create with IPv6 dual-stack fails due to subnet issues → use IPv4 only
+
+**Task 15.2: AWS ElastiCache Redis Setup ✅**
+- ✅ Created ElastiCache Serverless Valkey cache: `pigeonai-cache`
+  - Engine: Valkey 8 (open-source Redis alternative, recommended by AWS)
+  - Deployment: Serverless (auto-scaling, pay-per-use)
+  - Endpoint: `pigeonai-cache-ggng2r.serverless.use1.cache.amazonaws.com:6379`
+  - Encryption: In-transit enabled, at-rest with AWS KMS
+  - Security: Default security group with port 6379 inbound rule (0.0.0.0/0)
+  - No password required (serverless default)
+- ✅ Configured security group
+  - Added inbound rule: Custom TCP, port 6379, source 0.0.0.0/0
+  - Allows Lambda access from anywhere in AWS
+- ✅ Created Redis client code
+  - `aws-lambda/redis/redisClient.js` (Redis client with auto-TTL)
+  - `aws-lambda/redis/test-cache.js` (comprehensive test suite)
+  - `aws-lambda/redis/package.json` (dependencies: ioredis v5.4.1)
+  - `aws-lambda/redis/README.md` (setup guide, usage examples)
+  - `aws-lambda/redis/TESTING.md` (testing instructions)
+- ✅ TTL Configuration
+  - Summaries: 1 hour (3600s)
+  - Action Items: 2 hours (7200s)
+  - Search Results: 30 minutes (1800s)
+  - Decisions: 2 hours (7200s)
+  - Priority: 1 hour (3600s)
+  - Meeting: 2 hours (7200s)
+- ✅ Dependencies installed
+  - `npm install` in `aws-lambda/redis/` completed
+  - `ioredis` package installed successfully
+- **Key Learnings**:
+  - ElastiCache endpoints only accessible from within AWS (not local computer)
+  - Local test fails with ENOTFOUND (expected, will work from Lambda)
+  - Serverless Valkey is better than traditional Redis (auto-scaling, pay-per-use, ~$3-5/month vs $13/month)
+  - No password authentication required for Serverless Valkey
+
+**Files Created**:
+- `aws-lambda/opensearch/create-index.js`
+- `aws-lambda/opensearch/test-vector-search.js`
+- `aws-lambda/opensearch/README.md`
+- `docs/TASK_15.1_COMPLETION_GUIDE.md`
+- `aws-lambda/redis/redisClient.js`
+- `aws-lambda/redis/test-cache.js`
+- `aws-lambda/redis/package.json`
+- `aws-lambda/redis/README.md`
+- `aws-lambda/redis/TESTING.md`
+
+**Next**: Task 15.3 - Create API Gateway REST API
+
+---
 
 ### Completed Today (October 22, 2025)
 
