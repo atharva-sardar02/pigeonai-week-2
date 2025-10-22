@@ -102,78 +102,142 @@ exports.handler = async (event) => {
     });
 
     if (allTokens.length === 0) {
-      console.log('⚠️  No FCM tokens found for recipients');
+      console.log('⚠️  No push tokens found for recipients');
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: 'No FCM tokens found' })
+        body: JSON.stringify({ message: 'No push tokens found' })
       };
     }
 
     console.log(`🔔 Sending notification to ${allTokens.length} device(s)`);
 
-    // Prepare notification payload
-    const notificationPayload = {
-      notification: {
+    // Separate FCM and Expo tokens
+    const fcmTokens = allTokens.filter(token => !token.startsWith('ExponentPushToken'));
+    const expoTokens = allTokens.filter(token => token.startsWith('ExponentPushToken'));
+
+    console.log(`📊 Token breakdown: ${fcmTokens.length} FCM, ${expoTokens.length} Expo`);
+
+    let successCount = 0;
+    let failureCount = 0;
+
+    // Send via FCM if we have FCM tokens
+    if (fcmTokens.length > 0) {
+      // Prepare notification payload
+      const notificationPayload = {
+        notification: {
+          title: senderName,
+          body: message.content.length > 100 
+            ? message.content.substring(0, 100) + '...' 
+            : message.content,
+        },
+        data: {
+          screen: 'Chat',
+          conversationId: conversationId,
+          senderId: senderId,
+          messageId: messageId,
+        },
+        android: {
+          priority: 'high',
+          notification: {
+            sound: 'default',
+            channelId: 'default',
+          }
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1,
+            }
+          }
+        }
+      };
+
+      // Send notification to all FCM tokens
+      const fcmResponse = await messaging.sendEachForMulticast({
+        tokens: fcmTokens,
+        ...notificationPayload,
+      });
+
+      successCount += fcmResponse.successCount;
+      failureCount += fcmResponse.failureCount;
+
+      console.log(`✅ FCM sent: ${fcmResponse.successCount} success, ${fcmResponse.failureCount} failed`);
+
+      // Remove invalid FCM tokens
+      if (fcmResponse.failureCount > 0) {
+        const invalidTokens = [];
+        fcmResponse.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            invalidTokens.push(fcmTokens[idx]);
+            console.log(`❌ Failed FCM token: ${fcmTokens[idx].substring(0, 20)}...`);
+          }
+        });
+
+        // Remove invalid tokens from Firestore
+        for (const tokenData of recipientTokens) {
+          const tokensToRemove = tokenData.tokens.filter(token => 
+            invalidTokens.includes(token)
+          );
+
+          if (tokensToRemove.length > 0) {
+            await db.collection('users')
+              .doc(tokenData.recipientId)
+              .update({
+                fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove)
+              });
+            console.log(`🗑️  Removed ${tokensToRemove.length} invalid FCM token(s) from user ${tokenData.recipientId}`);
+          }
+        }
+      }
+    }
+
+    // Send via Expo Push API if we have Expo tokens
+    if (expoTokens.length > 0) {
+      const axios = require('axios');
+      
+      const expoMessages = expoTokens.map(token => ({
+        to: token,
+        sound: 'default',
         title: senderName,
         body: message.content.length > 100 
           ? message.content.substring(0, 100) + '...' 
           : message.content,
-      },
-      data: {
-        screen: 'Chat',
-        conversationId: conversationId,
-        senderId: senderId,
-        messageId: messageId,
-      },
-      android: {
+        data: {
+          screen: 'Chat',
+          conversationId: conversationId,
+          senderId: senderId,
+          messageId: messageId,
+        },
+        channelId: 'default',
         priority: 'high',
-        notification: {
-          sound: 'default',
-          channelId: 'default',
-        }
-      },
-      apns: {
-        payload: {
-          aps: {
-            sound: 'default',
-            badge: 1,
+      }));
+
+      try {
+        const expoResponse = await axios.post(
+          'https://exp.host/--/api/v2/push/send',
+          expoMessages,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            }
           }
-        }
-      }
-    };
-
-    // Send notification to all tokens
-    const response = await messaging.sendEachForMulticast({
-      tokens: allTokens,
-      ...notificationPayload,
-    });
-
-    console.log(`✅ Notification sent: ${response.successCount} success, ${response.failureCount} failed`);
-
-    // Remove invalid tokens
-    if (response.failureCount > 0) {
-      const invalidTokens = [];
-      response.responses.forEach((resp, idx) => {
-        if (!resp.success) {
-          invalidTokens.push(allTokens[idx]);
-          console.log(`❌ Failed token: ${allTokens[idx].substring(0, 20)}...`);
-        }
-      });
-
-      // Remove invalid tokens from Firestore
-      for (const tokenData of recipientTokens) {
-        const tokensToRemove = tokenData.tokens.filter(token => 
-          invalidTokens.includes(token)
         );
 
-        if (tokensToRemove.length > 0) {
-          await db.collection('users')
-            .doc(tokenData.recipientId)
-            .update({
-              fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove)
-            });
-          console.log(`🗑️  Removed ${tokensToRemove.length} invalid token(s) from user ${tokenData.recipientId}`);
-        }
+        console.log(`✅ Expo sent: ${expoResponse.data.data?.length || 0} notifications`);
+        successCount += expoResponse.data.data?.filter(r => r.status === 'ok').length || 0;
+        failureCount += expoResponse.data.data?.filter(r => r.status === 'error').length || 0;
+
+        // Log any Expo errors
+        expoResponse.data.data?.forEach((result, idx) => {
+          if (result.status === 'error') {
+            console.log(`❌ Expo error for token ${expoTokens[idx].substring(0, 20)}...: ${result.message}`);
+          }
+        });
+      } catch (expoError) {
+        console.error('❌ Expo Push API error:', expoError.response?.data || expoError.message);
+        failureCount += expoTokens.length;
       }
     }
 
@@ -181,8 +245,8 @@ exports.handler = async (event) => {
       statusCode: 200,
       body: JSON.stringify({
         message: 'Notification sent successfully',
-        successCount: response.successCount,
-        failureCount: response.failureCount
+        successCount: successCount,
+        failureCount: failureCount
       })
     };
 

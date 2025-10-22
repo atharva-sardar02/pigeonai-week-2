@@ -65,17 +65,35 @@ export async function getDeviceToken(): Promise<string | null> {
   try {
     // Check if running on physical device
     if (!Constants.isDevice) {
+      console.log('⚠️ Not a physical device, skipping FCM token');
       return null;
     }
 
-    // Get the FCM token (Firebase Cloud Messaging)
-    // This requires google-services.json to be configured
-    const token = await Notifications.getDevicePushTokenAsync();
-
-    console.log('📱 Got FCM token:', token.data.substring(0, 20) + '...');
-    return token.data;
+    console.log('📱 Attempting to get push token...');
+    
+    // Try to get FCM token first (for EAS Build with google-services.json)
+    try {
+      const fcmToken = await Notifications.getDevicePushTokenAsync();
+      console.log('📱 Got FCM token:', fcmToken.data.substring(0, 20) + '...');
+      console.log('📱 Full token length:', fcmToken.data.length);
+      return fcmToken.data;
+    } catch (fcmError) {
+      console.log('⚠️ FCM token failed, trying Expo push token:', fcmError);
+      
+      // Fallback to Expo Push Token
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+      if (!projectId) {
+        console.error('❌ No project ID found');
+        return null;
+      }
+      
+      const expoToken = await Notifications.getExpoPushTokenAsync({ projectId });
+      console.log('📱 Got Expo push token:', expoToken.data);
+      return expoToken.data;
+    }
   } catch (error) {
-    console.error('❌ Failed to get FCM token:', error);
+    console.error('❌ Failed to get push token:', error);
+    console.error('❌ Error details:', JSON.stringify(error, null, 2));
     return null;
   }
 }
