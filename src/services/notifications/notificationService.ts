@@ -9,11 +9,14 @@ import Constants from 'expo-constants';
  */
 
 // Configure how notifications should be displayed when app is in foreground
+// NOTE: We return shouldShowAlert: false because AWS Lambda sends FCM notifications
+// which should only appear when app is in background/closed.
+// When app is open, the in-app UI already shows new messages.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
+    shouldShowAlert: false, // Don't show notification banner when app is open
+    shouldPlaySound: false,
+    shouldSetBadge: false,
   }),
 });
 
