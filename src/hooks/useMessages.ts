@@ -285,6 +285,19 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
               imageUrl
             );
 
+            // Step 4b: Trigger Lambda for background push notifications
+            // Import at top of file: import * as LambdaNotificationService from '../services/notifications/lambdaNotificationService';
+            try {
+              const { sendNotificationViaLambda } = require('../services/notifications/lambdaNotificationService');
+              await sendNotificationViaLambda(conversationId, messageId, {
+                content,
+                senderId: user.uid,
+              });
+            } catch (lambdaErr) {
+              // Don't fail message send if Lambda call fails
+              console.log('⚠️  Lambda notification failed (non-critical):', lambdaErr);
+            }
+
             // Step 5: Update local database with real ID
             // Note: We don't update the UI state here because the Firestore
             // real-time listener will receive the message and handle deduplication

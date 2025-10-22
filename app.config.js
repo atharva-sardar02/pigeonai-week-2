@@ -58,6 +58,8 @@ export default {
       firebaseStorageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
       firebaseMessagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
       firebaseAppId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+      // AWS Lambda endpoint for push notifications
+      lambdaNotificationUrl: process.env.EXPO_PUBLIC_LAMBDA_NOTIFICATION_URL,
     },
   },
 };
