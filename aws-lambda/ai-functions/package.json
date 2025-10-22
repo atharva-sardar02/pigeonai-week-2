@@ -1,0 +1,25 @@
+{
+  "name": "pigeonai-lambda-ai",
+  "version": "1.0.0",
+  "description": "AWS Lambda functions for Pigeon AI - AI features (OpenAI, OpenSearch, Redis)",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test-connections.js",
+    "zip": "zip -r function.zip . -x '*.git*' -x 'node_modules/.cache/*' -x 'test-*'"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "@langchain/openai": "^0.3.0",
+    "@opensearch-project/opensearch": "^2.12.0",
+    "axios": "^1.7.7",
+    "dotenv": "^17.2.3",
+    "ioredis": "^5.4.1",
+    "langchain": "^0.3.2",
+    "openai": "^4.65.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "Pigeon AI Team",
+  "license": "MIT"
+}

@@ -10,9 +10,9 @@
 const { Client } = require('@opensearch-project/opensearch');
 
 // Configuration - UPDATE THESE VALUES
-const OPENSEARCH_ENDPOINT = 'https://search-pigeonai-embeddings-sefdb6usfwni6dhjxdmoqsn7zi.us-east-1.es.amazonaws.com';
-const OPENSEARCH_USERNAME = 'admin';
-const OPENSEARCH_PASSWORD = 'PigeonAI2025!';
+const OPENSEARCH_ENDPOINT = process.env.OPENSEARCH_ENDPOINT || 'https://YOUR_OPENSEARCH_ENDPOINT.us-east-1.es.amazonaws.com';
+const OPENSEARCH_USERNAME = process.env.OPENSEARCH_USERNAME || 'admin';
+const OPENSEARCH_PASSWORD = process.env.OPENSEARCH_PASSWORD || 'YOUR_PASSWORD';
 
 // Create OpenSearch client
 const client = new Client({
