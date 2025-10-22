@@ -2,6 +2,9 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
+// Export Notifications for external use
+export { Notifications };
+
 /**
  * Notification Service
  * Handles push notification permissions, tokens, and notification handling

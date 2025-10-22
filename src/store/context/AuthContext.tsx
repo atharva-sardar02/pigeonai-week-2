@@ -83,6 +83,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('🔔 Starting push notification registration for user:', userId.substring(0, 8));
       
+      // Check current permission status first
+      const { status: currentStatus } = await NotificationService.Notifications.getPermissionsAsync();
+      console.log('📱 Current permission status:', currentStatus);
+      
       // Register and get token
       const token = await NotificationService.registerForPushNotifications();
       console.log('🔔 Got token from service:', token ? `${token.substring(0, 20)}...` : 'null');
@@ -94,12 +98,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('✅ FCM token saved to Firestore successfully!');
         
         // Show success alert in production (temporary for debugging)
-        Alert.alert('✅ Notifications Ready', `Token registered successfully!`);
+        Alert.alert('✅ Notifications Ready', `Token registered successfully!\n\nPermission: ${currentStatus}`);
       } else {
         console.log('⚠️  No FCM token received');
         
-        // Show failure alert in production (temporary for debugging)
-        Alert.alert('⚠️ Notifications Disabled', 'Please enable notification permissions in device settings:\n\nSettings > Apps > Pigeon AI > Notifications');
+        // Show detailed failure alert
+        Alert.alert(
+          '⚠️ Notifications Disabled', 
+          `Permission Status: ${currentStatus}\n\nIf notifications are enabled in settings but this message appears, try:\n\n1. Uninstall the app\n2. Reinstall\n3. Allow notifications when prompted`
+        );
       }
       // If no token (Expo Go), silently continue - local notifications will work
     } catch (error) {

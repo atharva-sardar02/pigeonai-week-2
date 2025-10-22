@@ -22,6 +22,7 @@ export default {
           icon: './assets/icon.png',
           color: '#3B82F6',
           sounds: [],
+          mode: 'production', // Ensure production mode for proper permission handling
         }
       ]
     ],
