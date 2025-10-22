@@ -40,7 +40,7 @@ export default {
         backgroundColor: '#060C1D',
       },
       package: 'com.pigeonai.app',
-      googleServicesFile: process.env.GOOGLE_SERVICES_JSON || './android/app/google-services.json',
+      googleServicesFile: './android/app/google-services.json',
       permissions: [
         'RECEIVE_BOOT_COMPLETED',
         'VIBRATE',
