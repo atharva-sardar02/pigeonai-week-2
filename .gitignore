@@ -14,6 +14,17 @@ yarn.lock
 .env.local
 .env.*.local
 
+# AWS Lambda credentials and secrets
+aws-lambda/**/function.zip
+aws-lambda/**/.env
+aws-lambda/**/*.pem
+aws-lambda/**/*.key
+
+# AWS credentials (NEVER commit these!)
+# API keys, passwords, and sensitive endpoints are stored in:
+# - AWS Lambda environment variables (configured in AWS Console)
+# - Not in code or config files!
+
 # macOS
 .DS_Store
 

@@ -4,7 +4,7 @@ import {
   QueryDocumentSnapshot,
   SnapshotOptions,
 } from 'firebase/firestore';
-import { Message, MessageStatus, MessageType } from '../types';
+import { Message, MessageStatus, MessageType, MessagePriority, PriorityMetadata } from '../types';
 
 /**
  * Create a new Message object with defaults
@@ -307,6 +307,149 @@ export function groupMessagesByDate(messages: Message[]): { [date: string]: Mess
   });
   
   return grouped;
+}
+
+/**
+ * =======================
+ * Priority Detection Functions (PR #19)
+ * =======================
+ */
+
+/**
+ * Get priority metadata for display
+ * @param priority - Priority level (high/medium/low)
+ * @returns Priority metadata
+ */
+export function getPriorityMetadata(priority: MessagePriority): PriorityMetadata {
+  const metadata: Record<MessagePriority, PriorityMetadata> = {
+    high: {
+      label: 'High Priority',
+      color: '#EF4444', // red-500
+      icon: '🔴',
+      description: 'Urgent - needs immediate attention',
+      notificationImportance: 'high',
+    },
+    medium: {
+      label: 'Medium Priority',
+      color: '#F59E0B', // amber-500
+      icon: '🟡',
+      description: 'Important - respond when possible',
+      notificationImportance: 'default',
+    },
+    low: {
+      label: 'Low Priority',
+      color: '#6B7280', // gray-500
+      icon: '⚪',
+      description: 'General discussion',
+      notificationImportance: 'low',
+    },
+  };
+  
+  return metadata[priority];
+}
+
+/**
+ * Set message priority
+ * @param message - Message object
+ * @param priority - Priority level
+ * @returns Updated message with priority
+ */
+export function setPriority(message: Message, priority: MessagePriority): Message {
+  return {
+    ...message,
+    priority,
+    priorityMetadata: getPriorityMetadata(priority),
+  };
+}
+
+/**
+ * Check if message has high priority
+ * @param message - Message object
+ * @returns True if high priority
+ */
+export function isHighPriority(message: Message): boolean {
+  return message.priority === 'high';
+}
+
+/**
+ * Check if message has medium priority
+ * @param message - Message object
+ * @returns True if medium priority
+ */
+export function isMediumPriority(message: Message): boolean {
+  return message.priority === 'medium';
+}
+
+/**
+ * Check if message has low priority
+ * @param message - Message object
+ * @returns True if low priority
+ */
+export function isLowPriority(message: Message): boolean {
+  return message.priority === 'low' || !message.priority;
+}
+
+/**
+ * Filter messages by priority
+ * @param messages - Array of messages
+ * @param priority - Priority level to filter by
+ * @returns Filtered messages
+ */
+export function filterByPriority(messages: Message[], priority: MessagePriority): Message[] {
+  return messages.filter(msg => msg.priority === priority);
+}
+
+/**
+ * Filter high and medium priority messages
+ * @param messages - Array of messages
+ * @returns High and medium priority messages
+ */
+export function filterHighAndMediumPriority(messages: Message[]): Message[] {
+  return messages.filter(msg => msg.priority === 'high' || msg.priority === 'medium');
+}
+
+/**
+ * Get priority count statistics
+ * @param messages - Array of messages
+ * @returns Priority count statistics
+ */
+export function getPriorityStats(messages: Message[]): {
+  high: number;
+  medium: number;
+  low: number;
+  total: number;
+} {
+  const stats = { high: 0, medium: 0, low: 0, total: messages.length };
+  
+  messages.forEach(msg => {
+    if (msg.priority === 'high') stats.high++;
+    else if (msg.priority === 'medium') stats.medium++;
+    else stats.low++;
+  });
+  
+  return stats;
+}
+
+/**
+ * Sort messages by priority (high -> medium -> low) then by timestamp
+ * @param messages - Array of messages
+ * @returns Sorted messages
+ */
+export function sortByPriorityAndTime(messages: Message[]): Message[] {
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+  
+  return [...messages].sort((a, b) => {
+    // Sort by priority first
+    const priorityA = priorityOrder[a.priority || 'low'];
+    const priorityB = priorityOrder[b.priority || 'low'];
+    
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    
+    // Then by timestamp (newest first for same priority)
+    return b.timestamp.getTime() - a.timestamp.getTime();
+  });
 }
 
 

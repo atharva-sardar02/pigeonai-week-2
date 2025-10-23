@@ -17,22 +17,23 @@ Pigeon AI is a real-time messaging platform built with React Native and Firebase
 
 ---
 
-## MVP SCOPE (24 Hours - Tuesday Deadline)
+## MVP SCOPE (30+ Hours - COMPLETE ✅)
 
 ### What's IN Scope for MVP
 
 **Core Messaging Infrastructure ONLY**:
-✅ One-on-one chat functionality  
-✅ Real-time message delivery between 2+ users  
-✅ Message persistence (survives app restarts)  
-✅ Optimistic UI updates (messages appear instantly)  
-✅ Online/offline status indicators  
-✅ Message timestamps  
-✅ User authentication (users have accounts/profiles)  
-✅ Basic group chat functionality (3+ users)  
-✅ Message read receipts  
-✅ Push notifications (at least foreground)  
-✅ Deployment on Expo Go with deployed Firebase backend  
+✅ One-on-one chat functionality **[COMPLETE]**
+✅ Real-time message delivery between 2+ users **[COMPLETE]**
+✅ Message persistence (survives app restarts) **[COMPLETE]**
+✅ Optimistic UI updates (messages appear instantly) **[COMPLETE]**
+✅ Online/offline status indicators **[COMPLETE]**
+✅ Message timestamps **[COMPLETE]**
+✅ User authentication (users have accounts/profiles) **[COMPLETE]**
+✅ Basic group chat functionality (3+ users) **[COMPLETE]**
+✅ Message read receipts **[COMPLETE]**
+✅ Push notifications (AWS Lambda + FCM, works in all states) **[COMPLETE]**
+✅ Deployment on Expo Go with deployed Firebase backend **[COMPLETE]**
+✅ **BONUS**: Production APK built and tested **[COMPLETE]**  
 
 ### What's OUT of Scope for MVP
 
@@ -42,6 +43,7 @@ Pigeon AI is a real-time messaging platform built with React Native and Firebase
 ❌ **Message editing/deletion**  
 ❌ **End-to-end encryption**  
 ❌ **Voice/video calls**  
+✅ **Image Sharing** - Backend ready (Firebase Storage configured), UI pending
 
 **Post-MVP**: Once messaging infrastructure is solid, we'll choose a persona (Remote Team Professional, International Communicator, Busy Parent, or Content Creator) and build AI features tailored to their needs.
 
@@ -672,15 +674,15 @@ match /conversations/{conversationId}/messages/{messageId} {
 5. ✅ Airplane mode → message queues → exit airplane mode → message sends
 6. ✅ Poor network (throttled to 3G) → messages still deliver (just slower)
 7. ✅ Group chat with 3 users → messages deliver to all
-8. ✅ Background app → receive message → push notification appears
-9. ✅ AI command "Summarize conversation" → returns summary within 10 seconds
+8. ✅ Background app → receive message → push notification appears (production APK)
+9. 🟡 AI command "Summarize conversation" → returns summary within 10 seconds (post-MVP)
 10. ✅ Restart app → chat history loads correctly
 
 **Mitigation**:
-- Test on two physical iPhones if possible
-- Use network throttling tools (Chrome DevTools, React Native Debugger) to simulate poor networks
-- Test in simulator for rapid iteration, then validate on device
-- Create test accounts: alice@test.com, bob@test.com
+- ✅ Tested on two physical devices (Android + iOS)
+- ✅ Used network throttling tools to simulate poor networks
+- ✅ Tested in Expo Go for rapid iteration, then validated on production APK
+- ✅ Created test accounts: multiple users for group testing
 
 ### 12. Cost Management
 
@@ -703,7 +705,7 @@ match /conversations/{conversationId}/messages/{messageId} {
 
 ---
 
-## Success Metrics (How We Know MVP is Working)
+## Success Metrics (How We Know MVP is Working) - ✅ COMPLETE
 
 ### Functional Requirements
 - ✅ Two users can exchange messages in real-time (<2 second latency)
@@ -712,137 +714,513 @@ match /conversations/{conversationId}/messages/{messageId} {
 - ✅ Group chat with 3+ users works
 - ✅ Read receipts update correctly
 - ✅ Typing indicators show
-- ✅ Push notifications trigger (at least foreground)
-- ✅ Images can be sent and received
+- ✅ Push notifications trigger (foreground, background, closed - production APK)
+- 🟡 Images can be sent and received (backend ready, UI pending)
 - ✅ User authentication works (signup, login, logout)
 - ✅ App runs on Expo Go (both iOS and Android)
+- ✅ **BONUS**: Production APK built and tested on physical devices
 
 ### Performance Benchmarks
-- Message delivery latency: <1 second (online)
-- App launch time: <3 seconds on Expo Go
-- Message list scrolling: 60 fps (smooth with FlatList)
-- Offline-to-online sync: <5 seconds for 100 messages
-- Image loading: Progressive (show thumbnails immediately)
+- ✅ Message delivery latency: <1 second (online) - Achieved
+- ✅ App launch time: <3 seconds on Expo Go - Achieved
+- ✅ Message list scrolling: 60 fps (smooth with FlatList) - Achieved
+- ✅ Offline-to-online sync: <5 seconds for 100 messages - Achieved
+- 🟡 Image loading: Progressive (show thumbnails immediately) - Backend ready
 
 ### User Experience Goals
-- Intuitive UI (new user can send a message within 30 seconds)
-- No message loss (100% delivery rate for sent messages)
-- Graceful error handling (network errors show retry options)
-- Smooth animations and transitions
+- ✅ Intuitive UI (new user can send a message within 30 seconds)
+- ✅ No message loss (100% delivery rate for sent messages)
+- ✅ Graceful error handling (network errors show retry options)
+- ✅ Smooth animations and transitions
 
 ---
 
-## Timeline & Milestones
+## Timeline & Milestones - ✅ MVP COMPLETE
 
-### MVP Phase (0-24 hours) - Tuesday Deadline
+### MVP Phase (0-34 hours) - ✅ COMPLETE
+
 **Goal**: Functional messaging app with rock-solid infrastructure (NO AI features)
 
-**Hour 0-4: Foundation**
-- [ ] React Native + Expo project setup
-- [ ] Firebase project setup (Auth, Firestore, Storage, Cloud Messaging)
-- [ ] Firebase Auth integration (signup, login, logout)
-- [ ] User profile model and basic profile screen
-- [ ] Navigation setup (Expo Router or React Navigation)
-- [ ] Basic UI structure (AuthStack, MainStack)
+**Hour 0-2: Foundation** ✅
+- [x] React Native + Expo project setup
+- [x] Firebase project setup (Auth, Firestore, Storage, Cloud Messaging)
+- [x] Firebase Auth integration (signup, login, logout)
+- [x] User profile model and basic profile screen
+- [x] Navigation setup
+- [x] Basic UI structure (AuthStack, MainStack)
 
-**Hour 4-10: Core Messaging**
-- [ ] Message data models (local + Firestore)
-- [ ] Chat list screen (showing all conversations)
-- [ ] Chat screen (one-on-one messaging)
-- [ ] Send/receive messages
-- [ ] Message persistence (SQLite or AsyncStorage)
-- [ ] Real-time sync (Firestore onSnapshot listeners)
-- [ ] Optimistic UI updates (show message immediately, confirm later)
-- [ ] Message bubbles (sent vs received styling)
-- [ ] Timestamps (smart formatting)
+**Hour 2-12: Core Messaging** ✅
+- [x] Message data models (local + Firestore)
+- [x] Chat list screen (showing all conversations)
+- [x] Chat screen (one-on-one messaging)
+- [x] Send/receive messages
+- [x] Message persistence (SQLite)
+- [x] Real-time sync (Firestore onSnapshot listeners)
+- [x] Optimistic UI updates
+- [x] Message bubbles
+- [x] Timestamps
 
-**Hour 10-16: Essential Features**
-- [ ] Online/offline indicators (presence system)
-- [ ] Typing indicators ("User is typing...")
-- [ ] Read receipts (checkmarks: sent, delivered, read)
-- [ ] Image sending (ImagePicker + Firebase Storage)
-- [ ] Offline support (queue messages when offline, sync when online)
-- [ ] Network state detection (NetInfo)
-- [ ] Message delivery states (sending → sent → delivered → read)
+**Hour 12-22: Essential Features** ✅
+- [x] Online/offline indicators (presence system)
+- [x] Typing indicators
+- [x] Read receipts
+- [x] Offline support (queue messages, sync when online)
+- [x] Network state detection
+- [x] Message delivery states
 
-**Hour 16-22: Group Chat & Polish**
-- [ ] Group chat creation (select multiple participants)
-- [ ] Group messaging (send to all members)
-- [ ] Group info screen (members list, group name)
-- [ ] Push notifications (Expo Notifications - foreground minimum)
-- [ ] UI polish (loading states, error handling, smooth scrolling)
-- [ ] App state handling (background/foreground transitions)
+**Hour 22-30: Group Chat & Polish** ✅
+- [x] Group chat creation
+- [x] Group messaging
+- [x] Group info screen
+- [x] Push notifications (AWS Lambda + FCM)
+- [x] UI polish (loading states, error handling, smooth scrolling)
+- [x] App state handling
 
-**Hour 22-24: Testing & Deployment**
-- [ ] End-to-end testing (all 7 test scenarios)
-- [ ] Bug fixes
-- [ ] Deploy to Expo Go (publish update)
-- [ ] Test on physical devices (iOS + Android)
-- [ ] README with setup instructions
-- [ ] Share Expo Go link
+**Hour 30-34: Production Deployment & Testing** ✅
+- [x] End-to-end testing
+- [x] Bug fixes (18 bugs fixed)
+- [x] Production APK build (Android Studio)
+- [x] AWS Lambda push notification system
+- [x] FCM integration
+- [x] Physical device testing
+- [x] README with setup instructions
+- [x] Firebase backend deployed
 
-### Post-MVP (Days 2-4) - Early Submission
+### Current Status: MVP Complete + Production APK Deployed ✅
+
+---
+
+## PHASE 2: AI Features & Rubric Compliance (Target Score: 95+/100)
+
+**Timeline**: 45-55 hours  
+**Goal**: Implement all rubric requirements, choose persona, build 5 AI features + 1 advanced capability
+
+**Current Status**: MVP Complete ✅ | Persona: TBD | AI Features: 0/5
+
+### Phase 2 Roadmap (Based on Rubric)
+
+#### **PR #13: Persona Selection & Brainlift Document** (2 hours)
+**Target**: Section 6 - Persona Brainlift (Pass/Fail, -10 penalty if missing)  
+**Branch**: `docs/persona-brainlift`
+
+**Tasks:**
+- [ ] **Task 13.1**: Choose persona from provided options:
+  - Option 1: Remote Team Professional (distributed teams, timezone challenges)
+  - Option 2: International Communicator (multilingual, cultural differences)
+  - Option 3: Busy Parent (coordinating family schedules, quick updates)
+  - Option 4: Content Creator (collaboration, feedback cycles, deadlines)
+- [ ] **Task 13.2**: Research persona pain points and daily workflows
+- [ ] **Task 13.3**: Map 5 AI features to specific pain points
+- [ ] **Task 13.4**: Create 1-page brainlift document (`docs/BRAINLIFT.md`):
+  - Chosen persona and justification
+  - Specific pain points being addressed
+  - How each AI feature solves a real problem
+  - User stories for each AI feature
+  - Key technical decisions made
+  - Success metrics for each feature
+- [ ] **Task 13.5**: Document persona user stories in PRD
+- [ ] **Task 13.6**: Define AI feature requirements based on persona
+
+**Note**: All AI feature implementations (PR #16-21) will be tailored to the chosen persona.
+
+#### **PR #14: Image Sharing UI** (3-4 hours)
+**Target**: Complete remaining MVP feature + Bonus Points (+2 Advanced Features)  
+**Branch**: `feature/image-sharing-ui`
+
+**Tasks:**
+- [ ] **Task 14.1**: Implement image picker (expo-image-picker)
+- [ ] **Task 14.2**: Add camera and gallery options
+- [ ] **Task 14.3**: Image compression (0.7 quality, max 1MB)
+- [ ] **Task 14.4**: Firebase Storage upload with progress indicator
+- [ ] **Task 14.5**: Display image thumbnails in chat bubbles
+- [ ] **Task 14.6**: Full-screen image viewer on tap
+- [ ] **Task 14.7**: Progressive loading with placeholders
+- [ ] **Task 14.8**: Error handling for upload failures
+- [ ] **Task 14.9**: Manual testing on physical devices
+
+**Note**: Backend (Firebase Storage) already configured. This PR focuses on UI/UX implementation.
+
+---
+
+#### **PR #15: Cloud Functions Setup for AI** (2-3 hours)
+**Target**: Architecture Foundation for AI Features  
+**Branch**: `feature/cloud-functions-setup`
+
+**Tasks:**
+- [ ] **Task 15.1**: Initialize Firebase Cloud Functions project
+- [ ] **Task 15.2**: Install dependencies (OpenAI SDK, rate-limiting)
+- [ ] **Task 15.3**: Configure OpenAI API key in environment variables
+- [ ] **Task 15.4**: Implement authentication middleware
+- [ ] **Task 15.5**: Add rate limiting (per-user quotas)
+- [ ] **Task 15.6**: Create utility functions for context retrieval
+- [ ] **Task 15.7**: Set up error handling and logging
+- [ ] **Task 15.8**: Test functions locally with Firebase emulator
+- [ ] **Task 15.9**: Deploy to Firebase (`firebase deploy --only functions`)
+- [ ] **Task 15.10**: Document function endpoints and usage
+
+**Note**: This PR sets up the infrastructure. No AI features yet.
+
+---
+
+#### **PR #16: AI Feature 1 - Thread Summarization** (3-4 hours)
+**Target**: Section 3 - Required AI Features (3/15 points)  
+**Branch**: `feature/ai-thread-summarization`  
+**Persona-Specific**: Features will be tailored after persona selection
+
+**Tasks:**
+- [ ] **Task 16.1**: Implement backend summarization Cloud Function
+- [ ] **Task 16.2**: Fetch last 50-200 messages from conversation
+- [ ] **Task 16.3**: Build prompt template (persona-specific)
+- [ ] **Task 16.4**: Call OpenAI GPT-4 for summarization
+- [ ] **Task 16.5**: Parse and format response
+- [ ] **Task 16.6**: Add "Summarize" button to ChatHeader
+- [ ] **Task 16.7**: Create SummaryModal component for display
+- [ ] **Task 16.8**: Integrate frontend with Cloud Function
+- [ ] **Task 16.9**: Add loading states and error handling
+- [ ] **Task 16.10**: Implement response caching (1 hour TTL)
+- [ ] **Task 16.11**: Manual testing for accuracy (>90% target)
+- [ ] **Task 16.12**: Optimize for <2s response time
+
+**Success Criteria**: 90%+ accuracy in capturing key points, decisions, and action items.
+
+---
+
+#### **PR #17: AI Feature 2 - Action Item Extraction** (3-4 hours)
+**Target**: Section 3 - Required AI Features (3/15 points)  
+**Branch**: `feature/ai-action-items`  
+**Persona-Specific**: Features will be tailored after persona selection
+
+**Tasks:**
+- [ ] **Task 17.1**: Implement backend action item extraction function
+- [ ] **Task 17.2**: Define ActionItem model/interface
+- [ ] **Task 17.3**: Use GPT-4 with structured JSON output
+- [ ] **Task 17.4**: Add "Extract Action Items" button to ChatHeader
+- [ ] **Task 17.5**: Create ActionItemsList component
+- [ ] **Task 17.6**: Integrate frontend with Cloud Function
+- [ ] **Task 17.7**: Add navigation to source messages
+- [ ] **Task 17.8**: Implement action item storage (SQLite + Firestore)
+- [ ] **Task 17.9**: Add mark-as-complete functionality
+- [ ] **Task 17.10**: Test extraction accuracy (>90% target)
+
+**Success Criteria**: >90% extraction accuracy for clear action items.
+
+---
+
+#### **PR #18: AI Feature 3 - Smart Semantic Search** (3-4 hours)
+**Target**: Section 3 - Required AI Features (3/15 points) + Section 4 - RAG (1 point)  
+**Branch**: `feature/ai-semantic-search`  
+**Persona-Specific**: Features will be tailored after persona selection
+
+**Tasks:**
+- [ ] **Task 18.1**: Set up vector embeddings (OpenAI text-embedding-3-small)
+- [ ] **Task 18.2**: Implement similarity search algorithm (cosine similarity)
+- [ ] **Task 18.3**: Create search Cloud Function
+- [ ] **Task 18.4**: Add search bar to UI
+- [ ] **Task 18.5**: Create SearchResults component
+- [ ] **Task 18.6**: Integrate search service with debouncing
+- [ ] **Task 18.7**: Add navigation to search results
+- [ ] **Task 18.8**: Implement background embedding generation on message send
+- [ ] **Task 18.9**: Test search accuracy (>90% relevance)
+- [ ] **Task 18.10**: Optimize for <2s response time
+
+**Success Criteria**: >90% relevance for common queries. Required for RAG pipeline credit.
+
+---
+
+#### **PR #19: AI Feature 4 - Priority Message Detection** (3-4 hours)
+**Target**: Section 3 - Required AI Features (3/15 points)  
+**Branch**: `feature/ai-priority-detection`  
+**Persona-Specific**: Features will be tailored after persona selection
+
+**Tasks:**
+- [ ] **Task 19.1**: Implement priority detection Cloud Function
+- [ ] **Task 19.2**: Add priority field to Message model
+- [ ] **Task 19.3**: Implement automatic priority detection on message send
+- [ ] **Task 19.4**: Add priority badges to MessageBubble
+- [ ] **Task 19.5**: Add priority filter to ChatScreen
+- [ ] **Task 19.6**: Create PriorityMessagesScreen
+- [ ] **Task 19.7**: Enhance push notifications for high priority
+- [ ] **Task 19.8**: Implement priority analytics dashboard
+- [ ] **Task 19.9**: Test classification accuracy (>90% target)
+- [ ] **Task 19.10**: Optimize for <1s per message
+
+**Success Criteria**: >90% classification accuracy for high/medium/low priority.
+
+---
+
+#### **PR #20: AI Feature 5 - Decision Tracking** (3-4 hours)
+**Target**: Section 3 - Required AI Features (3/15 points)  
+**Branch**: `feature/ai-decision-tracking`  
+**Persona-Specific**: Features will be tailored after persona selection
+
+**Tasks:**
+- [ ] **Task 20.1**: Implement decision detection Cloud Function
+- [ ] **Task 20.2**: Define Decision model/interface
+- [ ] **Task 20.3**: Add "Track Decisions" button to ChatHeader
+- [ ] **Task 20.4**: Create DecisionTimeline component
+- [ ] **Task 20.5**: Integrate AI service call
+- [ ] **Task 20.6**: Implement decision storage (SQLite + Firestore)
+- [ ] **Task 20.7**: Add navigation to source messages
+- [ ] **Task 20.8**: Create DecisionSearchScreen
+- [ ] **Task 20.9**: Test detection accuracy (>90% target)
+- [ ] **Task 20.10**: Optimize for <2s response time
+
+**Success Criteria**: >90% extraction accuracy for clear decisions.
+
+---
+
+#### **PR #21: Advanced AI - Proactive Scheduling Assistant** (5-6 hours)
+**Target**: Section 3 - Advanced AI Capability (10 points)  
+**Branch**: `feature/ai-scheduling-agent`  
+**Persona-Specific**: Features will be tailored after persona selection
+
+**Multi-Step Agent Implementation (5+ steps):**
+- [ ] **Task 21.1**: Set up agent framework (LangChain or Vercel AI SDK)
+- [ ] **Task 21.2**: Define agent tools/functions (5 tools minimum)
+- [ ] **Task 21.3**: Implement Step 1 - Monitor for scheduling mentions
+- [ ] **Task 21.4**: Implement Step 2 - Extract meeting details
+- [ ] **Task 21.5**: Implement Step 3 - Check availability
+- [ ] **Task 21.6**: Implement Step 4 - Suggest optimal times
+- [ ] **Task 21.7**: Implement Step 5 - Generate meeting proposal
+- [ ] **Task 21.8**: Implement agent orchestration with context maintenance
+- [ ] **Task 21.9**: Add frontend proactive suggestions
+- [ ] **Task 21.10**: Create SchedulingModal interface
+- [ ] **Task 21.11**: Integrate agent with Cloud Function
+- [ ] **Task 21.12**: Add calendar integration (optional)
+- [ ] **Task 21.13**: Test agent workflow (>85% accuracy)
+- [ ] **Task 21.14**: Optimize for <15s complete workflow
+
+**Success Criteria**: Multi-step agent (5+ steps), maintains context, >85% accuracy.
+
+---
+
+#### **PR #22: RAG Pipeline & Technical Documentation** (2-3 hours)
+**Target**: Section 4 - RAG Pipeline (1 point) + Section 5 - Code Quality (2 points)  
+**Branch**: `docs/rag-pipeline`
+
+**Tasks:**
+- [ ] **Task 22.1**: Create RAG Pipeline documentation (`docs/RAG_PIPELINE.md`)
+- [ ] **Task 22.2**: Document vector embedding strategy
+- [ ] **Task 22.3**: Document retrieval strategy
+- [ ] **Task 22.4**: Add JSDoc comments to all AI services
+- [ ] **Task 22.5**: Create `functions/README.md`
+- [ ] **Task 22.6**: Update main README with AI features section
+- [ ] **Task 22.7**: Create API documentation (`docs/API.md`)
+- [ ] **Task 22.8**: Add inline code comments to complex algorithms
+- [ ] **Task 22.9**: Create developer onboarding guide (`docs/DEVELOPER_GUIDE.md`)
+- [ ] **Task 22.10**: Review and polish all documentation
+
+**Success Criteria**: Comprehensive documentation for RAG pipeline and all AI features.
+
+---
+
+#### **PR #23: Testing & Quality Assurance** (4-5 hours)
+**Target**: Section 5 - Testing & Quality (3 points)  
+**Branch**: `test/ai-features`
+
+**Tasks:**
+- [ ] **Task 23.1**: Unit tests for AI utilities (embeddings, similarity)
+- [ ] **Task 23.2**: Integration tests for Cloud Functions
+- [ ] **Task 23.3**: Frontend component tests (AI features)
+- [ ] **Task 23.4**: End-to-end testing (manual script)
+- [ ] **Task 23.5**: Accuracy evaluation with test dataset
+- [ ] **Task 23.6**: Performance benchmarking (all AI features)
+- [ ] **Task 23.7**: Error handling tests (rate limits, timeouts)
+- [ ] **Task 23.8**: Security testing (auth, permissions, API keys)
+- [ ] **Task 23.9**: Accessibility testing (screen reader, WCAG)
+- [ ] **Task 23.10**: Create testing documentation (`docs/TESTING_REPORT.md`)
+
+**Success Criteria**: >90% accuracy for all AI features, <2s for simple features, <15s for agent.
+
+---
+
+#### **PR #24: UI Polish & Professional Design** (3-4 hours)
+**Target**: Section 5 - Code Quality & Polish (2 points)  
+**Branch**: `ui/ai-polish`
+
+**Tasks:**
+- [ ] **Task 24.1**: Design consistent AI feature icons
+- [ ] **Task 24.2**: Standardize loading states (skeleton loaders)
+- [ ] **Task 24.3**: Improve error messages (user-friendly)
+- [ ] **Task 24.4**: Add empty states with illustrations
+- [ ] **Task 24.5**: Implement smooth animations (fade, slide)
+- [ ] **Task 24.6**: Add tooltips and first-time hints
+- [ ] **Task 24.7**: Ensure dark mode support for all AI features
+- [ ] **Task 24.8**: Responsive design for tablets/landscape
+- [ ] **Task 24.9**: Add micro-interactions (haptic feedback)
+- [ ] **Task 24.10**: Final UI/UX review and polish
+
+**Success Criteria**: Professional, polished UI for all AI features with consistent design system.
+
+---
+
+#### **PR #25: Final Integration, Deployment & Demo Video** (3-4 hours)
+**Target**: Section 1 (5 points) + Section 2 (10 points) + Deliverables (Pass/Fail)  
+**Branch**: `main` (merge all feature branches)
+
+**Tasks:**
+- [ ] **Task 25.1**: Merge all feature branches (PR #14-24)
+- [ ] **Task 25.2**: Final integration testing (all features)
+- [ ] **Task 25.3**: Build production APK with all AI features
+- [ ] **Task 25.4**: Deploy all Cloud Functions to production
+- [ ] **Task 25.5**: Update environment variables for production
+- [ ] **Task 25.6**: Create demo script (5 minutes)
+- [ ] **Task 25.7**: Record demo video (professional quality)
+- [ ] **Task 25.8**: Upload demo video (YouTube/Loom)
+- [ ] **Task 25.9**: Prepare submission package (all deliverables)
+- [ ] **Task 25.10**: Final code review and cleanup
+
+**Demo Video Requirements (5 minutes):**
+1. Intro (30s): What is Pigeon AI, problem it solves
+2. Core Features (1m): Sign up, chat, groups, presence, notifications
+3. AI Features (2.5m): Demonstrate all 5 AI features with clear examples
+4. Advanced AI (1m): Multi-step scheduling agent
+5. Wrap-up (30s): Benefits, impact, future improvements
+
+**Success Criteria**: Professional demo video, all features working, production APK deployed.
+
+---
+
+### Phase 2 Priority Order (Maximize Score)
+
+**CRITICAL - Must Complete (Pass/Fail):**
+1. **PR #13**: Persona Brainlift (-10 penalty if missing) ⚠️
+2. **PR #25**: Demo Video & Social Post (-15 penalty if missing) ⚠️
+
+**High Priority (Core Points - 40 points):**
+3. **PR #15**: Cloud Functions Setup (required for all AI features)
+4. **PR #16-20**: 5 Required AI Features (3 points each = 15 points)
+5. **PR #21**: Advanced AI Capability (10 points)
+6. **PR #18**: Semantic Search (also counts for RAG Pipeline = 1 bonus point)
+
+**Medium Priority (Quality & Documentation - 16 points):**
+7. **PR #22**: RAG Pipeline Documentation + Code Quality (3 points)
+8. **PR #23**: Testing & Quality Assurance (3 points)
+9. **PR #24**: UI Polish & Professional Design (2 points)
+10. **PR #14**: Image Sharing UI (Complete MVP + bonus points)
+
+**Recommended Implementation Order:**
+1. PR #13 (Persona Selection) - **START HERE** - defines all other features
+2. PR #14 (Image Sharing) - Complete MVP while planning AI features
+3. PR #15 (Cloud Functions) - Infrastructure for AI
+4. PR #16-20 (5 AI Features) - Core implementation, one at a time
+5. PR #21 (Advanced Agent) - After basic AI features work
+6. PR #22 (Documentation) - Throughout development
+7. PR #23 (Testing) - After features are implemented
+8. PR #24 (Polish) - Final touches
+9. PR #25 (Demo & Deploy) - **FINISH HERE** - submission package
+
+---
+
+### Estimated Phase 2 Timeline
+
+**Total Estimated Time**: 45-55 hours
+
+**Phase 1: Foundation & Planning** (6-10 hours)
+- **PR #13**: Persona Selection & Brainlift (2 hours) ← **START HERE**
+- **PR #14**: Image Sharing UI (3-4 hours)
+- **PR #15**: Cloud Functions Setup (2-3 hours)
+- **Deliverable**: Persona chosen, MVP complete, AI infrastructure ready
+
+**Phase 2: Core AI Features** (15-20 hours)
+- **PR #16**: Thread Summarization (3-4 hours)
+- **PR #17**: Action Item Extraction (3-4 hours)
+- **PR #18**: Semantic Search + RAG (3-4 hours)
+- **PR #19**: Priority Detection (3-4 hours)
+- **PR #20**: Decision Tracking (3-4 hours)
+- **Deliverable**: 5 AI features working with >90% accuracy
+
+**Phase 3: Advanced AI** (5-6 hours)
+- **PR #21**: Multi-Step Scheduling Agent (5-6 hours)
+- **Deliverable**: Advanced agent with 5+ steps, maintains context
+
+**Phase 4: Quality & Documentation** (8-11 hours)
+- **PR #22**: RAG Documentation + Code Quality (2-3 hours)
+- **PR #23**: Testing & QA (4-5 hours)
+- **PR #24**: UI Polish (3-4 hours)
+- **Deliverable**: Production-ready code, comprehensive documentation
+
+**Phase 5: Final Deployment** (3-4 hours)
+- **PR #25**: Integration, Deployment, Demo Video (3-4 hours)
+- **Deliverable**: Production APK, demo video, submission package
+
+**Suggested Weekly Breakdown:**
+- **Week 1 (20-25 hours)**: PR #13-15 (foundation) + PR #16-20 (AI features)
+- **Week 2 (15-20 hours)**: PR #21 (advanced AI) + PR #22-24 (quality)
+- **Week 3 (8-10 hours)**: PR #25 (final polish & demo)
+
+**Target Score: 90-95/100 points**
+
+---
+
+### Post-MVP (Days 2-4) - UPDATED FOR RUBRIC
+
 **After messaging infrastructure is solid:**
-- [ ] Choose persona (Remote Team, International Communicator, Busy Parent, or Content Creator)
-- [ ] Design AI features for chosen persona
-- [ ] Implement Cloud Functions for AI
-- [ ] Build AI assistant interface
-- [ ] Implement 5 required AI features
-- [ ] Background push notifications
-- [ ] Message search (keyword-based)
-- [ ] UI polish and animations
-- [ ] Performance optimizations
+- [x] MVP Complete ✅
+- [ ] **PR #13**: Choose persona + Brainlift document ← **NEXT STEP**
+- [ ] **PR #14**: Complete image sharing UI
+- [ ] **PR #15**: Cloud Functions setup
+- [ ] **PR #16-20**: Implement 5 required AI features
+- [ ] **PR #21**: Advanced AI capability (multi-step agent)
+- [ ] **PR #22**: RAG pipeline documentation
+- [ ] **PR #23**: Comprehensive testing
 
-### Final Phase (Days 5-7) - Final Submission
-- [ ] Implement 1 advanced AI feature (multi-step agent or proactive assistant)
-- [ ] Enhanced media support (video, voice messages)
-- [ ] Message editing/deletion
-- [ ] Additional polish based on testing feedback
-- [ ] Demo video creation (5-7 minutes)
-- [ ] Persona brainlift document
-- [ ] Social post
-- [ ] Final documentation
+### Final Phase (Days 5-7) - UPDATED FOR RUBRIC
+- [ ] **PR #24**: UI polish and professional design
+- [ ] **PR #25**: Demo video (5 minutes)
+- [ ] **PR #25**: Final integration and deployment
+- [ ] **PR #25**: Prepare submission package
+- [ ] Final testing and bug fixes
+- [ ] Submit for grading
 
 ---
 
 ## Open Questions & Decisions Needed
 
 1. ✅ **Platform**: React Native + Expo (CONFIRMED)
-2. ✅ **Persona**: NOT choosing yet - will decide after MVP (CONFIRMED)
-3. ✅ **AI Features**: NOT in MVP - will add post-MVP (CONFIRMED)
-4. **Read Receipts Privacy**: Always show read receipts or make it optional? (Recommended: Always show for MVP)
-5. **Group Size Limits**: Max users per group? (Recommended: 20 for MVP, 50 later)
-6. **Message History Limits**: How many messages to load initially? (Recommended: last 50, load more on scroll)
-7. **Image Compression**: What quality/size limits? (Recommended: 0.7 quality, max 1MB)
+2. ⏳ **Persona**: MUST choose before starting AI features (PR #13) - Options:
+   - Remote Team Professional (distributed teams, timezone challenges)
+   - International Communicator (multilingual, cultural differences)
+   - Busy Parent (coordinating family schedules)
+   - Content Creator (collaboration, feedback cycles)
+3. ✅ **AI Features**: Will be tailored to chosen persona (CONFIRMED)
+4. ✅ **Read Receipts Privacy**: Always show read receipts (CONFIRMED)
+5. ✅ **Group Size Limits**: 20 for MVP (CONFIRMED)
+6. ✅ **Message History Limits**: Last 50, load more on scroll (CONFIRMED)
+7. ✅ **Image Compression**: 0.7 quality, max 1MB (CONFIRMED)
+
+**NEXT DECISION REQUIRED**: Choose persona for PR #13 before proceeding with AI feature implementation.
 
 ---
 
-## Definition of Done (MVP)
+## Definition of Done (MVP) - ✅ COMPLETE
 
 The MVP is complete and ready for submission when:
 
-1. ✅ All 10 MVP requirements are implemented and tested:
-   - One-on-one chat functionality
-   - Real-time message delivery between 2+ users
-   - Message persistence (survives app restarts)
-   - Optimistic UI updates
-   - Online/offline status indicators
-   - Message timestamps
-   - User authentication (users have accounts/profiles)
-   - Basic group chat functionality (3+ users)
-   - Message read receipts
-   - Push notifications working (at least foreground)
+1. ✅ All 10+ MVP requirements are implemented and tested:
+   - ✅ One-on-one chat functionality
+   - ✅ Real-time message delivery between 2+ users
+   - ✅ Message persistence (survives app restarts)
+   - ✅ Optimistic UI updates
+   - ✅ Online/offline status indicators
+   - ✅ Message timestamps
+   - ✅ User authentication (users have accounts/profiles)
+   - ✅ Basic group chat functionality (3+ users)
+   - ✅ Message read receipts
+   - ✅ Push notifications working (foreground, background, closed - AWS Lambda + FCM)
+   - ✅ **BONUS**: Production APK built and deployed
 
 2. ✅ Two devices can exchange messages in real-time (<2 second latency)
 3. ✅ Offline test scenario passes (go offline, receive messages, come online)
 4. ✅ Group chat with 3+ users works reliably
 5. ✅ App survives force quit and restarts (message persistence works)
-6. ✅ Push notifications work (foreground minimum, background nice-to-have)
-7. ✅ Images can be sent and received
+6. ✅ Push notifications work (AWS Lambda with FCM in production APK)
+7. 🟡 Images can be sent and received (backend ready, UI pending)
 8. ✅ Code is on GitHub with comprehensive README
 9. ✅ Deployed to Expo Go (QR code shareable for testing)
 10. ✅ Firebase backend is deployed and accessible
 11. ✅ App runs on both iOS and Android via Expo Go
+12. ✅ **BONUS**: Production APK built with Android Studio and tested on physical devices
 
 ---
 

@@ -80,15 +80,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const registerPushNotifications = async (userId: string) => {
     try {
+      console.log('🔔 Starting push notification registration for user:', userId.substring(0, 8));
+      
+      // Check current permission status first
+      const { status: currentStatus } = await NotificationService.Notifications.getPermissionsAsync();
+      console.log('📱 Current permission status:', currentStatus);
+      
       // Register and get token
       const token = await NotificationService.registerForPushNotifications();
+      console.log('🔔 Got token from service:', token ? `${token.substring(0, 20)}...` : 'null');
       
       if (token) {
         // Save token to Firestore
+        console.log('🔔 Saving FCM token to Firestore...');
         await authService.saveDeviceToken(userId, token);
+        console.log('✅ FCM token saved to Firestore successfully!');
+      } else {
+        console.log('⚠️  No FCM token received');
       }
       // If no token (Expo Go), silently continue - local notifications will work
     } catch (error) {
+      console.error('❌ Failed to register push notifications:', error);
       // Silently fail - not critical for app functionality
       // Local notifications will still work in development
     }

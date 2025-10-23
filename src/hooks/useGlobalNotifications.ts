@@ -97,7 +97,7 @@ export function useGlobalNotifications() {
 
   // Listen for app state changes to detect when user comes online
   useEffect(() => {
-    if (!user || !shouldUseLocalNotifications()) {
+    if (!user) {
       return;
     }
 
@@ -127,7 +127,7 @@ export function useGlobalNotifications() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !shouldUseLocalNotifications()) {
+    if (!user) {
       return;
     }
 
@@ -211,26 +211,14 @@ export function useGlobalNotifications() {
 
               if (newMessages.length > 0) {
                 for (const msg of newMessages) {
-                  console.log(`  📤 [Global] Notifying: "${msg.content}" from ${msg.senderId.substring(0, 8)}`);
+                  console.log(`  📤 [Global] New message: "${msg.content}" from ${msg.senderId.substring(0, 8)}`);
                   
                   // Mark as processed immediately to avoid duplicates
                   processedMessageIds.current.add(msg.id);
 
-                  // Get sender info
-                  const senderProfile = userProfileCache.get(msg.senderId);
-                  const senderName = senderProfile?.displayName || 'Someone';
-
-                  // Trigger notification
-                  try {
-                    await triggerLocalNotification(
-                      senderName,
-                      msg.content,
-                      conv.id,
-                      msg.senderId
-                    );
-                  } catch (error) {
-                    console.error('Error triggering notification:', error);
-                  }
+                  // NOTE: We don't trigger local notifications here anymore
+                  // AWS Lambda handles ALL push notifications (foreground, background, and closed)
+                  // This listener only tracks messages to prevent duplicate notification triggers
                 }
                 
                 // Update last seen timestamp to NOW

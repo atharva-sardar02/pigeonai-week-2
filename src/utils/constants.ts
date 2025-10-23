@@ -10,8 +10,11 @@ export const COLORS = {
   
   // Status Colors
   success: '#34C759',
+  successLight: '#D1F2DD',       // Light green background
   warning: '#FF9500',
+  warningLight: '#FFE5B4',       // Light yellow background
   error: '#FF3B30',
+  errorLight: '#FFD6D6',         // Light red background
   info: '#4A9FF5',               // Matching pigeon blue
   
   // Background Colors (Dark Mode - Matching Icon Background)
@@ -100,6 +103,34 @@ export const SPACING = {
   lg: 24,
   xl: 32,
   xxl: 48,
+};
+
+// Font Sizes
+export const FONT_SIZES = {
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 18,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+};
+
+// Font Weights
+export const FONT_WEIGHTS = {
+  regular: '400',
+  medium: '500',
+  semibold: '600',
+  bold: '700',
+};
+
+// Border Radius
+export const BORDER_RADIUS = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  full: 9999,
 };
 
 // Typography

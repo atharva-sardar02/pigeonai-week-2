@@ -7,6 +7,7 @@ import {
   Platform,
   Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Conversation } from '../../types';
 import { COLORS, SIZES } from '../../utils/constants';
 import { formatMessageTime } from '../../utils/dateFormatter';
@@ -15,10 +16,12 @@ interface ChatHeaderProps {
   conversation: Conversation;
   currentUserId: string;
   onBack: () => void;
-  onTitlePress?: () => void; // New prop for tapping on the header
+  onTitlePress?: () => void;
+  onAIFeaturesPress?: () => void; // Single AI features button
+  onMorePress?: () => void; // 3-dot menu button
   isOnline?: boolean;
   lastSeen?: Date | null;
-  typingUserIds?: string[]; // New prop for typing users
+  typingUserIds?: string[];
   getUserDisplayName?: (userId: string) => string;
 }
 
@@ -39,6 +42,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   currentUserId,
   onBack,
   onTitlePress,
+  onAIFeaturesPress,
+  onMorePress,
   isOnline = false,
   lastSeen = null,
   typingUserIds = [],
@@ -256,21 +261,31 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         </View>
       </TouchableOpacity>
 
-      {/* More Options Button (Future) */}
-      <TouchableOpacity
-        style={styles.moreButton}
-        onPress={() => {
-          // TODO: Open conversation settings
-          console.log('More options tapped');
-        }}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <View style={styles.moreIcon}>
-          <View style={styles.dot} />
-          <View style={styles.dot} />
-          <View style={styles.dot} />
-        </View>
-      </TouchableOpacity>
+      {/* Single AI Features Button */}
+      {onAIFeaturesPress && (
+        <TouchableOpacity
+          style={styles.aiButton}
+          onPress={onAIFeaturesPress}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="sparkles" size={24} color={COLORS.primary} />
+        </TouchableOpacity>
+      )}
+
+      {/* More Options Button */}
+      {onMorePress && (
+        <TouchableOpacity
+          style={styles.moreButton}
+          onPress={onMorePress}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <View style={styles.moreIcon}>
+            <View style={styles.dot} />
+            <View style={styles.dot} />
+            <View style={styles.dot} />
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -368,6 +383,13 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: COLORS.online,
+  },
+  aiButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: SIZES.paddingSmall,
   },
   moreButton: {
     width: 40,

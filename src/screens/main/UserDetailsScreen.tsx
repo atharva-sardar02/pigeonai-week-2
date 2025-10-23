@@ -12,11 +12,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { MainStackParamList, UserProfile } from '../../types';
+import { MainStackParamList, UserProfile, Conversation } from '../../types';
 import * as AuthService from '../../services/firebase/authService';
+import * as FirestoreService from '../../services/firebase/firestoreService';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../../components/common/Avatar';
+import { CommonGroupsList } from '../../components/common/CommonGroupsList';
+import { useAuth } from '../../store/context/AuthContext';
 
 type UserDetailsScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -42,15 +45,21 @@ interface UserDetailsScreenProps {
  */
 export function UserDetailsScreen({ navigation, route }: UserDetailsScreenProps) {
   const { userId } = route.params;
+  const { user: currentUser } = useAuth();
   
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [commonGroups, setCommonGroups] = useState<Conversation[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(true);
 
   // Fetch user details
   useEffect(() => {
     fetchUserDetails();
-  }, [userId]);
+    if (currentUser?.uid) {
+      fetchCommonGroups();
+    }
+  }, [userId, currentUser?.uid]);
 
   const fetchUserDetails = async () => {
     try {
@@ -68,6 +77,29 @@ export function UserDetailsScreen({ navigation, route }: UserDetailsScreenProps)
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchCommonGroups = async () => {
+    if (!currentUser?.uid) return;
+    
+    try {
+      setLoadingGroups(true);
+      const groups = await FirestoreService.getCommonGroups(currentUser.uid, userId);
+      setCommonGroups(groups);
+    } catch (err: any) {
+      console.error('Error fetching common groups:', err);
+      // Don't show error for groups, just leave empty
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  const handleGroupPress = (group: Conversation) => {
+    // Navigate to group chat
+    navigation.navigate('Chat', {
+      conversationId: group.id,
+      conversation: group,
+    });
   };
 
   const handleBack = () => {
@@ -180,18 +212,14 @@ export function UserDetailsScreen({ navigation, route }: UserDetailsScreenProps)
           </View>
         </View>
 
-        {/* Common Groups Section (Placeholder for PR #6) */}
+        {/* Common Groups Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Common Groups</Text>
-          <View style={styles.placeholderCard}>
-            <Ionicons name="people-outline" size={32} color={COLORS.textTertiary} />
-            <Text style={styles.placeholderText}>
-              Common groups will appear here
-            </Text>
-            <Text style={styles.placeholderSubtext}>
-              Feature coming in PR #6: Group Chat
-            </Text>
-          </View>
+          <CommonGroupsList
+            groups={commonGroups}
+            loading={loadingGroups}
+            onGroupPress={handleGroupPress}
+          />
         </View>
 
         {/* Additional Info Section (Future Enhancement) */}
@@ -346,27 +374,6 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.fontWeight.semibold as TextStyle['fontWeight'],
     color: COLORS.text,
     marginBottom: SPACING.md,
-  } as TextStyle,
-
-  placeholderCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    padding: SPACING.xl,
-    alignItems: 'center',
-  } as ViewStyle,
-
-  placeholderText: {
-    fontSize: TYPOGRAPHY.fontSize.md,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.md,
-    textAlign: 'center',
-  } as TextStyle,
-
-  placeholderSubtext: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: COLORS.textTertiary,
-    marginTop: SPACING.xs,
-    textAlign: 'center',
   } as TextStyle,
 
   infoCard: {

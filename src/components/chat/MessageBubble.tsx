@@ -9,6 +9,7 @@ interface MessageBubbleProps {
   message: Message;
   isOwnMessage: boolean;
   isGroupChat?: boolean; // New prop to indicate if this is a group chat
+  participantCount?: number; // Total participants in conversation (for group read status)
 }
 
 /**
@@ -28,6 +29,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isOwnMessage,
   isGroupChat = false,
+  participantCount = 2,
 }) => {
   const bubbleStyle = isOwnMessage ? styles.sentBubble : styles.receivedBubble;
   const textStyle = isOwnMessage ? styles.sentText : styles.receivedText;
@@ -44,23 +46,70 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const getStatusIcon = () => {
     if (!isOwnMessage) return null;
 
-    if (MessageModel.isRead(message)) {
-      return <Text style={styles.statusIcon}>✓✓</Text>; // Double check (read)
-    } else if (MessageModel.isDelivered(message)) {
-      return <Text style={styles.statusIcon}>✓✓</Text>; // Double check (delivered)
-    } else if (MessageModel.isSent(message)) {
-      return <Text style={styles.statusIcon}>✓</Text>; // Single check (sent)
-    } else if (MessageModel.isSending(message)) {
-      return <Text style={styles.statusIconPending}>○</Text>; // Clock (sending)
-    } else if (MessageModel.isFailed(message)) {
-      return <Text style={styles.statusIconFailed}>!</Text>; // Exclamation (failed)
+    // Failed/Offline state
+    if (MessageModel.isFailed(message)) {
+      return <Text style={styles.statusIconFailed}>!</Text>; // Exclamation mark
     }
+    
+    // Sending state
+    if (MessageModel.isSending(message)) {
+      return <Text style={styles.statusIconPending}>○</Text>; // Clock icon
+    }
+
+    // Group chat logic
+    if (isGroupChat) {
+      // Count how many people have read (excluding sender)
+      const readByCount = Object.keys(message.readBy || {}).length;
+      const readByOthers = readByCount - 1; // Exclude sender
+      const otherParticipants = participantCount - 1; // Exclude sender
+      
+      // All members read → Green double ticks
+      if (readByOthers >= otherParticipants && otherParticipants > 0) {
+        return <Text style={styles.statusIconRead}>✓✓</Text>;
+      }
+      
+      // Message sent/delivered but not all read → Single tick
+      if (MessageModel.isSent(message) || MessageModel.isDelivered(message)) {
+        return <Text style={styles.statusIcon}>✓</Text>;
+      }
+      
+      return null;
+    }
+
+    // DM logic (1-on-1 chat)
+    if (MessageModel.isRead(message)) {
+      // Blue double ticks (read)
+      return <Text style={styles.statusIconRead}>✓✓</Text>;
+    } else if (MessageModel.isDelivered(message)) {
+      // Gray double ticks (delivered but not read)
+      return <Text style={styles.statusIcon}>✓✓</Text>;
+    } else if (MessageModel.isSent(message)) {
+      // Single gray tick (sent)
+      return <Text style={styles.statusIcon}>✓</Text>;
+    }
+    
     return null;
   };
 
   return (
     <View style={containerStyle}>
       <View style={[styles.bubble, bubbleStyle]}>
+        {/* Priority Badge (PR #19) */}
+        {message.priority && message.priority !== 'low' && (
+          <View style={[
+            styles.priorityBadge,
+            message.priority === 'high' ? styles.priorityHigh : styles.priorityMedium,
+            isOwnMessage && styles.priorityBadgeSent
+          ]}>
+            <Text style={styles.priorityIcon}>
+              {message.priority === 'high' ? '🔴' : '🟡'}
+            </Text>
+            <Text style={styles.priorityLabel}>
+              {message.priority === 'high' ? 'Urgent' : 'Important'}
+            </Text>
+          </View>
+        )}
+
         {/* Sender Name (for group chats, received messages only) */}
         {showSenderName && (
           <Text style={styles.senderName}>
@@ -158,7 +207,12 @@ const styles = StyleSheet.create({
   },
   statusIcon: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.8)', // Gray ticks (sent/delivered)
+  },
+  statusIconRead: {
+    fontSize: 12,
+    color: '#10B981', // Green ticks (read) - emerald-500, high contrast on blue bubble
+    fontWeight: 'bold',
   },
   statusIconPending: {
     fontSize: 12,
@@ -168,6 +222,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.error,
     fontWeight: 'bold',
+  },
+  // PR #19: Priority Badge Styles
+  priorityBadge: {
+    position: 'absolute',
+    top: -10,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  priorityBadgeSent: {
+    right: 8,
+  },
+  priorityHigh: {
+    backgroundColor: '#EF4444', // red-500
+  },
+  priorityMedium: {
+    backgroundColor: '#F59E0B', // amber-500
+  },
+  priorityIcon: {
+    fontSize: 10,
+  },
+  priorityLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
   },
 });
 

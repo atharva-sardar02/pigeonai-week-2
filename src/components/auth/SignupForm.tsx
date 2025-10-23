@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { COLORS, SIZES } from '../../utils/constants';
 import {
@@ -122,11 +120,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({
     confirmPassword.length > 0;
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <View style={styles.formContainer}>
+    <View style={styles.formContainer}>
         {/* Display Name Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Display Name</Text>
@@ -249,14 +243,10 @@ export const SignupForm: React.FC<SignupFormProps> = ({
           By signing up, you agree to our Terms of Service and Privacy Policy
         </Text>
       </View>
-    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   formContainer: {
     width: '100%',
   },

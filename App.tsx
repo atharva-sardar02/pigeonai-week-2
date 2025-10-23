@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LogBox } from 'react-native';
@@ -6,7 +6,6 @@ import * as Notifications from 'expo-notifications';
 import { AuthProvider } from './src/store/context/AuthContext';
 import { PresenceProvider } from './src/store/context/PresenceContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
-import { NotificationBanner } from './src/components/common';
 import { GlobalNotificationListener } from './src/components/GlobalNotificationListener';
 import { NavigationContainerRef } from '@react-navigation/native';
 
@@ -63,12 +62,6 @@ export default function App() {
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
-  
-  // State for notification banner
-  const [bannerVisible, setBannerVisible] = useState(false);
-  const [bannerTitle, setBannerTitle] = useState('');
-  const [bannerMessage, setBannerMessage] = useState('');
-  const [bannerData, setBannerData] = useState<any>(null);
 
   useEffect(() => {
     // Listener for notifications received while app is in foreground
@@ -81,11 +74,9 @@ export default function App() {
       console.log('📬 Body:', body);
       console.log('📬 Data:', data);
       
-      // Show custom in-app banner
-      setBannerTitle(title as string || 'New Message');
-      setBannerMessage(body as string || '');
-      setBannerData(data);
-      setBannerVisible(true);
+      // DON'T show in-app banner - system notifications handle everything
+      // The notification handler in notificationService.ts returns null
+      // which lets the OS display system notifications in the notification tray
     });
 
     // Listener for when user taps on notification
@@ -142,31 +133,6 @@ export default function App() {
     };
   }, []);
 
-  /**
-   * Handle banner tap - navigate to conversation
-   */
-  const handleBannerPress = () => {
-    if (bannerData && navigationRef.current) {
-      const { conversationId, screen } = bannerData as any;
-      
-      if (screen === 'Chat' && conversationId) {
-        console.log('🧭 Banner tapped - navigating to Chat:', conversationId);
-        navigationRef.current.navigate('Main', {
-          screen: 'Chat',
-          params: { conversationId },
-        });
-      }
-    }
-    setBannerVisible(false);
-  };
-
-  /**
-   * Handle banner dismiss
-   */
-  const handleBannerDismiss = () => {
-    setBannerVisible(false);
-  };
-
   return (
     <SafeAreaProvider>
       <AuthProvider>
@@ -176,15 +142,6 @@ export default function App() {
           
           <StatusBar style="light" />
           <AppNavigator ref={navigationRef} />
-          
-          {/* Custom notification banner for foreground notifications */}
-          <NotificationBanner
-            visible={bannerVisible}
-            title={bannerTitle}
-            message={bannerMessage}
-            onPress={handleBannerPress}
-            onDismiss={handleBannerDismiss}
-          />
         </PresenceProvider>
       </AuthProvider>
     </SafeAreaProvider>

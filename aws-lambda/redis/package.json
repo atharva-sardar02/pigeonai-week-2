@@ -1,0 +1,16 @@
+{
+  "name": "pigeonai-redis",
+  "version": "1.0.0",
+  "description": "Redis client for AI response caching in Pigeon AI",
+  "main": "redisClient.js",
+  "scripts": {
+    "test": "node test-cache.js"
+  },
+  "dependencies": {
+    "ioredis": "^5.4.1"
+  },
+  "devDependencies": {},
+  "author": "Pigeon AI Team",
+  "license": "MIT"
+}
+

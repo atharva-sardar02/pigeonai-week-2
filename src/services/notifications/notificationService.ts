@@ -2,6 +2,9 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
+// Export Notifications for external use
+export { Notifications };
+
 /**
  * Notification Service
  * Handles push notification permissions, tokens, and notification handling
@@ -9,6 +12,9 @@ import Constants from 'expo-constants';
  */
 
 // Configure how notifications should be displayed when app is in foreground
+// shouldShowAlert: true means show in notification tray (system notification)
+// shouldPlaySound: true means play notification sound
+// shouldSetBadge: true means update app icon badge
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -24,17 +30,30 @@ Notifications.setNotificationHandler({
 export async function requestPermissions(): Promise<boolean> {
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    console.log('📱 Current permission status:', existingStatus);
+    
     let finalStatus = existingStatus;
 
     // If permission not already granted, ask user
     if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
+      console.log('📱 Requesting notification permissions...');
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+        },
+      });
       finalStatus = status;
+      console.log('📱 New permission status:', finalStatus);
     }
 
     if (finalStatus !== 'granted') {
+      console.log('⚠️ Notification permissions not granted');
       return false;
     }
+    
+    console.log('✅ Notification permissions granted');
     
     // Set up notification channel for Android
     if (Platform.OS === 'android') {
@@ -45,34 +64,50 @@ export async function requestPermissions(): Promise<boolean> {
         lightColor: '#3B82F6',
         sound: 'default',
       });
+      console.log('✅ Android notification channel created');
     }
 
     return true;
   } catch (error) {
-    // Silently fail
+    console.error('❌ Error requesting permissions:', error);
     return false;
   }
 }
 
 /**
- * Get the Expo Push Token for this device
- * @returns Promise with the Expo Push Token or null
+ * Get the FCM Push Token for this device
+ * @returns Promise with the FCM Push Token or null
  */
 export async function getDeviceToken(): Promise<string | null> {
   try {
-    // Check if running on physical device
-    if (!Constants.isDevice) {
-      return null;
+    console.log('📱 [STEP 3] Device check - isDevice:', Constants.isDevice);
+    console.log('📱 [STEP 4] Attempting to get FCM push token...');
+    
+    // Try to get FCM token first (for EAS Build with google-services.json)
+    try {
+      const fcmToken = await Notifications.getDevicePushTokenAsync();
+      console.log('📱 [STEP 5] ✅ Got FCM token:', fcmToken.data.substring(0, 20) + '...');
+      console.log('📱 Full token length:', fcmToken.data.length);
+      return fcmToken.data;
+    } catch (fcmError: any) {
+      console.log('📱 [STEP 5] ⚠️ FCM token failed:', fcmError?.message || fcmError);
+      console.log('📱 [STEP 6] Trying Expo push token as fallback...');
+      
+      // Fallback to Expo Push Token
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+      if (!projectId) {
+        console.error('❌ No project ID found for Expo push token');
+        return null;
+      }
+      
+      console.log('📱 [STEP 7] Project ID found:', projectId);
+      const expoToken = await Notifications.getExpoPushTokenAsync({ projectId });
+      console.log('📱 [STEP 8] ✅ Got Expo push token:', expoToken.data);
+      return expoToken.data;
     }
-
-    // Get the Expo Push Token
-    const token = await Notifications.getExpoPushTokenAsync({
-      projectId: Constants.expoConfig?.extra?.eas?.projectId,
-    });
-
-    return token.data;
-  } catch (error) {
-    // Silently handle Expo Go limitation (SDK 53+)
+  } catch (error: any) {
+    console.error('❌ FATAL: Failed to get any push token:', error?.message || error);
+    console.error('❌ Error stack:', error?.stack);
     return null;
   }
 }
@@ -83,21 +118,32 @@ export async function getDeviceToken(): Promise<string | null> {
  */
 export async function registerForPushNotifications(): Promise<string | null> {
   try {
+    console.log('📱 [STEP 1] Requesting permissions...');
+    
     // Step 1: Request permissions
     const hasPermission = await requestPermissions();
+    console.log(`📱 [STEP 1 RESULT] Permission granted: ${hasPermission}`);
+    
     if (!hasPermission) {
+      console.log('❌ Permissions not granted, aborting');
       return null;
     }
 
+    console.log('📱 [STEP 2] Getting device token...');
+    
     // Step 2: Get device token
     const token = await getDeviceToken();
+    console.log(`📱 [STEP 2 RESULT] Token received: ${token ? 'YES' : 'NO'}`);
+    
     if (!token) {
+      console.log('❌ Token generation failed');
       return null;
     }
 
+    console.log('✅ Registration complete!');
     return token;
   } catch (error) {
-    // Silently fail
+    console.error('❌ FATAL: Registration error:', error);
     return null;
   }
 }
