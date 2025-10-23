@@ -177,7 +177,7 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
           onPress={handleAddToCalendar}
           activeOpacity={0.7}
         >
-          <Ionicons name="calendar" size={20} color={COLORS.white} />
+          <Ionicons name="calendar" size={20} color={COLORS.buttonPrimaryText} />
           <Text style={styles.calendarButtonText}>Add to Google Calendar</Text>
         </TouchableOpacity>
 
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   detailsCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   timeSlotCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
   calendarButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.white,
+    color: COLORS.buttonPrimaryText,
   },
   calendarHint: {
     fontSize: 12,

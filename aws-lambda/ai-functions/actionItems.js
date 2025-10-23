@@ -75,7 +75,7 @@ async function extractActionItems(messages) {
 
     // Use JSON mode for structured output
     const result = await chatCompletion(promptMessages, {
-      model: 'gpt-4-turbo',
+      model: 'gpt-4o-mini', // ✅ Faster and cheaper
       temperature: 0.2, // Low temperature for consistent structured output
       maxTokens: 2000,
       responseFormat: 'json', // Enable JSON mode

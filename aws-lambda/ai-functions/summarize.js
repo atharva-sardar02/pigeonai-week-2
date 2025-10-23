@@ -75,7 +75,7 @@ async function generateSummary(messages, messageCount) {
     if (messageCount < 10) {
       const promptMessages = getQuickSummaryPrompt(messages, messageCount);
       const summary = await chatCompletion(promptMessages, {
-        model: 'gpt-4-turbo',
+        model: 'gpt-4o-mini',
         temperature: 0.5,
         maxTokens: 200,
       });

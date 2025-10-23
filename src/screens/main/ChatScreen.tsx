@@ -14,7 +14,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChatHeader } from '../../components/chat/ChatHeader';
 import { MessageList } from '../../components/chat/MessageList';
 import { MessageInput } from '../../components/chat/MessageInput';
-import { ChatOptionsMenu } from '../../components/chat/ChatOptionsMenu';
 import AIFeaturesMenu from '../../components/ai/AIFeaturesMenu';
 import SummaryModal from '../../components/ai/SummaryModal';
 import ActionItemsList from '../../components/ai/ActionItemsList';
@@ -99,8 +98,6 @@ export const ChatScreen: React.FC = () => {
   const [aiMenuVisible, setAiMenuVisible] = useState(false);
   const [aiMenuPosition, setAiMenuPosition] = useState({ x: 0, y: 60 });
 
-  // Chat Options Menu state (3-dot menu)
-  const [optionsMenuVisible, setOptionsMenuVisible] = useState(false);
 
   // AI Action Items state
   const [actionItemsModalVisible, setActionItemsModalVisible] = useState(false);
@@ -362,9 +359,17 @@ export const ChatScreen: React.FC = () => {
       // Call AI service to generate summary
       const result = await summarizeConversation(conversationId, 100);
 
+      console.log('📊 Summary result:', JSON.stringify(result, null, 2));
+      console.log('📊 result.success:', result.success);
+      console.log('📊 result.data:', result.data);
+      console.log('📊 result.data.summary:', result.data?.summary);
+
       if (result.success && result.data) {
+        const summaryText = result.data.summary || 'No summary generated';
+        console.log('✅ Setting summary:', summaryText.substring(0, 100));
+        
         setSummaryData({
-          summary: result.data.summary,
+          summary: summaryText,
           loading: false,
           error: null,
           messageCount: result.data.messageCount,
@@ -372,6 +377,7 @@ export const ChatScreen: React.FC = () => {
           duration: result.data.duration,
         });
       } else {
+        console.log('❌ Summary failed:', result.error);
         setSummaryData({
           summary: null,
           loading: false,
@@ -379,7 +385,7 @@ export const ChatScreen: React.FC = () => {
         });
       }
     } catch (err: any) {
-      console.error('Summarization error:', err);
+      console.error('❌ Summarization error:', err);
       setSummaryData({
         summary: null,
         loading: false,
@@ -759,46 +765,6 @@ export const ChatScreen: React.FC = () => {
     );
   };
 
-  // Handle opening options menu (3-dot menu)
-  const handleOptionsMenuPress = () => {
-    setOptionsMenuVisible(true);
-  };
-
-  // Handle deleting all messages in conversation
-  const handleDeleteAllMessages = async () => {
-    if (!user?.uid) return;
-
-    Alert.alert(
-      'Delete All Messages',
-      'Are you sure you want to delete all messages in this conversation? This action cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log(`🗑️ Deleting all messages in conversation ${conversationId}`);
-              
-              // Delete all messages from Firestore
-              await FirestoreService.deleteAllMessagesInConversation(conversationId);
-              
-              // Refresh messages to show empty state
-              await refreshMessages();
-              
-              Alert.alert('Success', 'All messages have been deleted.');
-            } catch (error: any) {
-              console.error('Error deleting messages:', error);
-              Alert.alert('Error', 'Failed to delete messages. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  };
 
   // Show loading state
   if (loadingConversation || !conversation) {
@@ -848,7 +814,6 @@ export const ChatScreen: React.FC = () => {
           onBack={handleBack}
           onTitlePress={handleHeaderTap}
           onAIFeaturesPress={handleAIFeaturesPress}
-          onMorePress={handleOptionsMenuPress}
           isOnline={isOnline}
           lastSeen={lastSeen}
           typingUserIds={typingUsers}
@@ -959,12 +924,6 @@ export const ChatScreen: React.FC = () => {
           onAddToCalendar={handleAddToCalendar}
         />
 
-        {/* Chat Options Menu (3-dot menu) */}
-        <ChatOptionsMenu
-          visible={optionsMenuVisible}
-          onClose={() => setOptionsMenuVisible(false)}
-          onDeleteAllMessages={handleDeleteAllMessages}
-        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

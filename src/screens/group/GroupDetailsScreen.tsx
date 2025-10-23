@@ -80,16 +80,6 @@ export const GroupDetailsScreen: React.FC = () => {
     navigation.goBack();
   };
 
-  const handleLeaveGroup = async () => {
-    if (!user || !group) return;
-    
-    try {
-      await FirestoreService.leaveGroup(groupId, user.uid);
-      navigation.goBack();
-    } catch (error) {
-      console.error('Error leaving group:', error);
-    }
-  };
 
   const handleMemberPress = (memberId: string) => {
     if (memberId === user?.uid) {
@@ -199,13 +189,6 @@ export const GroupDetailsScreen: React.FC = () => {
           />
         </View>
 
-        {/* Actions Section */}
-        <View style={styles.section}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleLeaveGroup}>
-            <Ionicons name="exit-outline" size={24} color={COLORS.error} />
-            <Text style={styles.actionButtonTextDanger}>Leave Group</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

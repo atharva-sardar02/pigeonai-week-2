@@ -95,80 +95,22 @@ export default function SummaryModal({
       );
     }
 
-    // Parse and format the summary
-    // Split by sections (KEY DECISIONS, ACTION ITEMS, etc.)
-    const lines = summary.split('\n');
-    const formattedContent = [];
-    let currentSection = '';
-    let sectionContent: string[] = [];
-
-    lines.forEach((line, index) => {
-      const trimmed = line.trim();
-      
-      // Detect section headers (all caps ending with colon)
-      if (trimmed.match(/^[A-Z\s]+:$/)) {
-        // Save previous section
-        if (currentSection && sectionContent.length > 0) {
-          formattedContent.push({
-            type: 'section',
-            header: currentSection,
-            content: sectionContent,
-          });
-        }
-        // Start new section
-        currentSection = trimmed.replace(':', '');
-        sectionContent = [];
-      } else if (trimmed.startsWith('📋')) {
-        // Title
-        formattedContent.push({
-          type: 'title',
-          content: trimmed,
-        });
-      } else if (trimmed.startsWith('-')) {
-        // Bullet point
-        sectionContent.push(trimmed.substring(1).trim());
-      } else if (trimmed.length > 0) {
-        // Regular text
-        sectionContent.push(trimmed);
-      }
-    });
-
-    // Add last section
-    if (currentSection && sectionContent.length > 0) {
-      formattedContent.push({
-        type: 'section',
-        header: currentSection,
-        content: sectionContent,
-      });
-    }
+    // ✅ SIMPLIFIED: Just display the summary as plain text with basic formatting
+    // Remove the emoji if it exists
+    const cleanSummary = summary.replace(/^📋\s*/gm, '');
+    
+    const formattedContent = [{
+      type: 'text',
+      content: cleanSummary,
+    }];
 
     return (
       <ScrollView style={styles.summaryContent} showsVerticalScrollIndicator={true}>
-        {formattedContent.map((item: any, index: number) => {
-          if (item.type === 'title') {
-            return (
-              <Text key={index} style={styles.summaryTitle}>
-                {item.content}
-              </Text>
-            );
-          }
-
-          if (item.type === 'section') {
-            return (
-              <View key={index} style={styles.section}>
-                <Text style={styles.sectionHeader}>{item.header}</Text>
-                {item.content.map((line: string, lineIndex: number) => (
-                  <View key={lineIndex} style={styles.bulletContainer}>
-                    <Text style={styles.bullet}>•</Text>
-                    <Text style={styles.bulletText}>{line}</Text>
-                  </View>
-                ))}
-              </View>
-            );
-          }
-
-          return null;
-        })}
+        {formattedContent.map((item: any, index: number) => (
+          <Text key={index} style={styles.summaryText}>
+            {item.content}
+          </Text>
+        ))}
 
         {/* Metadata footer */}
         <View style={styles.metadataContainer}>
@@ -293,6 +235,12 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     color: COLORS.text,
     lineHeight: FONT_SIZES.md * 1.5,
+  },
+  summaryText: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.text,
+    lineHeight: FONT_SIZES.md * 1.6,
+    marginBottom: SPACING.md,
   },
   metadataContainer: {
     marginTop: SPACING.lg,

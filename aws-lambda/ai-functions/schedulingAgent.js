@@ -19,7 +19,7 @@ const { ChatPromptTemplate } = require('@langchain/core/prompts');
 const { StructuredOutputParser } = require('@langchain/core/output_parsers');
 const { RunnableSequence } = require('@langchain/core/runnables');
 const { z } = require('zod'); // Fixed: Import zod directly, not from @langchain/core/zod
-const openaiClient = require('./utils/openaiClient');
+const { openai: openaiClient } = require('./utils/openaiClient'); // ✅ Destructure to get the raw OpenAI client
 const firestoreClient = require('./utils/firestoreClient');
 const cacheClient = require('./utils/cacheClient');
 const responseUtils = require('./utils/responseUtils');
@@ -160,7 +160,7 @@ async function detectSchedulingIntent(messages) {
     const prompt = schedulingPrompt.getIntentDetectionPrompt(recentMessages.map(m => m.content).join('\n'));
     
     const response = await openaiClient.chat.completions.create({
-      model: 'gpt-4-turbo',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: 'You are an AI assistant that detects scheduling intent in conversations.' },
         { role: 'user', content: prompt }
@@ -205,7 +205,7 @@ async function extractMeetingDetails(messages, triggerMessage) {
 
   try {
     const response = await openaiClient.chat.completions.create({
-      model: 'gpt-4-turbo',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: 'You are an AI assistant that extracts meeting details from conversations.' },
         { role: 'user', content: prompt }
@@ -295,28 +295,31 @@ async function suggestOptimalTimes(meetingDetails, availability) {
   const { duration, timeframe, preferredTime } = meetingDetails;
   const { workingHours, participants } = availability;
 
-  // Calculate optimal times (simplified for MVP)
+  // Calculate optimal times (varied based on current time)
   const now = new Date();
-  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
+  
+  // Use different days based on current day to add variety
+  const currentDay = now.getDay(); // 0-6
+  const currentHour = now.getHours();
+  
   const suggestedTimes = [];
 
-  // Option 1: Tuesday 9 AM PST (best overlap for global teams)
-  const option1 = new Date(nextWeek);
-  option1.setDate(option1.getDate() + (2 - option1.getDay() + 7) % 7); // Next Tuesday
-  option1.setHours(9, 0, 0, 0);
+  // Option 1: Tomorrow at 10 AM or 2 days from now at 9 AM
+  const option1 = new Date(now);
+  option1.setDate(option1.getDate() + (currentHour > 15 ? 2 : 1));
+  option1.setHours(currentHour > 12 ? 10 : 14, 0, 0, 0);
   suggestedTimes.push(createTimeSlot(option1, duration, participants, 'best'));
 
-  // Option 2: Wednesday 2 PM PST
-  const option2 = new Date(option1);
-  option2.setDate(option2.getDate() + 1); // Wednesday
-  option2.setHours(14, 0, 0, 0);
+  // Option 2: 3 days from now at different time
+  const option2 = new Date(now);
+  option2.setDate(option2.getDate() + 3);
+  option2.setHours(currentDay % 2 === 0 ? 11 : 15, 0, 0, 0);
   suggestedTimes.push(createTimeSlot(option2, duration, participants, 'good'));
 
-  // Option 3: Thursday 10 AM PST
-  const option3 = new Date(option1);
-  option3.setDate(option3.getDate() + 2); // Thursday
-  option3.setHours(10, 0, 0, 0);
+  // Option 3: 5 days from now at another time
+  const option3 = new Date(now);
+  option3.setDate(option3.getDate() + 5);
+  option3.setHours(currentDay % 2 === 0 ? 13 : 9, 30, 0, 0);
   suggestedTimes.push(createTimeSlot(option3, duration, participants, 'acceptable'));
 
   return suggestedTimes;
