@@ -21,6 +21,8 @@ interface ChatHeaderProps {
   onExtractActionItems?: () => void; // New prop for AI action item extraction
   onSearch?: () => void; // New prop for semantic search
   onFilterPriority?: () => void; // New prop for priority filter (PR #19)
+  onTrackDecisions?: () => void; // New prop for decision tracking (PR #20)
+  onScheduleMeeting?: () => void; // New prop for scheduling agent (PR #21)
   isOnline?: boolean;
   lastSeen?: Date | null;
   typingUserIds?: string[]; // New prop for typing users
@@ -48,6 +50,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onExtractActionItems,
   onSearch,
   onFilterPriority,
+  onTrackDecisions,
+  onScheduleMeeting,
   isOnline = false,
   lastSeen = null,
   typingUserIds = [],
@@ -306,6 +310,28 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="filter-outline" size={22} color={COLORS.primary} />
+        </TouchableOpacity>
+      )}
+
+      {/* AI Decision Tracking Button (PR #20) */}
+      {onTrackDecisions && (
+        <TouchableOpacity
+          style={styles.aiButton}
+          onPress={onTrackDecisions}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="bulb-outline" size={22} color={COLORS.primary} />
+        </TouchableOpacity>
+      )}
+
+      {/* AI Scheduling Agent Button (PR #21) */}
+      {onScheduleMeeting && (
+        <TouchableOpacity
+          style={styles.aiButton}
+          onPress={onScheduleMeeting}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="calendar-outline" size={22} color={COLORS.primary} />
         </TouchableOpacity>
       )}
 

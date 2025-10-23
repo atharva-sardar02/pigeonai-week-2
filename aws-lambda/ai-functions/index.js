@@ -11,6 +11,8 @@ const actionItemsHandler = require('./actionItems');
 const searchHandler = require('./search');
 const embeddingHandler = require('./generateEmbedding');
 const priorityHandler = require('./priorityDetection');
+const decisionTrackingHandler = require('./decisionTracking');
+const schedulingAgentHandler = require('./schedulingAgent');
 
 /**
  * Main Lambda Handler
@@ -70,34 +72,16 @@ exports.handler = async (event) => {
       return await priorityHandler.batchDetectPriority(event);
     }
     
-    // Decision Tracking (PR #20 - TODO)
+    // Decision Tracking (PR #20)
     if (path === '/ai/track-decisions' || path.endsWith('/ai/track-decisions')) {
-      return {
-        statusCode: 501,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({
-          error: 'Not Implemented',
-          message: 'Decision tracking will be implemented in PR #20',
-        }),
-      };
+      console.log('🤖 Routing to decision tracking handler');
+      return await decisionTrackingHandler.handler(event);
     }
     
-    // Meeting Scheduling (PR #21 - TODO)
+    // Meeting Scheduling Agent (PR #21)
     if (path === '/ai/schedule-meeting' || path.endsWith('/ai/schedule-meeting')) {
-      return {
-        statusCode: 501,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({
-          error: 'Not Implemented',
-          message: 'Meeting scheduling will be implemented in PR #21',
-        }),
-      };
+      console.log('🤖 Routing to scheduling agent handler');
+      return await schedulingAgentHandler.handler(event);
     }
     
     // Default: Push notification handler (backward compatibility)

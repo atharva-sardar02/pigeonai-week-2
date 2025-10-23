@@ -18,6 +18,9 @@ import SummaryModal from '../../components/ai/SummaryModal';
 import ActionItemsList from '../../components/ai/ActionItemsList';
 import SearchModal, { SearchResultData } from '../../components/ai/SearchModal';
 import { PriorityFilterModal } from '../../components/ai/PriorityFilterModal';
+import DecisionTimeline from '../../components/ai/DecisionTimeline';
+import { ProactiveSchedulingSuggestion } from '../../components/ai/ProactiveSchedulingSuggestion';
+import { SchedulingModal } from '../../components/ai/SchedulingModal';
 import { useAuth } from '../../store/context/AuthContext';
 import { useMessages } from '../../hooks/useMessages';
 import { useUserDisplayName, userProfileCache } from '../../hooks/useUserProfile';
@@ -26,8 +29,10 @@ import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import * as FirestoreService from '../../services/firebase/firestoreService';
 import * as NotificationService from '../../services/notifications/notificationService';
 import { shouldUseLocalNotifications } from '../../services/notifications/localNotificationHelper';
-import { summarizeConversation, extractActionItems, searchMessages } from '../../services/ai/aiService';
+import { summarizeConversation, extractActionItems, searchMessages, trackDecisions, scheduleMeeting } from '../../services/ai/aiService';
 import { ActionItem } from '../../models/ActionItem';
+import { Decision } from '../../models/Decision';
+import { MeetingProposal, TimeSlot, MeetingDetails, SchedulingAgentResponse } from '../../models/MeetingProposal';
 import { COLORS } from '../../utils/constants';
 import { MainStackParamList, Conversation } from '../../types';
 
@@ -108,6 +113,43 @@ export const ChatScreen: React.FC = () => {
 
   // AI Priority Filter state (PR #19)
   const [priorityFilterVisible, setPriorityFilterVisible] = useState(false);
+
+  // AI Decision Tracking state (PR #20)
+  const [decisionTimelineVisible, setDecisionTimelineVisible] = useState(false);
+  const [decisionsData, setDecisionsData] = useState<{
+    decisions: Decision[];
+    loading: boolean;
+    error: string | null;
+    messageCount?: number;
+    cached?: boolean;
+    duration?: number;
+  }>({
+    decisions: [],
+    loading: false,
+    error: null,
+  });
+
+  // AI Scheduling Agent state (PR #21)
+  const [schedulingSuggestionVisible, setSchedulingSuggestionVisible] = useState(false);
+  const [schedulingModalVisible, setSchedulingModalVisible] = useState(false);
+  const [schedulingData, setSchedulingData] = useState<{
+    hasSchedulingIntent: boolean;
+    confidence: number;
+    triggerMessage?: string;
+    proposal: MeetingProposal | null;
+    meetingDetails: MeetingDetails | null;
+    loading: boolean;
+    error: string | null;
+    duration?: number;
+  }>({
+    hasSchedulingIntent: false,
+    confidence: 0,
+    triggerMessage: undefined,
+    proposal: null,
+    meetingDetails: null,
+    loading: false,
+    error: null,
+  });
 
   // Get the other participant's ID for direct messages
   const otherUserId = conversation?.type === 'dm' || conversation?.type === 'direct'
@@ -441,6 +483,190 @@ export const ChatScreen: React.FC = () => {
     }
   };
 
+  // Handle opening decision tracking (PR #20)
+  const handleTrackDecisions = async () => {
+    if (messages.length === 0) {
+      Alert.alert('No Messages', 'There are no messages to analyze in this conversation.');
+      return;
+    }
+
+    if (!user?.uid) {
+      Alert.alert('Authentication Error', 'You must be logged in to track decisions.');
+      return;
+    }
+
+    // Open modal and start loading
+    setDecisionTimelineVisible(true);
+    setDecisionsData({
+      decisions: [],
+      loading: true,
+      error: null,
+    });
+
+    try {
+      // Call AI service to track decisions
+      const result = await trackDecisions(conversationId, user.uid, 100);
+
+      if (result.success && result.data) {
+        setDecisionsData({
+          decisions: result.data.decisions || [],
+          loading: false,
+          error: null,
+          messageCount: result.data.messageCount,
+          cached: result.data.cached,
+          duration: result.data.duration,
+        });
+      } else {
+        setDecisionsData({
+          decisions: [],
+          loading: false,
+          error: result.error || 'Failed to track decisions',
+        });
+      }
+    } catch (err: any) {
+      console.error('Decision tracking error:', err);
+      setDecisionsData({
+        decisions: [],
+        loading: false,
+        error: err.message || 'An unexpected error occurred',
+      });
+    }
+  };
+
+  // Handle closing decision timeline
+  const handleCloseDecisionTimeline = () => {
+    setDecisionTimelineVisible(false);
+  };
+
+  // Handle viewing decision context (navigate to source message)
+  const handleViewDecisionContext = (decision: Decision) => {
+    // TODO: Implement navigation to source message
+    // For now, just close the modal
+    console.log('View context for decision:', decision.id);
+    Alert.alert(
+      'View Context',
+      'This feature will navigate to the source messages in the conversation.\n\nComing soon!',
+      [{ text: 'OK' }]
+    );
+  };
+
+  // Handle running scheduling agent (PR #21)
+  const handleScheduleMeeting = async () => {
+    if (messages.length < 5) {
+      Alert.alert('Not Enough Messages', 'Need at least 5 messages to detect scheduling intent.');
+      return;
+    }
+
+    if (!user?.uid) {
+      Alert.alert('Authentication Error', 'You must be logged in to use scheduling agent.');
+      return;
+    }
+
+    // Start loading
+    setSchedulingData({
+      ...schedulingData,
+      loading: true,
+      error: null,
+    });
+
+    try {
+      // Call AI service to run scheduling agent
+      const result = await scheduleMeeting(conversationId, user.uid, 50);
+
+      if (result.success && result.data) {
+        const data = result.data as SchedulingAgentResponse;
+        
+        setSchedulingData({
+          hasSchedulingIntent: data.hasSchedulingIntent || false,
+          confidence: data.confidence || 0,
+          triggerMessage: data.triggerMessage,
+          proposal: data.proposal || null,
+          meetingDetails: data.meetingDetails || null,
+          loading: false,
+          error: null,
+          duration: data.duration,
+        });
+
+        // If scheduling intent detected, show suggestion banner
+        if (data.hasSchedulingIntent && data.confidence >= 0.75) {
+          setSchedulingSuggestionVisible(true);
+        } else {
+          Alert.alert(
+            'No Scheduling Intent',
+            'I couldn\'t detect any scheduling intent in this conversation. Try sending a message like "Let\'s schedule a meeting" to trigger the agent.',
+            [{ text: 'OK' }]
+          );
+        }
+      } else {
+        setSchedulingData({
+          ...schedulingData,
+          loading: false,
+          error: result.error || 'Failed to run scheduling agent',
+        });
+        Alert.alert('Error', result.error || 'Failed to run scheduling agent');
+      }
+    } catch (err: any) {
+      console.error('Error running scheduling agent:', err);
+      setSchedulingData({
+        ...schedulingData,
+        loading: false,
+        error: err.message || 'An unexpected error occurred',
+      });
+      Alert.alert('Error', err.message || 'An unexpected error occurred');
+    }
+  };
+
+  // Handle opening scheduling modal
+  const handleOpenSchedulingModal = () => {
+    setSchedulingSuggestionVisible(false);
+    setSchedulingModalVisible(true);
+  };
+
+  // Handle dismissing scheduling suggestion
+  const handleDismissSchedulingSuggestion = () => {
+    setSchedulingSuggestionVisible(false);
+  };
+
+  // Handle closing scheduling modal
+  const handleCloseSchedulingModal = () => {
+    setSchedulingModalVisible(false);
+  };
+
+  // Handle selecting a time slot
+  const handleSelectTimeSlot = (timeSlot: TimeSlot) => {
+    console.log('Selected time slot:', timeSlot);
+    // Time slot selection is handled in SchedulingModal
+  };
+
+  // Handle adding to calendar
+  const handleAddToCalendar = (timeSlot: TimeSlot) => {
+    console.log('Add to calendar:', timeSlot);
+    Alert.alert(
+      'Calendar Link Opened',
+      'The Google Calendar link has been opened in your browser. Please confirm the meeting in Google Calendar.',
+      [
+        { 
+          text: 'OK',
+          onPress: () => {
+            setSchedulingModalVisible(false);
+            setSchedulingSuggestionVisible(false);
+          }
+        }
+      ]
+    );
+  };
+
+  // Handle navigate to message (placeholder)
+  const handleNavigateToMessage = (messageId: string) => {
+    console.log('Navigate to message:', messageId);
+    // TODO: Implement scroll to message functionality
+    Alert.alert(
+      'Navigate to Message',
+      'This feature will scroll to the selected message in the conversation.\n\nComing soon!',
+      [{ text: 'OK' }]
+    );
+  };
+
   // Show loading state
   if (loadingConversation || !conversation) {
     return (
@@ -492,6 +718,8 @@ export const ChatScreen: React.FC = () => {
           onExtractActionItems={handleExtractActionItems}
           onSearch={handleOpenSearch}
           onFilterPriority={() => setPriorityFilterVisible(true)}
+          onTrackDecisions={handleTrackDecisions}
+          onScheduleMeeting={handleScheduleMeeting}
           isOnline={isOnline}
           lastSeen={lastSeen}
           typingUserIds={typingUsers}
@@ -560,6 +788,37 @@ export const ChatScreen: React.FC = () => {
           messages={messages}
           onClose={() => setPriorityFilterVisible(false)}
           onNavigateToMessage={handleNavigateToMessage}
+        />
+
+        {/* AI Decision Timeline Modal (PR #20) */}
+        <DecisionTimeline
+          visible={decisionTimelineVisible}
+          onClose={handleCloseDecisionTimeline}
+          decisions={decisionsData.decisions}
+          loading={decisionsData.loading}
+          onViewContext={handleViewDecisionContext}
+        />
+
+        {/* AI Proactive Scheduling Suggestion (PR #21) */}
+        {schedulingSuggestionVisible && schedulingData.hasSchedulingIntent && (
+          <ProactiveSchedulingSuggestion
+            visible={schedulingSuggestionVisible}
+            confidence={schedulingData.confidence}
+            triggerMessage={schedulingData.triggerMessage || ''}
+            onSchedule={handleOpenSchedulingModal}
+            onDismiss={handleDismissSchedulingSuggestion}
+          />
+        )}
+
+        {/* AI Scheduling Modal (PR #21) */}
+        <SchedulingModal
+          visible={schedulingModalVisible}
+          loading={schedulingData.loading}
+          proposal={schedulingData.proposal}
+          meetingDetails={schedulingData.meetingDetails}
+          onClose={handleCloseSchedulingModal}
+          onSelectTime={handleSelectTimeSlot}
+          onAddToCalendar={handleAddToCalendar}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

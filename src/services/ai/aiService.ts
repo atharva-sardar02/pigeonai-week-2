@@ -184,14 +184,20 @@ export async function detectPriority(conversationId: string) {
 /**
  * Track decisions made in conversation
  * @param {string} conversationId - Conversation ID
- * @param {number} messageCount - Number of messages to analyze
- * @returns {Promise<Object>} - Decisions data
+ * @param {string} userId - User ID for authentication
+ * @param {number} limit - Number of messages to analyze (default: 100)
+ * @returns {Promise<Object>} - Decisions data with array of Decision objects
  */
-export async function trackDecisions(conversationId: string, messageCount: number = 50) {
+export async function trackDecisions(
+  conversationId: string, 
+  userId: string,
+  limit: number = 100
+) {
   try {
     const response = await axios.post(`${API_BASE_URL}/ai/track-decisions`, {
       conversationId,
-      messageCount,
+      userId,
+      limit,
     });
 
     return {
@@ -208,27 +214,34 @@ export async function trackDecisions(conversationId: string, messageCount: numbe
 }
 
 /**
- * Schedule meeting using AI agent
+ * Schedule meeting using AI agent (PR #21)
+ * Multi-step agent workflow:
+ * 1. Detect scheduling intent
+ * 2. Extract meeting details
+ * 3. Check availability
+ * 4. Suggest optimal times
+ * 5. Generate meeting proposal
+ * 
  * @param {string} conversationId - Conversation ID
- * @param {Array<string>} participants - Participant user IDs
- * @param {Object} constraints - Scheduling constraints
- * @returns {Promise<Object>} - Meeting schedule data
+ * @param {string} userId - User ID for authentication
+ * @param {number} limit - Number of messages to analyze (default: 50)
+ * @param {boolean} forceRefresh - Skip cache (default: false)
+ * @returns {Promise<Object>} - Scheduling agent response with meeting proposal
  */
 export async function scheduleMeeting(
   conversationId: string,
-  participants: string[],
-  constraints?: {
-    startDate?: string;
-    endDate?: string;
-    duration?: number;
-    timeZone?: string;
-  }
+  userId: string,
+  limit: number = 50,
+  forceRefresh: boolean = false
 ) {
   try {
     const response = await axios.post(`${API_BASE_URL}/ai/schedule-meeting`, {
       conversationId,
-      participants,
-      constraints,
+      userId,
+      limit,
+      forceRefresh,
+    }, {
+      timeout: 30000, // 30 seconds for multi-step workflow
     });
 
     return {
