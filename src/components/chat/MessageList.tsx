@@ -19,6 +19,7 @@ interface MessageListProps {
   onRefresh?: () => void;
   refreshing?: boolean;
   isGroupChat?: boolean; // New prop for group chat support
+  participantCount?: number; // Total participants for group read status
 }
 
 /**
@@ -42,6 +43,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   onRefresh,
   refreshing = false,
   isGroupChat = false,
+  participantCount = 2,
 }) => {
   const flatListRef = useRef<FlatList>(null);
 
@@ -59,6 +61,7 @@ export const MessageList: React.FC<MessageListProps> = ({
         message={item} 
         isOwnMessage={isOwnMessage}
         isGroupChat={isGroupChat}
+        participantCount={participantCount}
       />
     );
   };

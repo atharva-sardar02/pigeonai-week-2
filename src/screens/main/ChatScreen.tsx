@@ -864,6 +864,7 @@ export const ChatScreen: React.FC = () => {
             onRefresh={refreshMessages}
             refreshing={loading}
             isGroupChat={conversation.type === 'group'}
+            participantCount={conversation.participants?.length || 2}
           />
         </View>
 

@@ -9,6 +9,7 @@ interface MessageBubbleProps {
   message: Message;
   isOwnMessage: boolean;
   isGroupChat?: boolean; // New prop to indicate if this is a group chat
+  participantCount?: number; // Total participants in conversation (for group read status)
 }
 
 /**
@@ -28,6 +29,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isOwnMessage,
   isGroupChat = false,
+  participantCount = 2,
 }) => {
   const bubbleStyle = isOwnMessage ? styles.sentBubble : styles.receivedBubble;
   const textStyle = isOwnMessage ? styles.sentText : styles.receivedText;
@@ -44,17 +46,48 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const getStatusIcon = () => {
     if (!isOwnMessage) return null;
 
-    if (MessageModel.isRead(message)) {
-      return <Text style={styles.statusIcon}>✓✓</Text>; // Double check (read)
-    } else if (MessageModel.isDelivered(message)) {
-      return <Text style={styles.statusIcon}>✓✓</Text>; // Double check (delivered)
-    } else if (MessageModel.isSent(message)) {
-      return <Text style={styles.statusIcon}>✓</Text>; // Single check (sent)
-    } else if (MessageModel.isSending(message)) {
-      return <Text style={styles.statusIconPending}>○</Text>; // Clock (sending)
-    } else if (MessageModel.isFailed(message)) {
-      return <Text style={styles.statusIconFailed}>!</Text>; // Exclamation (failed)
+    // Failed/Offline state
+    if (MessageModel.isFailed(message)) {
+      return <Text style={styles.statusIconFailed}>!</Text>; // Exclamation mark
     }
+    
+    // Sending state
+    if (MessageModel.isSending(message)) {
+      return <Text style={styles.statusIconPending}>○</Text>; // Clock icon
+    }
+
+    // Group chat logic
+    if (isGroupChat) {
+      // Count how many people have read (excluding sender)
+      const readByCount = Object.keys(message.readBy || {}).length;
+      const readByOthers = readByCount - 1; // Exclude sender
+      const otherParticipants = participantCount - 1; // Exclude sender
+      
+      // All members read → Green double ticks
+      if (readByOthers >= otherParticipants && otherParticipants > 0) {
+        return <Text style={styles.statusIconRead}>✓✓</Text>;
+      }
+      
+      // Message sent/delivered but not all read → Single tick
+      if (MessageModel.isSent(message) || MessageModel.isDelivered(message)) {
+        return <Text style={styles.statusIcon}>✓</Text>;
+      }
+      
+      return null;
+    }
+
+    // DM logic (1-on-1 chat)
+    if (MessageModel.isRead(message)) {
+      // Blue double ticks (read)
+      return <Text style={styles.statusIconRead}>✓✓</Text>;
+    } else if (MessageModel.isDelivered(message)) {
+      // Gray double ticks (delivered but not read)
+      return <Text style={styles.statusIcon}>✓✓</Text>;
+    } else if (MessageModel.isSent(message)) {
+      // Single gray tick (sent)
+      return <Text style={styles.statusIcon}>✓</Text>;
+    }
+    
     return null;
   };
 
@@ -174,7 +207,12 @@ const styles = StyleSheet.create({
   },
   statusIcon: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.8)', // Gray ticks (sent/delivered)
+  },
+  statusIconRead: {
+    fontSize: 12,
+    color: '#10B981', // Green ticks (read) - emerald-500, high contrast on blue bubble
+    fontWeight: 'bold',
   },
   statusIconPending: {
     fontSize: 12,

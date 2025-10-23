@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef } from 'react';
 import { AppState, AppStateStatus, BackHandler } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { useAuth } from './AuthContext';
 import * as FirestoreService from '../../services/firebase/firestoreService';
 
@@ -33,6 +34,7 @@ export const PresenceProvider: React.FC<PresenceProviderProps> = ({ children }) 
   const hasSetInitialPresence = useRef(false); // Track if we've set initial presence
   const userIdRef = useRef<string | null>(null); // Stable reference to user ID
   const isOnlineRef = useRef<boolean>(false); // Track current online status to prevent redundant updates
+  const networkOnlineRef = useRef<boolean>(true); // Track network connectivity
 
   // Update userIdRef when user changes
   useEffect(() => {
@@ -41,6 +43,64 @@ export const PresenceProvider: React.FC<PresenceProviderProps> = ({ children }) 
       isOnlineRef.current = false; // Reset online status on logout
     }
   }, [user]);
+
+  /**
+   * Monitor network connectivity for presence updates
+   * When network goes offline (airplane mode, etc.), set user offline
+   */
+  useEffect(() => {
+    console.log('📡 PresenceContext: Setting up network listener');
+    
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const wasOnline = networkOnlineRef.current;
+      const isNowOnline = state.isConnected ?? false;
+      
+      networkOnlineRef.current = isNowOnline;
+      
+      const userId = userIdRef.current;
+      
+      if (!userId || !isOnlineRef.current) {
+        // User not logged in or already offline
+        return;
+      }
+      
+      // Network connectivity changed
+      if (wasOnline && !isNowOnline) {
+        // Network went offline (airplane mode, WiFi off, etc.)
+        console.log('📴 Network disconnected - setting user offline');
+        
+        // Try to send offline status (might fail if network already gone)
+        // But this attempts it in the brief window before complete disconnect
+        FirestoreService.updatePresence(userId, false, new Date())
+          .then(() => {
+            console.log('✅ Offline status sent successfully');
+            isOnlineRef.current = false;
+          })
+          .catch((err) => {
+            console.log('⚠️ Could not send offline status (network already down)');
+            console.log('📡 Firebase will auto-timeout within 30s');
+            isOnlineRef.current = false; // Update local ref anyway
+          });
+      } else if (!wasOnline && isNowOnline) {
+        // Network came back online
+        console.log('📶 Network reconnected - setting user online');
+        
+        FirestoreService.updatePresence(userId, true)
+          .then(() => {
+            console.log('✅ Online status sent successfully');
+            isOnlineRef.current = true;
+          })
+          .catch((err) => {
+            console.error('❌ Could not send online status:', err);
+          });
+      }
+    });
+
+    return () => {
+      console.log('📡 PresenceContext: Removing network listener');
+      unsubscribe();
+    };
+  }, []); // Empty deps - listener stays active
 
   /**
    * Handle app state changes (foreground/background)
@@ -106,6 +166,7 @@ export const PresenceProvider: React.FC<PresenceProviderProps> = ({ children }) 
 
   /**
    * Set user online when they log in (only once per login session)
+   * AND set up Firebase onDisconnect() to auto-set offline when network drops
    */
   useEffect(() => {
     const setInitialPresence = async () => {
@@ -115,6 +176,10 @@ export const PresenceProvider: React.FC<PresenceProviderProps> = ({ children }) 
           await FirestoreService.updatePresence(user.uid, true);
           isOnlineRef.current = true; // Track that user is online
           hasSetInitialPresence.current = true;
+          
+          // ✅ NEW: Setup Firebase onDisconnect to auto-set offline when network drops
+          await FirestoreService.setupPresenceDisconnect(user.uid);
+          console.log('🔌 Firebase onDisconnect configured - will auto-set offline on network loss');
         } catch (error) {
           console.error('Error setting initial presence:', error);
         }

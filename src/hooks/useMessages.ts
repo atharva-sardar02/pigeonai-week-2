@@ -31,17 +31,40 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
   const messageIdsRef = useRef(new Set<string>());
 
   /**
-   * Monitor network connectivity
+   * Monitor network connectivity and process offline queue when reconnecting
    */
   useEffect(() => {
+    let previousOnlineState = isOnline;
+    
     const netInfoUnsubscribe = NetInfo.addEventListener((state) => {
-      setIsOnline(state.isConnected ?? false);
+      const isNowOnline = state.isConnected ?? false;
+      
+      console.log(`🌐 Network state changed: ${previousOnlineState ? 'online' : 'offline'} → ${isNowOnline ? 'online' : 'offline'}`);
+      
+      setIsOnline(isNowOnline);
+      
+      // If we just came back online, process the offline queue
+      if (!previousOnlineState && isNowOnline && user) {
+        console.log('📶 Network reconnected! Processing offline queue...');
+        processOfflineQueue().catch((err) => {
+          console.error('Error processing offline queue:', err);
+        });
+      }
+      
+      previousOnlineState = isNowOnline;
+    });
+
+    // Also check current network state on mount
+    NetInfo.fetch().then((state) => {
+      const currentOnline = state.isConnected ?? false;
+      console.log(`🌐 Initial network state: ${currentOnline ? 'online' : 'offline'}`);
+      setIsOnline(currentOnline);
     });
 
     return () => {
       netInfoUnsubscribe();
     };
-  }, []);
+  }, [user]); // Only depend on user, not isOnline (to avoid stale closures)
 
   /**
    * Set up and cleanup real-time listener when conversation changes
@@ -50,6 +73,11 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
    * - Memory leaks
    * - Unnecessary Firestore reads (costs money!)
    * - Stale data updates
+   * 
+   * NOTE: We do NOT include isOnline in dependencies!
+   * - When online: Load cache + setup Firestore listener
+   * - When going offline: Keep current messages (don't reload from stale cache)
+   * - When coming back online: processOfflineQueue handles syncing
    */
   useEffect(() => {
     if (!conversationId || !user) {
@@ -78,7 +106,7 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
       // Clear the message ID tracking ref on cleanup
       messageIdsRef.current.clear();
     };
-  }, [conversationId, user, isOnline]);
+  }, [conversationId, user]); // Removed isOnline - don't reload on network change!
 
   /**
    * Load messages and set up real-time listener (Task 4.7)
@@ -97,25 +125,49 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
     try {
       setError(null);
 
-        if (isOnline) {
-          // Load from cache first for instant display ⚡
-          const cachedMessages = await LocalDatabase.getMessages(conversationId);
-          if (cachedMessages.length > 0) {
-            setMessages(cachedMessages);
-            setLoading(false); // Stop loading immediately - show cached data!
-            
-            // Initialize our tracking ref with cached message IDs
-            messageIdsRef.current = new Set(cachedMessages.map(m => m.id));
-          } else {
-            setLoading(true); // Only show loading if no cached messages
-          }
+      // ALWAYS load from cache first (works offline AND online) ⚡
+      const cachedMessages = await LocalDatabase.getMessages(conversationId);
+      
+      console.log(`📖 Loaded ${cachedMessages.length} messages from cache (offline: ${!isOnline})`);
+      
+      // ALWAYS show cached messages immediately (even if empty)
+      setMessages(cachedMessages);
+      
+      // Initialize our tracking ref with cached message IDs
+      if (cachedMessages.length > 0) {
+        messageIdsRef.current = new Set(cachedMessages.map(m => m.id));
+      }
+      
+      // Stop loading immediately - cache-first!
+      setLoading(false);
 
-        // Then set up real-time Firestore listener for updates
+      // Only set up Firestore listener if online
+      if (isOnline) {
+        console.log('🌐 Setting up Firestore listener (online)');
+        
+        // Set up real-time Firestore listener for updates
         const listener = FirestoreService.listenToMessages(
           conversationId,
           async (firestoreMessages) => {
             // Real-time update received
             // Note: Global notifications are handled by useGlobalNotifications hook
+            
+            // **AUTO-DELIVERY TRACKING**: Mark messages as delivered when received
+            for (const msg of firestoreMessages) {
+              // If this is a message sent by someone else, mark it as delivered for me
+              if (msg.senderId !== user.uid && msg.status === 'sent') {
+                try {
+                  await FirestoreService.updateMessageStatus(
+                    conversationId,
+                    msg.id,
+                    'delivered'
+                  );
+                  console.log(`✓ Message ${msg.id} marked as delivered`);
+                } catch (err) {
+                  console.error('Failed to mark message as delivered:', err);
+                }
+              }
+            }
             
             // CRITICAL: Use a single atomic update to prevent any race conditions
             setMessages((prevMessages) => {
@@ -214,11 +266,7 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
         // Store unsubscribe function for cleanup
         setUnsubscribe(() => listener);
       } else {
-        // Offline - load from local cache
-        setLoading(true);
-        const cachedMessages = await LocalDatabase.getMessages(conversationId);
-        setMessages(cachedMessages);
-        setLoading(false);
+        console.log('📴 Offline mode - using cache only (no Firestore listener)');
       }
     } catch (err: any) {
       console.error('Error loading messages:', err);
@@ -265,9 +313,10 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
         messageIdsRef.current.add(tempId);
 
         // Step 2: Add to UI immediately (optimistic update)
-        // Add to BEGINNING of array (for inverted list - newest messages at top/index 0)
+        // Add to END of array (newest messages at bottom - natural order)
         setMessages((prev) => {
-          const updated = [optimisticMessage, ...prev];
+          const updated = [...prev, optimisticMessage];
+          console.log(`✉️ Optimistic message added (offline: ${!isOnline}, total: ${updated.length})`);
           return updated;
         });
 
@@ -385,6 +434,85 @@ export function useMessages(conversationId: string | null): UseMessagesReturn {
       setLoading(false);
     }
   }, [conversationId, user, isOnline]);
+
+  /**
+   * Process offline queue when network reconnects
+   */
+  const processOfflineQueue = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      console.log('🔄 Processing offline queue...');
+      const queuedOperations = await LocalDatabase.getQueuedOperations();
+      
+      if (queuedOperations.length === 0) {
+        console.log('✅ Offline queue is empty');
+        return;
+      }
+
+      console.log(`📤 Found ${queuedOperations.length} queued operations`);
+
+      for (const operation of queuedOperations) {
+        try {
+          if (operation.operationType === 'sendMessage') {
+            const { conversationId: convId, senderId, content, type, imageUrl, tempId } = operation.data;
+
+            console.log(`📨 Retrying message: ${tempId}`);
+
+            // Send to Firestore
+            const messageId = await FirestoreService.sendMessage(
+              convId,
+              senderId,
+              content,
+              type || 'text',
+              imageUrl
+            );
+
+            // Trigger Lambda notification
+            try {
+              const { sendNotificationViaLambda } = require('../services/notifications/lambdaNotificationService');
+              await sendNotificationViaLambda(convId, messageId, { content, senderId });
+            } catch (lambdaErr) {
+              console.log('⚠️  Lambda notification failed (non-critical):', lambdaErr);
+            }
+
+            // Remove temp message from local DB
+            await LocalDatabase.deleteMessage(tempId);
+
+            // Remove temp message from UI immediately (prevent duplicate flash)
+            setMessages((prev) => {
+              const filtered = prev.filter(msg => msg.id !== tempId);
+              console.log(`🗑️ Removed temp message ${tempId} from UI (${prev.length} → ${filtered.length})`);
+              return filtered;
+            });
+
+            // Remove temp ID from tracking
+            messageIdsRef.current.delete(tempId);
+
+            // Remove from queue
+            await LocalDatabase.dequeueOperation(operation.id);
+
+            console.log(`✅ Message sent successfully: ${messageId}`);
+          }
+        } catch (err: any) {
+          console.error(`❌ Failed to process queued operation ${operation.id}:`, err);
+          
+          // Increment retry count
+          await LocalDatabase.incrementRetryCount(operation.id);
+          
+          // If retried too many times, remove from queue
+          if (operation.retryCount && operation.retryCount >= 3) {
+            console.warn(`⚠️  Operation ${operation.id} failed 3 times, removing from queue`);
+            await LocalDatabase.dequeueOperation(operation.id);
+          }
+        }
+      }
+
+      console.log('✅ Offline queue processed');
+    } catch (err: any) {
+      console.error('Error processing offline queue:', err);
+    }
+  }, [user]);
 
   /**
    * Mark a message as read
