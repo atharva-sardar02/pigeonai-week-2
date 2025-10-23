@@ -244,6 +244,17 @@ export default function SearchModal({
             </View>
           )}
 
+          {/* Indexing State (when embeddings are being generated) */}
+          {results.length === 0 && hasSearched && !isLoading && !error && (
+            <View style={styles.emptyState}>
+              <Ionicons name="sync-circle-outline" size={64} color={COLORS.primary} />
+              <Text style={styles.emptyStateTitle}>Indexing Messages</Text>
+              <Text style={styles.emptyStateText}>
+                Messages are being indexed for search. Try again in 10 seconds!
+              </Text>
+            </View>
+          )}
+
           {/* Empty State (no search yet) */}
           {!hasSearched && !isLoading && (
             <View style={styles.emptyState}>

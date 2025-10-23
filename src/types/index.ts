@@ -129,5 +129,6 @@ export type MainStackParamList = {
   GroupDetails: { groupId: string };
   CreateGroup: undefined;
   NotificationTest: undefined; // Temporary test screen
+  ProactiveAssistant: { conversationId: string; userId: string };
 };
 

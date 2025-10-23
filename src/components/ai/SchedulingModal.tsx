@@ -28,7 +28,8 @@ import {
   ActivityIndicator,
   TextInput,
   Platform,
-  Linking
+  Share,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../../utils/constants';
@@ -71,19 +72,39 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
     onSelectTime(slot);
   };
 
-  const handleAddToCalendar = async () => {
-    if (!selectedSlot || !selectedSlot.calendarUrl) return;
+  const handleConfirmMeeting = () => {
+    if (!selectedSlot) return;
+
+    console.log('✅ Meeting confirmed:', {
+      time: selectedSlot.startTime,
+      date: selectedSlot.date,
+      duration: selectedSlot.duration
+    });
+
+    // Just call the callback - no external calendar
+    onAddToCalendar(selectedSlot);
+    
+    Alert.alert('Success', 'Meeting time confirmed!');
+  };
+
+  const handleShareMeeting = async () => {
+    if (!selectedSlot || !proposal) return;
+
+    const meetingText = `📅 Meeting: ${proposal.title || 'Team Meeting'}
+    
+📆 Date: ${selectedSlot.dayOfWeek}, ${selectedSlot.date}
+⏰ Time: ${selectedSlot.startTime} - ${selectedSlot.endTime}
+⏱️ Duration: ${formatDuration(selectedSlot.duration)}
+
+Let me know if this works for you!`;
 
     try {
-      const supported = await Linking.canOpenURL(selectedSlot.calendarUrl);
-      if (supported) {
-        await Linking.openURL(selectedSlot.calendarUrl);
-        onAddToCalendar(selectedSlot);
-      } else {
-        console.error('Cannot open calendar URL');
-      }
+      await Share.share({
+        message: meetingText,
+        title: 'Meeting Invitation'
+      });
     } catch (error) {
-      console.error('Error opening calendar:', error);
+      console.error('Share error:', error);
     }
   };
 
@@ -147,7 +168,7 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
     );
   };
 
-  const renderCalendarActions = () => {
+  const renderConfirmActions = () => {
     if (!selectedSlot) return null;
 
     return (
@@ -165,24 +186,35 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
             {selectedSlot.dayOfWeek}, {selectedSlot.date}
           </Text>
           <Text style={styles.confirmTime}>
-            {formatAllTimezones(selectedSlot).join(' / ')}
+            {selectedSlot.startTime} - {selectedSlot.endTime}
           </Text>
           <Text style={styles.confirmDuration}>
             Duration: {formatDuration(selectedSlot.duration)}
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.calendarButton}
-          onPress={handleAddToCalendar}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="calendar" size={20} color={COLORS.buttonPrimaryText} />
-          <Text style={styles.calendarButtonText}>Add to Google Calendar</Text>
-        </TouchableOpacity>
+        <View style={styles.actionButtonsRow}>
+          <TouchableOpacity
+            style={[styles.confirmButton, styles.confirmButtonMain]}
+            onPress={handleConfirmMeeting}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="checkmark-circle" size={20} color={COLORS.buttonPrimaryText} />
+            <Text style={styles.confirmButtonText}>Confirm</Text>
+          </TouchableOpacity>
 
-        <Text style={styles.calendarHint}>
-          You'll be redirected to Google Calendar to create the event
+          <TouchableOpacity
+            style={[styles.confirmButton, styles.shareButton]}
+            onPress={handleShareMeeting}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="share-social" size={20} color={COLORS.buttonPrimaryText} />
+            <Text style={styles.confirmButtonText}>Share</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.confirmHint}>
+          Confirm to save, or share with participants
         </Text>
       </View>
     );
@@ -202,7 +234,7 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
             <Ionicons name="close" size={28} color={COLORS.text} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>🤖 AI Scheduling Assistant</Text>
+            <Text style={styles.headerTitle}>✨ Proactive Assistant</Text>
             <Text style={styles.headerSubtitle}>
               Find the perfect time for your meeting
             </Text>
@@ -216,8 +248,8 @@ export const SchedulingModal: React.FC<SchedulingModalProps> = ({
           ) : (
             <>
               {renderMeetingDetails()}
-              {renderTimeSlots()}
-              {renderCalendarActions()}
+        {renderTimeSlots()}
+        {renderConfirmActions()}
             </>
           )}
 
@@ -449,7 +481,8 @@ const styles = StyleSheet.create({
   },
   timeSlotCardSelected: {
     borderColor: COLORS.primary,
-    backgroundColor: '#F0F9FF',
+    borderWidth: 2,
+    backgroundColor: COLORS.backgroundSecondary, // Dark theme
   },
   timeSlotHeader: {
     flexDirection: 'row',
@@ -516,12 +549,12 @@ const styles = StyleSheet.create({
     color: COLORS.warning,
   },
   confirmCard: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: COLORS.backgroundSecondary, // Dark theme
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: COLORS.primary,
   },
   confirmTitle: {
     fontSize: 18,
@@ -543,6 +576,36 @@ const styles = StyleSheet.create({
   confirmDuration: {
     fontSize: 14,
     color: COLORS.textSecondary,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 8,
+  },
+  confirmButton: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  confirmButtonMain: {
+    backgroundColor: COLORS.primary,
+  },
+  shareButton: {
+    backgroundColor: COLORS.success,
+  },
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.buttonPrimaryText,
+  },
+  confirmHint: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
   calendarButton: {
     flexDirection: 'row',

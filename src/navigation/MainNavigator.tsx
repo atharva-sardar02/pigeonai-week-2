@@ -8,6 +8,7 @@ import { ProfileScreen } from '../screens/main/ProfileScreen';
 import { UserDetailsScreen } from '../screens/main/UserDetailsScreen';
 import { CreateGroupScreen } from '../screens/group/CreateGroupScreen';
 import { GroupDetailsScreen } from '../screens/group/GroupDetailsScreen';
+import { ProactiveAssistantScreen } from '../screens/ai/ProactiveAssistantScreen';
 import { NotificationTestScreen } from '../screens/test/NotificationTestScreen';
 import { COLORS } from '../utils/constants';
 
@@ -99,6 +100,16 @@ export const MainNavigator: React.FC = () => {
         component={GroupDetailsScreen}
         options={{
           title: 'Group Details',
+          animation: 'slide_from_right',
+        }}
+      />
+
+      {/* Proactive Assistant Screen (AI Feature) */}
+      <Stack.Screen
+        name="ProactiveAssistant"
+        component={ProactiveAssistantScreen}
+        options={{
+          title: 'Proactive Assistant',
           animation: 'slide_from_right',
         }}
       />

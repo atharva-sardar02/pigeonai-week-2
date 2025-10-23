@@ -659,70 +659,23 @@ export const ChatScreen: React.FC = () => {
     );
   };
 
-  // Handle running scheduling agent (PR #21)
-  const handleScheduleMeeting = async () => {
-    if (messages.length < 5) {
-      Alert.alert('Not Enough Messages', 'Need at least 5 messages to detect scheduling intent.');
+  // Handle opening Proactive Assistant (PR #21 - Enhanced)
+  const handleScheduleMeeting = () => {
+    if (messages.length < 3) {
+      Alert.alert('Not Enough Messages', 'Need at least 3 messages to detect scheduling patterns.');
       return;
     }
 
     if (!user?.uid) {
-      Alert.alert('Authentication Error', 'You must be logged in to use scheduling agent.');
+      Alert.alert('Authentication Error', 'You must be logged in to use Proactive Assistant.');
       return;
     }
 
-    // Start loading
-    setSchedulingData({
-      ...schedulingData,
-      loading: true,
-      error: null,
+    // Navigate to full-screen Proactive Assistant
+    navigation.navigate('ProactiveAssistant', {
+      conversationId,
+      userId: user.uid
     });
-
-    try {
-      // Call AI service to run scheduling agent
-      const result = await scheduleMeeting(conversationId, user.uid, 50);
-
-      if (result.success && result.data) {
-        const data = result.data as SchedulingAgentResponse;
-        
-        setSchedulingData({
-          hasSchedulingIntent: data.hasSchedulingIntent || false,
-          confidence: data.confidence || 0,
-          triggerMessage: data.triggerMessage,
-          proposal: data.proposal || null,
-          meetingDetails: data.meetingDetails || null,
-          loading: false,
-          error: null,
-          duration: data.duration,
-        });
-
-        // If scheduling intent detected, show suggestion banner
-        if (data.hasSchedulingIntent && data.confidence >= 0.75) {
-          setSchedulingSuggestionVisible(true);
-        } else {
-          Alert.alert(
-            'No Scheduling Intent',
-            'I couldn\'t detect any scheduling intent in this conversation. Try sending a message like "Let\'s schedule a meeting" to trigger the agent.',
-            [{ text: 'OK' }]
-          );
-        }
-      } else {
-        setSchedulingData({
-          ...schedulingData,
-          loading: false,
-          error: result.error || 'Failed to run scheduling agent',
-        });
-        Alert.alert('Error', result.error || 'Failed to run scheduling agent');
-      }
-    } catch (err: any) {
-      console.error('Error running scheduling agent:', err);
-      setSchedulingData({
-        ...schedulingData,
-        loading: false,
-        error: err.message || 'An unexpected error occurred',
-      });
-      Alert.alert('Error', err.message || 'An unexpected error occurred');
-    }
   };
 
   // Handle opening scheduling modal
