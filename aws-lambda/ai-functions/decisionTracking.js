@@ -14,11 +14,13 @@
  * Response Time Target: <2 seconds
  */
 
-const { openaiClient } = require('./utils/openaiClient');
-const { cacheClient } = require('./utils/cacheClient');
-const { responseUtils } = require('./utils/responseUtils');
-const admin = require('firebase-admin');
+const { chatCompletion } = require('./utils/openaiClient');
+const { get: cacheGet, set: cacheSet, decisionsCacheKey } = require('./utils/cacheClient');
+const responseUtils = require('./utils/responseUtils');
+const { admin } = require('./utils/firebaseAdmin'); // Destructure admin from exports
 const { DECISION_TRACKING_PROMPT } = require('./prompts/decisionTracking');
+
+const db = admin.firestore();
 
 /**
  * Main handler for decision tracking
@@ -49,7 +51,7 @@ exports.handler = async (event) => {
     console.log(`📦 Cache key: ${cacheKey}`);
 
     // Check cache first
-    const cachedDecisions = await cacheClient.get(cacheKey);
+    const cachedDecisions = await cacheGet(cacheKey);
     if (cachedDecisions) {
       console.log('✅ Cache hit - returning cached decisions');
       const duration = Date.now() - startTime;
@@ -86,7 +88,7 @@ exports.handler = async (event) => {
     console.log(`✅ Extracted ${decisions.length} decisions`);
 
     // Cache the results (2 hour TTL)
-    await cacheClient.set(cacheKey, decisions, 7200); // 2 hours = 7200 seconds
+    await cacheSet(cacheKey, decisions, 7200); // 2 hours = 7200 seconds
     console.log('💾 Decisions cached for 2 hours');
 
     const duration = Date.now() - startTime;
@@ -211,34 +213,28 @@ async function formatMessagesForAI(messages) {
  */
 async function extractDecisions(formattedMessages, conversationId) {
   try {
-    const response = await openaiClient.chat.completions.create({
+    const messages = [
+      {
+        role: 'system',
+        content: DECISION_TRACKING_PROMPT,
+      },
+      {
+        role: 'user',
+        content: `CONVERSATION:\n\n${formattedMessages}\n\nReturn decisions as JSON array.`,
+      },
+    ];
+
+    const response = await chatCompletion(messages, {
       model: 'gpt-4-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: DECISION_TRACKING_PROMPT,
-        },
-        {
-          role: 'user',
-          content: `CONVERSATION:\n\n${formattedMessages}\n\nReturn decisions as JSON array.`,
-        },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.3, // Low temperature for factual accuracy
-      max_tokens: 2000,
+      temperature: 0.3,
+      maxTokens: 2000,
+      responseFormat: 'json',
     });
 
-    const content = response.choices[0].message.content;
     console.log('🤖 OpenAI response received');
 
-    // Parse JSON response
-    let parsed;
-    try {
-      parsed = JSON.parse(content);
-    } catch (parseError) {
-      console.error('❌ Failed to parse OpenAI response as JSON:', content);
-      throw new Error('Invalid JSON response from OpenAI');
-    }
+    // chatCompletion already parses JSON when responseFormat is set
+    const parsed = response;
 
     // Handle both array and object responses
     const decisionsArray = Array.isArray(parsed) ? parsed : (parsed.decisions || []);

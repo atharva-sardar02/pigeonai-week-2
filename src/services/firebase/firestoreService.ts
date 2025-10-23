@@ -1214,3 +1214,106 @@ export async function createGroupConversation(
     throw new Error(error.message || 'Failed to create group conversation');
   }
 }
+
+/**
+ * Delete all messages in a conversation
+ * @param conversationId - The conversation ID
+ */
+export async function deleteAllMessagesInConversation(
+  conversationId: string
+): Promise<void> {
+  try {
+    console.log(`🗑️ Deleting all messages in conversation: ${conversationId}`);
+    
+    // Get all messages in the conversation
+    const messagesRef = collection(
+      db,
+      FIREBASE_COLLECTIONS.CONVERSATIONS,
+      conversationId,
+      'messages'
+    );
+    
+    const messagesSnap = await getDocs(messagesRef);
+    
+    if (messagesSnap.empty) {
+      console.log('No messages to delete');
+      return;
+    }
+
+    // Batch delete all messages (max 500 per batch)
+    const batch = writeBatch(db);
+    let deleteCount = 0;
+    
+    messagesSnap.forEach((messageDoc) => {
+      batch.delete(messageDoc.ref);
+      deleteCount++;
+    });
+
+    await batch.commit();
+    
+    // Update conversation lastMessage to null
+    const conversationRef = doc(db, FIREBASE_COLLECTIONS.CONVERSATIONS, conversationId);
+    await updateDoc(conversationRef, {
+      lastMessage: null,
+      lastMessageTime: null,
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log(`✅ Deleted ${deleteCount} messages from conversation ${conversationId}`);
+  } catch (error: any) {
+    console.error('Error deleting messages:', error);
+    throw new Error(error.message || 'Failed to delete messages');
+  }
+}
+
+/**
+ * Get common groups between two users
+ * @param userId1 - First user ID (current user)
+ * @param userId2 - Second user ID (profile user)
+ * @returns Array of common group conversations
+ */
+export async function getCommonGroups(
+  userId1: string,
+  userId2: string
+): Promise<Conversation[]> {
+  try {
+    console.log(`🔍 Finding common groups between ${userId1} and ${userId2}`);
+
+    // Query conversations where both users are participants and type is 'group'
+    const conversationsRef = collection(db, FIREBASE_COLLECTIONS.CONVERSATIONS);
+    
+    // Get all group conversations that user1 is in
+    const user1GroupsQuery = query(
+      conversationsRef,
+      where('type', '==', 'group'),
+      where('participants', 'array-contains', userId1)
+    );
+    
+    const user1GroupsSnap = await getDocs(user1GroupsQuery);
+    
+    if (user1GroupsSnap.empty) {
+      console.log('User1 has no groups');
+      return [];
+    }
+
+    // Filter groups where user2 is also a participant
+    const commonGroups: Conversation[] = [];
+    
+    user1GroupsSnap.forEach((docSnap) => {
+      const data = docSnap.data();
+      const participants = data.participants || [];
+      
+      // Check if user2 is also in this group
+      if (participants.includes(userId2)) {
+        const conversation = ConversationModel.fromFirestore(docSnap);
+        commonGroups.push(conversation);
+      }
+    });
+
+    console.log(`✅ Found ${commonGroups.length} common groups`);
+    return commonGroups;
+  } catch (error: any) {
+    console.error('Error getting common groups:', error);
+    throw new Error(error.message || 'Failed to get common groups');
+  }
+}

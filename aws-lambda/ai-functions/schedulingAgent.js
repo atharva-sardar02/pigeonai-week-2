@@ -18,7 +18,7 @@ const { ChatOpenAI } = require('@langchain/openai');
 const { ChatPromptTemplate } = require('@langchain/core/prompts');
 const { StructuredOutputParser } = require('@langchain/core/output_parsers');
 const { RunnableSequence } = require('@langchain/core/runnables');
-const { z } = require('@langchain/core/zod');
+const { z } = require('zod'); // Fixed: Import zod directly, not from @langchain/core/zod
 const openaiClient = require('./utils/openaiClient');
 const firestoreClient = require('./utils/firestoreClient');
 const cacheClient = require('./utils/cacheClient');
@@ -160,7 +160,7 @@ async function detectSchedulingIntent(messages) {
     const prompt = schedulingPrompt.getIntentDetectionPrompt(recentMessages.map(m => m.content).join('\n'));
     
     const response = await openaiClient.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4-turbo',
       messages: [
         { role: 'system', content: 'You are an AI assistant that detects scheduling intent in conversations.' },
         { role: 'user', content: prompt }

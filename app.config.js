@@ -10,9 +10,7 @@ export default {
     updates: {
       url: 'https://u.expo.dev/1df9d352-7f2d-4127-b73c-c12fe1922269',
     },
-    runtimeVersion: {
-      policy: 'appVersion',
-    },
+    runtimeVersion: '1.0.0',
     plugins: [
       'expo-asset',
       'expo-font',

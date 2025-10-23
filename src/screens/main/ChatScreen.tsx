@@ -14,6 +14,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChatHeader } from '../../components/chat/ChatHeader';
 import { MessageList } from '../../components/chat/MessageList';
 import { MessageInput } from '../../components/chat/MessageInput';
+import { ChatOptionsMenu } from '../../components/chat/ChatOptionsMenu';
+import AIFeaturesMenu from '../../components/ai/AIFeaturesMenu';
 import SummaryModal from '../../components/ai/SummaryModal';
 import ActionItemsList from '../../components/ai/ActionItemsList';
 import SearchModal, { SearchResultData } from '../../components/ai/SearchModal';
@@ -29,7 +31,7 @@ import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import * as FirestoreService from '../../services/firebase/firestoreService';
 import * as NotificationService from '../../services/notifications/notificationService';
 import { shouldUseLocalNotifications } from '../../services/notifications/localNotificationHelper';
-import { summarizeConversation, extractActionItems, searchMessages, trackDecisions, scheduleMeeting } from '../../services/ai/aiService';
+import { summarizeConversation, extractActionItems, searchMessages, trackDecisions, scheduleMeeting, batchDetectPriority } from '../../services/ai/aiService';
 import { ActionItem } from '../../models/ActionItem';
 import { Decision } from '../../models/Decision';
 import { MeetingProposal, TimeSlot, MeetingDetails, SchedulingAgentResponse } from '../../models/MeetingProposal';
@@ -93,6 +95,13 @@ export const ChatScreen: React.FC = () => {
     error: null,
   });
 
+  // AI Features Menu state
+  const [aiMenuVisible, setAiMenuVisible] = useState(false);
+  const [aiMenuPosition, setAiMenuPosition] = useState({ x: 0, y: 60 });
+
+  // Chat Options Menu state (3-dot menu)
+  const [optionsMenuVisible, setOptionsMenuVisible] = useState(false);
+
   // AI Action Items state
   const [actionItemsModalVisible, setActionItemsModalVisible] = useState(false);
   const [actionItemsData, setActionItemsData] = useState<{
@@ -128,6 +137,10 @@ export const ChatScreen: React.FC = () => {
     loading: false,
     error: null,
   });
+
+  // AI Priority Detection state (PR #19)
+  const [messagesWithPriority, setMessagesWithPriority] = useState<Message[]>([]);
+  const [priorityDetectionLoading, setPriorityDetectionLoading] = useState(false);
 
   // AI Scheduling Agent state (PR #21)
   const [schedulingSuggestionVisible, setSchedulingSuggestionVisible] = useState(false);
@@ -302,6 +315,34 @@ export const ChatScreen: React.FC = () => {
     return cachedProfile?.displayName || 'User';
   };
 
+  // Handle AI Features Menu
+  const handleAIFeaturesPress = () => {
+    setAiMenuVisible(true);
+  };
+
+  const handleAIFeatureSelect = (feature: string) => {
+    switch (feature) {
+      case 'summarize':
+        handleSummarize();
+        break;
+      case 'actionItems':
+        handleExtractActionItems();
+        break;
+      case 'search':
+        handleOpenSearch();
+        break;
+      case 'priority':
+        handleDetectPriorities();
+        break;
+      case 'decisions':
+        handleTrackDecisions();
+        break;
+      case 'scheduling':
+        handleScheduleMeeting();
+        break;
+    }
+  };
+
   // Handle AI Summarization
   const handleSummarize = async () => {
     if (messages.length === 0) {
@@ -468,7 +509,7 @@ export const ChatScreen: React.FC = () => {
   const handleSearch = async (query: string): Promise<SearchResultData | null> => {
     try {
       // Call AI service for semantic search
-      const result = await searchMessages(query, conversationId, 5, 0.7);
+      const result = await searchMessages(query, conversationId, 5, 0.5);
 
       if (result.success && result.data) {
         return result.data as SearchResultData;
@@ -480,6 +521,68 @@ export const ChatScreen: React.FC = () => {
       console.error('Search error:', err);
       Alert.alert('Search Error', err.message || 'An unexpected error occurred');
       return null;
+    }
+  };
+
+  // Handle AI Priority Detection (PR #19)
+  const handleDetectPriorities = async () => {
+    if (messages.length === 0) {
+      Alert.alert('No Messages', 'There are no messages to analyze in this conversation.');
+      return;
+    }
+
+    console.log('🎯 Detecting priorities for', messages.length, 'messages...');
+
+    // Show loading state
+    setPriorityDetectionLoading(true);
+
+    try {
+      // Prepare messages for batch priority detection
+      const messagesToAnalyze = messages.slice(0, 50).map(msg => ({
+        id: msg.id,
+        conversationId: conversationId,
+        content: msg.content || '',
+        senderName: msg.senderName || 'Unknown',
+        conversationType: conversation?.type === 'group' ? 'group' as const : 'dm' as const,
+      }));
+
+      console.log('🤖 Calling batch priority detection API...');
+
+      // Call AI service to detect priorities
+      const result = await batchDetectPriority(messagesToAnalyze);
+
+      if (result.success && result.data) {
+        console.log('✅ Priority detection successful:', result.data);
+
+        // Map priorities back to messages
+        // Backend returns {results: [{messageId, success, data: {priority}}]}
+        const priorityMap = new Map(
+          (result.data.results || [])
+            .filter((r: any) => r.success && r.data)
+            .map((r: any) => [r.messageId, r.data.priority])
+        );
+
+        console.log('📊 Priority map:', Array.from(priorityMap.entries()));
+
+        const updatedMessages = messages.map(msg => ({
+          ...msg,
+          priority: priorityMap.get(msg.id) || 'low',
+        }));
+
+        console.log('📝 Updated messages with priorities:', updatedMessages.map(m => ({ id: m.id, priority: m.priority })));
+
+        setMessagesWithPriority(updatedMessages);
+        setPriorityDetectionLoading(false);
+        setPriorityFilterVisible(true);
+      } else {
+        console.error('❌ Priority detection failed:', result.error);
+        setPriorityDetectionLoading(false);
+        Alert.alert('Priority Detection Error', result.error || 'Failed to detect priorities');
+      }
+    } catch (err: any) {
+      console.error('❌ Priority detection error:', err);
+      setPriorityDetectionLoading(false);
+      Alert.alert('Priority Detection Error', err.message || 'An unexpected error occurred');
     }
   };
 
@@ -656,14 +759,44 @@ export const ChatScreen: React.FC = () => {
     );
   };
 
-  // Handle navigate to message (placeholder)
-  const handleNavigateToMessage = (messageId: string) => {
-    console.log('Navigate to message:', messageId);
-    // TODO: Implement scroll to message functionality
+  // Handle opening options menu (3-dot menu)
+  const handleOptionsMenuPress = () => {
+    setOptionsMenuVisible(true);
+  };
+
+  // Handle deleting all messages in conversation
+  const handleDeleteAllMessages = async () => {
+    if (!user?.uid) return;
+
     Alert.alert(
-      'Navigate to Message',
-      'This feature will scroll to the selected message in the conversation.\n\nComing soon!',
-      [{ text: 'OK' }]
+      'Delete All Messages',
+      'Are you sure you want to delete all messages in this conversation? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log(`🗑️ Deleting all messages in conversation ${conversationId}`);
+              
+              // Delete all messages from Firestore
+              await FirestoreService.deleteAllMessagesInConversation(conversationId);
+              
+              // Refresh messages to show empty state
+              await refreshMessages();
+              
+              Alert.alert('Success', 'All messages have been deleted.');
+            } catch (error: any) {
+              console.error('Error deleting messages:', error);
+              Alert.alert('Error', 'Failed to delete messages. Please try again.');
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -714,12 +847,8 @@ export const ChatScreen: React.FC = () => {
           currentUserId={user?.uid || ''}
           onBack={handleBack}
           onTitlePress={handleHeaderTap}
-          onSummarize={handleSummarize}
-          onExtractActionItems={handleExtractActionItems}
-          onSearch={handleOpenSearch}
-          onFilterPriority={() => setPriorityFilterVisible(true)}
-          onTrackDecisions={handleTrackDecisions}
-          onScheduleMeeting={handleScheduleMeeting}
+          onAIFeaturesPress={handleAIFeaturesPress}
+          onMorePress={handleOptionsMenuPress}
           isOnline={isOnline}
           lastSeen={lastSeen}
           typingUserIds={typingUsers}
@@ -744,6 +873,14 @@ export const ChatScreen: React.FC = () => {
           onTypingChange={setTyping}
           onImagePick={handleImagePick}
           sending={sending}
+        />
+
+        {/* AI Features Menu */}
+        <AIFeaturesMenu
+          visible={aiMenuVisible}
+          onClose={() => setAiMenuVisible(false)}
+          onSelectFeature={handleAIFeatureSelect}
+          position={aiMenuPosition}
         />
 
         {/* AI Summary Modal */}
@@ -785,7 +922,7 @@ export const ChatScreen: React.FC = () => {
         {/* AI Priority Filter Modal (PR #19) */}
         <PriorityFilterModal
           visible={priorityFilterVisible}
-          messages={messages}
+          messages={messagesWithPriority.length > 0 ? messagesWithPriority : messages}
           onClose={() => setPriorityFilterVisible(false)}
           onNavigateToMessage={handleNavigateToMessage}
         />
@@ -819,6 +956,13 @@ export const ChatScreen: React.FC = () => {
           onClose={handleCloseSchedulingModal}
           onSelectTime={handleSelectTimeSlot}
           onAddToCalendar={handleAddToCalendar}
+        />
+
+        {/* Chat Options Menu (3-dot menu) */}
+        <ChatOptionsMenu
+          visible={optionsMenuVisible}
+          onClose={() => setOptionsMenuVisible(false)}
+          onDeleteAllMessages={handleDeleteAllMessages}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

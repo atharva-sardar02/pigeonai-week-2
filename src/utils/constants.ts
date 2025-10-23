@@ -105,6 +105,34 @@ export const SPACING = {
   xxl: 48,
 };
 
+// Font Sizes
+export const FONT_SIZES = {
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 18,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+};
+
+// Font Weights
+export const FONT_WEIGHTS = {
+  regular: '400',
+  medium: '500',
+  semibold: '600',
+  bold: '700',
+};
+
+// Border Radius
+export const BORDER_RADIUS = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  full: 9999,
+};
+
 // Typography
 export const TYPOGRAPHY = {
   fontSize: {

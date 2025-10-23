@@ -9,34 +9,38 @@
 
 const Redis = require('ioredis');
 
-// Initialize Redis client
-const redis = new Redis({
-  host: process.env.REDIS_ENDPOINT,
-  port: 6379,
-  enableReadyCheck: true,
-  maxRetriesPerRequest: 3,
-  retryStrategy: (times) => {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
-  },
-  reconnectOnError: (err) => {
-    const targetError = 'READONLY';
-    if (err.message.includes(targetError)) {
-      return true;
-    }
-    return false;
-  },
-  lazyConnect: true, // Don't connect until first operation
-});
+// Check if Redis is configured
+const REDIS_ENABLED = !!process.env.REDIS_ENDPOINT;
 
-// Connection event handlers
-redis.on('connect', () => {
-  console.log('✅ Redis connected');
-});
+// Initialize Redis client only if endpoint is configured
+let redis = null;
 
-redis.on('error', (err) => {
-  console.error('❌ Redis error:', err.message);
-});
+if (REDIS_ENABLED) {
+  redis = new Redis({
+    host: process.env.REDIS_ENDPOINT,
+    port: 6379,
+    tls: {}, // Enable TLS for Serverless Valkey
+    enableReadyCheck: true,
+    maxRetriesPerRequest: 1, // Reduced from 3
+    connectTimeout: 3000, // 3 second timeout
+    retryStrategy: (times) => {
+      if (times > 2) return null; // Stop retrying after 2 attempts
+      return Math.min(times * 50, 1000);
+    },
+    lazyConnect: true,
+  });
+
+  // Connection event handlers
+  redis.on('connect', () => {
+    console.log('✅ Redis connected');
+  });
+
+  redis.on('error', (err) => {
+    console.error('❌ Redis error:', err.message);
+  });
+} else {
+  console.log('⚠️ Redis not configured - caching disabled');
+}
 
 /**
  * TTL Configuration (in seconds)
@@ -56,6 +60,11 @@ const TTL = {
  * @returns {Promise<any>} - Parsed value or null
  */
 async function get(key) {
+  if (!REDIS_ENABLED || !redis) {
+    console.log(`⚠️ Cache disabled - skipping get: ${key}`);
+    return null;
+  }
+  
   try {
     const value = await redis.get(key);
     if (!value) {
@@ -78,6 +87,11 @@ async function get(key) {
  * @returns {Promise<boolean>}
  */
 async function set(key, value, ttl) {
+  if (!REDIS_ENABLED || !redis) {
+    console.log(`⚠️ Cache disabled - skipping set: ${key}`);
+    return false;
+  }
+  
   try {
     const serialized = JSON.stringify(value);
     

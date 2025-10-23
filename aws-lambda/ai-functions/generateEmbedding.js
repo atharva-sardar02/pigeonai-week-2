@@ -10,7 +10,7 @@
 
 const openaiClient = require('./utils/openaiClient');
 const opensearchClient = require('./utils/opensearchClient');
-const admin = require('./utils/firebaseAdmin');
+const { admin } = require('./utils/firebaseAdmin');
 const { success, badRequest, internalError } = require('./utils/responseUtils');
 
 /**

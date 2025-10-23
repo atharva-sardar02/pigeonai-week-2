@@ -5,7 +5,7 @@
  * Focuses on decisions, action items, blockers, and technical details.
  */
 
-const admin = require('firebase-admin');
+const { admin } = require('./utils/firebaseAdmin'); // Destructure admin from exports
 const { chatCompletion } = require('./utils/openaiClient');
 const { get, set, summaryCacheKey } = require('./utils/cacheClient');
 const {
@@ -18,13 +18,6 @@ const {
   measureTime,
 } = require('./utils/responseUtils');
 const { getSummarizationPrompt, getQuickSummaryPrompt } = require('./prompts/summarization');
-
-// Initialize Firebase Admin (if not already initialized)
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(require('../serviceAccountKey.json')),
-  });
-}
 
 const db = admin.firestore();
 
@@ -119,12 +112,16 @@ exports.handler = async (event) => {
 
     const { 
       conversationId, 
-      messageLimit = 100,
+      messageLimit,
+      messageCount, // Backwards compatibility with frontend
       forceRefresh = false,
     } = body;
 
+    // Accept both messageLimit and messageCount (backwards compatible)
+    const messageLimitValue = messageLimit || messageCount || 100;
+
     // Validate message limit (max 200 to avoid token limits)
-    const limit = Math.min(Math.max(messageLimit, 1), 200);
+    const limit = Math.min(Math.max(messageLimitValue, 1), 200);
 
     // Generate cache key (includes limit for cache busting)
     const cacheKey = `${summaryCacheKey(conversationId)}:${limit}`;

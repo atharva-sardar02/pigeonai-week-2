@@ -73,14 +73,14 @@ export async function extractActionItems(conversationId: string, messageCount: n
  * @param {string} query - Search query
  * @param {string} conversationId - Conversation ID
  * @param {number} limit - Number of results (default: 5)
- * @param {number} minScore - Minimum relevance score (0.0-1.0, default: 0.7)
+ * @param {number} minScore - Minimum relevance score (0.0-1.0, default: 0.5)
  * @returns {Promise<Object>} - Search results
  */
 export async function searchMessages(
   query: string, 
   conversationId: string,
   limit: number = 5,
-  minScore: number = 0.7
+  minScore: number = 0.5
 ) {
   try {
     const response = await axios.post(`${API_BASE_URL}/ai/search`, {

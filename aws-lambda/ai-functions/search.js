@@ -16,7 +16,7 @@ const openaiClient = require('./utils/openaiClient');
 const opensearchClient = require('./utils/opensearchClient');
 const cacheClient = require('./utils/cacheClient');
 const { success, badRequest, internalError, measureTime } = require('./utils/responseUtils');
-const admin = require('./utils/firebaseAdmin');
+const { admin } = require('./utils/firebaseAdmin');
 
 /**
  * Main handler for semantic search
@@ -229,6 +229,4 @@ function calculateRelevancePercentage(score) {
   const normalized = Math.min(score / 2, 1.0);
   return Math.round(normalized * 100);
 }
-
-module.exports = { handler };
 

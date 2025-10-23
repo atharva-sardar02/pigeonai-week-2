@@ -37,15 +37,15 @@
  * }
  */
 
-const { openaiClient } = require('../utils/openaiClient');
-const { firestoreClient } = require('../utils/firestoreClient');
-const { responseUtils } = require('../utils/responseUtils');
+const { openai, chatCompletion } = require('./utils/openaiClient'); // Fixed: Import correct exports
+const { firestoreClient } = require('./utils/firestoreClient');
+const responseUtils = require('./utils/responseUtils'); // Fixed: Import directly, not destructured
 const {
   generatePriorityPrompt,
   getSystemPrompt,
   validatePriorityResponse,
   getPriorityMetadata,
-} = require('../prompts/priorityDetection');
+} = require('./prompts/priorityDetection');
 
 /**
  * Detect message priority
@@ -108,11 +108,11 @@ async function detectPriority(event) {
     const userPrompt = generatePriorityPrompt(messageContent, context);
     const systemPrompt = getSystemPrompt();
     
-    console.log(`🤖 Calling OpenAI GPT-3.5-turbo for priority detection...`);
+    console.log(`🤖 Calling OpenAI GPT-4-turbo for priority detection...`);
     
-    // Call OpenAI with GPT-3.5-turbo (fast and cheap for real-time classification)
-    const completion = await openaiClient.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+    // Call OpenAI with GPT-4-turbo (more accurate for nuanced priority classification)
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

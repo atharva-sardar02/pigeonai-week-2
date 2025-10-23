@@ -16,16 +16,12 @@ interface ChatHeaderProps {
   conversation: Conversation;
   currentUserId: string;
   onBack: () => void;
-  onTitlePress?: () => void; // New prop for tapping on the header
-  onSummarize?: () => void; // New prop for AI summarization
-  onExtractActionItems?: () => void; // New prop for AI action item extraction
-  onSearch?: () => void; // New prop for semantic search
-  onFilterPriority?: () => void; // New prop for priority filter (PR #19)
-  onTrackDecisions?: () => void; // New prop for decision tracking (PR #20)
-  onScheduleMeeting?: () => void; // New prop for scheduling agent (PR #21)
+  onTitlePress?: () => void;
+  onAIFeaturesPress?: () => void; // Single AI features button
+  onMorePress?: () => void; // 3-dot menu button
   isOnline?: boolean;
   lastSeen?: Date | null;
-  typingUserIds?: string[]; // New prop for typing users
+  typingUserIds?: string[];
   getUserDisplayName?: (userId: string) => string;
 }
 
@@ -46,12 +42,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   currentUserId,
   onBack,
   onTitlePress,
-  onSummarize,
-  onExtractActionItems,
-  onSearch,
-  onFilterPriority,
-  onTrackDecisions,
-  onScheduleMeeting,
+  onAIFeaturesPress,
+  onMorePress,
   isOnline = false,
   lastSeen = null,
   typingUserIds = [],
@@ -269,87 +261,31 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         </View>
       </TouchableOpacity>
 
-      {/* AI Summarize Button */}
-      {onSummarize && (
+      {/* Single AI Features Button */}
+      {onAIFeaturesPress && (
         <TouchableOpacity
           style={styles.aiButton}
-          onPress={onSummarize}
+          onPress={onAIFeaturesPress}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="sparkles" size={22} color={COLORS.primary} />
+          <Ionicons name="sparkles" size={24} color={COLORS.primary} />
         </TouchableOpacity>
       )}
 
-      {/* AI Action Items Button */}
-      {onExtractActionItems && (
+      {/* More Options Button */}
+      {onMorePress && (
         <TouchableOpacity
-          style={styles.aiButton}
-          onPress={onExtractActionItems}
+          style={styles.moreButton}
+          onPress={onMorePress}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="checkbox-outline" size={22} color={COLORS.primary} />
+          <View style={styles.moreIcon}>
+            <View style={styles.dot} />
+            <View style={styles.dot} />
+            <View style={styles.dot} />
+          </View>
         </TouchableOpacity>
       )}
-
-      {/* AI Semantic Search Button */}
-      {onSearch && (
-        <TouchableOpacity
-          style={styles.aiButton}
-          onPress={onSearch}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="search-outline" size={22} color={COLORS.primary} />
-        </TouchableOpacity>
-      )}
-
-      {/* AI Priority Filter Button (PR #19) */}
-      {onFilterPriority && (
-        <TouchableOpacity
-          style={styles.aiButton}
-          onPress={onFilterPriority}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="filter-outline" size={22} color={COLORS.primary} />
-        </TouchableOpacity>
-      )}
-
-      {/* AI Decision Tracking Button (PR #20) */}
-      {onTrackDecisions && (
-        <TouchableOpacity
-          style={styles.aiButton}
-          onPress={onTrackDecisions}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="bulb-outline" size={22} color={COLORS.primary} />
-        </TouchableOpacity>
-      )}
-
-      {/* AI Scheduling Agent Button (PR #21) */}
-      {onScheduleMeeting && (
-        <TouchableOpacity
-          style={styles.aiButton}
-          onPress={onScheduleMeeting}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="calendar-outline" size={22} color={COLORS.primary} />
-        </TouchableOpacity>
-      )}
-
-      {/* More Options Button (Future) */}
-      <TouchableOpacity
-        style={styles.moreButton}
-        onPress={() => {
-          // TODO: Open conversation settings
-          console.log('More options tapped');
-        }}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <View style={styles.moreIcon}>
-          <View style={styles.dot} />
-          <View style={styles.dot} />
-          <View style={styles.dot} />
-        </View>
-      </TouchableOpacity>
     </View>
   );
 };
