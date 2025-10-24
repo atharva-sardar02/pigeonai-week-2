@@ -2,17 +2,23 @@
  * OpenAI Client for Lambda Functions
  * 
  * Provides:
- * - Chat completions (GPT-4, GPT-3.5-turbo)
+ * - Chat completions (GPT-4o-mini)
  * - Text embeddings (text-embedding-3-small)
  * - Structured outputs
  */
 
 const { OpenAI } = require('openai');
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization - only create client when first needed
+let openai = null;
+function getOpenAIClient() {
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+}
 
 /**
  * Generate chat completion
@@ -23,7 +29,7 @@ const openai = new OpenAI({
 async function chatCompletion(messages, options = {}) {
   try {
     const {
-      model = 'gpt-4-turbo',
+      model = 'gpt-4o-mini',
       temperature = 0.7,
       maxTokens = 1000,
       responseFormat = null,
@@ -50,7 +56,7 @@ async function chatCompletion(messages, options = {}) {
       }
     }
 
-    const response = await openai.chat.completions.create(params);
+    const response = await getOpenAIClient().chat.completions.create(params);
     const content = response.choices[0].message.content;
 
     console.log(`✅ Chat completion (${model}): ${response.usage.total_tokens} tokens`);
@@ -69,7 +75,7 @@ async function chatCompletion(messages, options = {}) {
  */
 async function generateEmbedding(text) {
   try {
-    const response = await openai.embeddings.create({
+    const response = await getOpenAIClient().embeddings.create({
       model: 'text-embedding-3-small',
       input: text,
       encoding_format: 'float',
@@ -95,11 +101,11 @@ async function generateEmbedding(text) {
 async function chatCompletionWithTools(messages, tools, options = {}) {
   try {
     const {
-      model = 'gpt-4-turbo',
+      model = 'gpt-4o-mini',
       temperature = 0,
     } = options;
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAIClient().chat.completions.create({
       model,
       messages,
       tools,
@@ -122,7 +128,7 @@ async function chatCompletionWithTools(messages, tools, options = {}) {
 }
 
 module.exports = {
-  openai,
+  getOpenAIClient, // ✅ Export lazy loader instead of null client
   chatCompletion,
   generateEmbedding,
   chatCompletionWithTools,

@@ -226,8 +226,25 @@ exports.batchHandler = async (event) => {
   }
 };
 
+/**
+ * Helper function to batch generate embeddings (for use by other Lambda functions)
+ * @param {string} conversationId - Conversation ID
+ * @param {number} messageLimit - Number of messages to process
+ * @returns {Promise<Object>} - Result object
+ */
+async function batchGenerateEmbeddings(conversationId, messageLimit = 100) {
+  // Create a mock event object for batchHandler
+  const mockEvent = {
+    body: JSON.stringify({ conversationId, messageLimit })
+  };
+  
+  const result = await exports.batchHandler(mockEvent);
+  return JSON.parse(result.body);
+}
+
 module.exports = { 
   handler: exports.handler,
   batchHandler: exports.batchHandler,
+  batchGenerateEmbeddings, // ✅ Export for use by search.js
 };
 

@@ -85,9 +85,9 @@ async function generateSummary(messages, messageCount) {
     // For longer conversations, use full structured summary
     const promptMessages = getSummarizationPrompt(messages, messageCount);
     const summary = await chatCompletion(promptMessages, {
-      model: 'gpt-4-turbo',
+      model: 'gpt-4o-mini',
       temperature: 0.3, // Lower temperature for more factual summaries
-      maxTokens: 1000,
+      maxTokens: 700, // ✅ Reduced from 1000 for faster generation
     });
 
     return summary;
@@ -118,7 +118,8 @@ exports.handler = async (event) => {
     } = body;
 
     // Accept both messageLimit and messageCount (backwards compatible)
-    const messageLimitValue = messageLimit || messageCount || 100;
+    // ✅ Reduced default from 100 to 50 for faster processing
+    const messageLimitValue = messageLimit || messageCount || 50;
 
     // Validate message limit (max 200 to avoid token limits)
     const limit = Math.min(Math.max(messageLimitValue, 1), 200);
@@ -152,7 +153,7 @@ exports.handler = async (event) => {
       console.log(`✅ Fetched ${actualCount} messages`);
 
       // Generate summary using OpenAI
-      console.log(`🤖 Generating summary with GPT-4...`);
+      console.log(`🤖 Generating summary with GPT-4o-mini...`);
       const summary = await generateSummary(messages, actualCount);
 
       return {

@@ -4,7 +4,7 @@
  * For Remote Team Professional persona
  * 
  * This prompt classifies message urgency/priority for distributed software teams.
- * Uses GPT-3.5-turbo for speed (real-time classification).
+ * Uses GPT-4o-mini for speed and accuracy (real-time classification).
  * 
  * Priority Levels:
  * - high: Urgent, needs immediate attention (deadlines, blockers, production issues, escalations)

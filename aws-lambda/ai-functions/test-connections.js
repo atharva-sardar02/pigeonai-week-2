@@ -33,7 +33,7 @@ async function testConnections() {
     const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
     
     const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: 'Say "Hello from Lambda!"' }],
       max_tokens: 10,
     });
@@ -113,7 +113,7 @@ async function testConnections() {
     
     const model = new ChatOpenAI({
       openAIApiKey: OPENAI_API_KEY,
-      modelName: 'gpt-3.5-turbo',
+      modelName: 'gpt-4o-mini',
       temperature: 0,
     });
     
