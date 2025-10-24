@@ -49,15 +49,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   /**
    * Fetch user profile from Firestore
+   * OFFLINE-FIRST: If fetch fails (offline), create profile from Firebase Auth cache
    */
   const fetchUserProfile = async (firebaseUser: FirebaseUser): Promise<User | null> => {
     try {
-      const userProfile = await authService.getUserProfile(firebaseUser.uid);
+      // Try to fetch from Firestore (with short timeout for offline scenarios)
+      const userProfile = await Promise.race([
+        authService.getUserProfile(firebaseUser.uid),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)) // 3s timeout
+      ]);
+      
       if (userProfile) {
         return userProfile;
       }
 
-      // If Firestore profile doesn't exist, create one from Firebase Auth data
+      // If Firestore fetch failed or timed out (offline), create profile from Firebase Auth cache
+      console.log('⚠️ Firestore unavailable, using cached auth data');
       return {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
@@ -66,11 +73,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         bio: '',
         createdAt: new Date(),
         lastSeen: new Date(),
-        isOnline: true,
+        isOnline: false, // Assume offline if Firestore is unavailable
       };
     } catch (err) {
       console.error('Error fetching user profile:', err);
-      return null;
+      // Return cached auth data even on error
+      return {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL,
+        bio: '',
+        createdAt: new Date(),
+        lastSeen: new Date(),
+        isOnline: false,
+      };
     }
   };
 
@@ -108,31 +125,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   /**
    * Handle auth state changes
+   * OFFLINE-FIRST: Continue loading even if Firestore calls fail
    */
   useEffect(() => {
     const unsubscribe = authService.onAuthStateChange(async (firebaseUser) => {
+      console.log('🔐 Auth state changed:', firebaseUser ? `User ${firebaseUser.uid.substring(0, 8)}` : 'Signed out');
+      
       if (firebaseUser) {
         // User is signed in
+        console.log('📱 Fetching user profile (offline-first)...');
         const userProfile = await fetchUserProfile(firebaseUser);
         setUser(userProfile);
+        console.log('✅ User profile loaded:', userProfile?.displayName || 'Unknown');
         
-        // Set up presence system
+        // Set up presence system (non-blocking, silently fails offline)
         if (firebaseUser.uid) {
-          await authService.setupPresence(firebaseUser.uid);
+          authService.setupPresence(firebaseUser.uid).catch((err) => {
+            console.warn('⚠️ Failed to setup presence (offline?):', err.message);
+            // Silently continue - not critical for offline usage
+          });
           
-          // Register for push notifications after successful login
-          // Wait a moment to let the user see they're logged in
+          // Register for push notifications after successful login (non-blocking)
           setTimeout(() => {
-            registerPushNotifications(firebaseUser.uid);
+            registerPushNotifications(firebaseUser.uid).catch((err) => {
+              console.warn('⚠️ Failed to register push notifications:', err.message);
+              // Silently continue - not critical for offline usage
+            });
           }, 1000);
         }
       } else {
         // User is signed out
         setUser(null);
+        console.log('👋 User signed out');
       }
       
       if (initializing) {
         setInitializing(false);
+        console.log('✅ Auth initialization complete');
       }
       setLoading(false);
     });
