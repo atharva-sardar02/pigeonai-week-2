@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   TextStyle,
   Alert,
   ActivityIndicator,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -39,23 +41,11 @@ interface ProfileScreenProps {
  * - Account management (future)
  */
 export function ProfileScreen({ navigation }: ProfileScreenProps) {
-  const { user, signOut } = useAuth();
-  const [cacheStats, setCacheStats] = useState<any>(null);
+  const { user, signOut, updateProfile } = useAuth();
   const [clearing, setClearing] = useState(false);
-
-  // Load cache statistics
-  useEffect(() => {
-    loadCacheStats();
-  }, []);
-
-  const loadCacheStats = async () => {
-    try {
-      const stats = await LocalDatabase.getDatabaseStats();
-      setCacheStats(stats);
-    } catch (error) {
-      console.error('Error loading cache stats:', error);
-    }
-  };
+  const [editNameModalVisible, setEditNameModalVisible] = useState(false);
+  const [newDisplayName, setNewDisplayName] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   const handleClearCache = () => {
     Alert.alert(
@@ -73,7 +63,6 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
             try {
               setClearing(true);
               await LocalDatabase.clearAllData();
-              await loadCacheStats();
               Alert.alert(
                 'Success',
                 'Cache cleared successfully! Data will be reloaded from the server.',
@@ -107,12 +96,28 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
     navigation.goBack();
   };
 
-  // Format cache size for display
-  const formatCacheInfo = () => {
-    if (!cacheStats) return 'Loading...';
-    const messageCount = cacheStats.messages || 0;
-    const conversationCount = cacheStats.conversations || 0;
-    return `${messageCount} messages, ${conversationCount} conversations`;
+  const handleEditName = () => {
+    setNewDisplayName(user?.displayName || '');
+    setEditNameModalVisible(true);
+  };
+
+  const handleSaveDisplayName = async () => {
+    if (!newDisplayName.trim()) {
+      Alert.alert('Error', 'Display name cannot be empty');
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      await updateProfile(newDisplayName.trim());
+      setEditNameModalVisible(false);
+      Alert.alert('Success', 'Display name updated successfully!');
+    } catch (error) {
+      console.error('Error updating display name:', error);
+      Alert.alert('Error', 'Failed to update display name. Please try again.');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   return (
@@ -145,99 +150,152 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
           />
 
           {/* User Info */}
-          <Text style={styles.displayName}>{user?.displayName || 'User'}</Text>
+          <View style={styles.nameContainer}>
+            <Text style={styles.displayName}>{user?.displayName || 'User'}</Text>
+            <TouchableOpacity
+              style={styles.editNameButton}
+              onPress={handleEditName}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="pencil" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
           <Text style={styles.email}>{user?.email || ''}</Text>
         </View>
 
+        {/* Edit Name Modal */}
+        <Modal
+          visible={editNameModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setEditNameModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Edit Display Name</Text>
+              
+              <TextInput
+                style={styles.modalInput}
+                value={newDisplayName}
+                onChangeText={setNewDisplayName}
+                placeholder="Enter your name"
+                placeholderTextColor={COLORS.textTertiary}
+                maxLength={50}
+                autoFocus
+              />
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setEditNameModalVisible(false)}
+                  disabled={updating}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.saveButton, updating && styles.buttonDisabled]}
+                  onPress={handleSaveDisplayName}
+                  disabled={updating}
+                  activeOpacity={0.7}
+                >
+                  {updating ? (
+                    <ActivityIndicator size="small" color={COLORS.buttonPrimaryText} />
+                  ) : (
+                    <Text style={styles.saveButtonText}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         {/* Menu Items */}
         <View style={styles.menuSection}>
-          {/* Test Notifications (Temporary - Dev Only) */}
+          {/* About AI Features */}
           <TouchableOpacity
-            style={[styles.menuItem, styles.testMenuItem]}
-            onPress={() => navigation.navigate('NotificationTest')}
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('AboutAIFeatures')}
             activeOpacity={0.7}
           >
             <Ionicons
-              name="flask-outline"
+              name="sparkles-outline"
               size={24}
-              color={COLORS.primary}
+              color={COLORS.text}
             />
-            <Text style={[styles.menuItemText, styles.testMenuItemText]}>
-              🧪 Test Notifications
+            <Text style={styles.menuItemText}>
+              About AI Features
             </Text>
-            <Text style={styles.testBadge}>DEV</Text>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
           </TouchableOpacity>
 
-          {/* Account Settings (Future) */}
+          {/* Account Settings */}
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => {}}
-            disabled={true}
+            onPress={() => navigation.navigate('AccountSettings')}
             activeOpacity={0.7}
           >
             <Ionicons
               name="person-outline"
               size={24}
-              color={COLORS.textTertiary}
+              color={COLORS.text}
             />
-            <Text style={[styles.menuItemText, styles.menuItemDisabled]}>
+            <Text style={styles.menuItemText}>
               Account Settings
             </Text>
-            <Text style={styles.comingSoon}>Coming Soon</Text>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
           </TouchableOpacity>
 
-          {/* Privacy Settings (Future) */}
+          {/* Privacy Settings */}
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => {}}
-            disabled={true}
+            onPress={() => navigation.navigate('PrivacySecurity')}
             activeOpacity={0.7}
           >
             <Ionicons
               name="shield-outline"
               size={24}
-              color={COLORS.textTertiary}
+              color={COLORS.text}
             />
-            <Text style={[styles.menuItemText, styles.menuItemDisabled]}>
+            <Text style={styles.menuItemText}>
               Privacy & Security
             </Text>
-            <Text style={styles.comingSoon}>Coming Soon</Text>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
           </TouchableOpacity>
 
-          {/* Notifications (Future) */}
+          {/* Notifications */}
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => {}}
-            disabled={true}
+            onPress={() => navigation.navigate('NotificationSettings')}
             activeOpacity={0.7}
           >
             <Ionicons
               name="notifications-outline"
               size={24}
-              color={COLORS.textTertiary}
+              color={COLORS.text}
             />
-            <Text style={[styles.menuItemText, styles.menuItemDisabled]}>
+            <Text style={styles.menuItemText}>
               Notifications
             </Text>
-            <Text style={styles.comingSoon}>Coming Soon</Text>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
           </TouchableOpacity>
 
-          {/* Help & Support (Future) */}
+          {/* Help & Support */}
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => {}}
-            disabled={true}
+            onPress={() => navigation.navigate('HelpSupport')}
             activeOpacity={0.7}
           >
             <Ionicons
               name="help-circle-outline"
               size={24}
-              color={COLORS.textTertiary}
+              color={COLORS.text}
             />
-            <Text style={[styles.menuItemText, styles.menuItemDisabled]}>
+            <Text style={styles.menuItemText}>
               Help & Support
             </Text>
-            <Text style={styles.comingSoon}>Coming Soon</Text>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
           </TouchableOpacity>
         </View>
 
@@ -245,37 +303,21 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
         <View style={styles.storageSection}>
           <Text style={styles.sectionTitle}>Storage</Text>
           
-          {/* Cache Info */}
-          <View style={styles.cacheInfoCard}>
-            <View style={styles.cacheInfoRow}>
-              <Ionicons name="file-tray-full-outline" size={24} color={COLORS.primary} />
-              <View style={styles.cacheInfoText}>
-                <Text style={styles.cacheInfoTitle}>Local Cache</Text>
-                <Text style={styles.cacheInfoSubtitle}>
-                  {formatCacheInfo()}
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={[styles.clearCacheButton, clearing && styles.buttonDisabled]}
-              onPress={handleClearCache}
-              disabled={clearing}
-              activeOpacity={0.7}
-            >
-              {clearing ? (
-                <ActivityIndicator size="small" color={COLORS.text} />
-              ) : (
-                <>
-                  <Ionicons name="trash-outline" size={20} color={COLORS.text} />
-                  <Text style={styles.clearCacheText}>Clear Cache</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.storageNote}>
-            💡 Clearing cache frees up storage space. Data will be reloaded from the server when needed.
-          </Text>
+          <TouchableOpacity
+            style={[styles.clearCacheButton, clearing && styles.buttonDisabled]}
+            onPress={handleClearCache}
+            disabled={clearing}
+            activeOpacity={0.7}
+          >
+            {clearing ? (
+              <ActivityIndicator size="small" color={COLORS.buttonPrimaryText} />
+            ) : (
+              <>
+                <Ionicons name="trash-outline" size={20} color={COLORS.buttonPrimaryText} />
+                <Text style={styles.clearCacheText}>Clear Cache</Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Sign Out Button */}
@@ -289,7 +331,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
         </TouchableOpacity>
 
         {/* Version Info */}
-        <Text style={styles.versionText}>Pigeon AI v1.0.0 (MVP)</Text>
+        <Text style={styles.versionText}>PigeonAi v1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -340,17 +382,98 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   } as ViewStyle,
 
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.xs,
+  } as ViewStyle,
+
   displayName: {
     fontSize: TYPOGRAPHY.fontSize.xxl,
     fontWeight: TYPOGRAPHY.fontWeight.bold as TextStyle['fontWeight'],
     color: COLORS.text,
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.xs,
   } as TextStyle,
+
+  editNameButton: {
+    marginLeft: SPACING.sm,
+    padding: SPACING.xs,
+  } as ViewStyle,
 
   email: {
     fontSize: TYPOGRAPHY.fontSize.md,
     color: COLORS.textSecondary,
+  } as TextStyle,
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: COLORS.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+  } as ViewStyle,
+
+  modalContainer: {
+    width: '85%',
+    maxWidth: 400,
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: 12,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  } as ViewStyle,
+
+  modalTitle: {
+    fontSize: TYPOGRAPHY.fontSize.xl,
+    fontWeight: TYPOGRAPHY.fontWeight.bold as TextStyle['fontWeight'],
+    color: COLORS.text,
+    marginBottom: SPACING.lg,
+    textAlign: 'center',
+  } as TextStyle,
+
+  modalInput: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    padding: SPACING.md,
+    fontSize: TYPOGRAPHY.fontSize.md,
+    color: COLORS.text,
+    marginBottom: SPACING.lg,
+  } as ViewStyle,
+
+  modalButtons: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+  } as ViewStyle,
+
+  modalButton: {
+    flex: 1,
+    paddingVertical: SPACING.md,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  } as ViewStyle,
+
+  cancelButton: {
+    backgroundColor: COLORS.backgroundTertiary,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  } as ViewStyle,
+
+  cancelButtonText: {
+    fontSize: TYPOGRAPHY.fontSize.md,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold as TextStyle['fontWeight'],
+    color: COLORS.text,
+  } as TextStyle,
+
+  saveButton: {
+    backgroundColor: COLORS.buttonPrimary,
+  } as ViewStyle,
+
+  saveButtonText: {
+    fontSize: TYPOGRAPHY.fontSize.md,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold as TextStyle['fontWeight'],
+    color: COLORS.buttonPrimaryText,
   } as TextStyle,
 
   menuSection: {
@@ -375,35 +498,6 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.md,
   } as TextStyle,
 
-  menuItemDisabled: {
-    color: COLORS.textTertiary,
-  } as TextStyle,
-
-  comingSoon: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: COLORS.textTertiary,
-    fontStyle: 'italic',
-  } as TextStyle,
-
-  testMenuItem: {
-    backgroundColor: COLORS.primary + '10',
-  } as ViewStyle,
-
-  testMenuItemText: {
-    color: COLORS.primary,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold as TextStyle['fontWeight'],
-  } as TextStyle,
-
-  testBadge: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    fontWeight: TYPOGRAPHY.fontWeight.bold as TextStyle['fontWeight'],
-    color: COLORS.background,
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.xs,
-    paddingVertical: 2,
-    borderRadius: 4,
-  } as TextStyle,
-
   storageSection: {
     marginTop: SPACING.lg,
     marginHorizontal: SPACING.lg,
@@ -416,47 +510,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   } as TextStyle,
 
-  cacheInfoCard: {
-    backgroundColor: COLORS.backgroundTertiary,
-    borderRadius: 12,
-    padding: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  } as ViewStyle,
-
-  cacheInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  } as ViewStyle,
-
-  cacheInfoText: {
-    flex: 1,
-    marginLeft: SPACING.md,
-  } as ViewStyle,
-
-  cacheInfoTitle: {
-    fontSize: TYPOGRAPHY.fontSize.md,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold as TextStyle['fontWeight'],
-    color: COLORS.text,
-    marginBottom: SPACING.xs / 2,
-  } as TextStyle,
-
-  cacheInfoSubtitle: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: COLORS.textSecondary,
-  } as TextStyle,
-
   clearCacheButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.backgroundSecondary,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: COLORS.buttonPrimary,
+    borderRadius: 12,
   } as ViewStyle,
 
   buttonDisabled: {
@@ -464,17 +525,10 @@ const styles = StyleSheet.create({
   } as ViewStyle,
 
   clearCacheText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.medium as TextStyle['fontWeight'],
-    color: COLORS.text,
+    fontSize: TYPOGRAPHY.fontSize.md,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold as TextStyle['fontWeight'],
+    color: COLORS.buttonPrimaryText,
     marginLeft: SPACING.xs,
-  } as TextStyle,
-
-  storageNote: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: COLORS.textTertiary,
-    marginTop: SPACING.sm,
-    lineHeight: 16,
   } as TextStyle,
 
   signOutButton: {

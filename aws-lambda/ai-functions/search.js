@@ -109,6 +109,30 @@ exports.handler = async (event) => {
     const searchDuration = Date.now() - searchStartTime;
     console.log(`✅ Found ${searchResults.length} results (${searchDuration}ms)`);
 
+    // ✅ AUTO-FIX: If no results found, trigger batch embedding generation
+    if (searchResults.length === 0) {
+      console.log('⚠️ No embeddings found - triggering batch generation...');
+      
+      try {
+        const { batchGenerateEmbeddings } = require('./generateEmbedding');
+        await batchGenerateEmbeddings(conversationId);
+        console.log('✅ Batch embeddings generated - try searching again in a few seconds');
+        
+        return success({
+          results: [],
+          query,
+          conversationId,
+          resultCount: 0,
+          message: 'No existing embeddings found. Messages are being indexed - please try again in 10 seconds.',
+          embeddingsGenerated: true,
+          duration: Date.now() - startTime
+        });
+      } catch (embeddingError) {
+        console.error('❌ Failed to generate embeddings:', embeddingError);
+        // Continue with empty results
+      }
+    }
+
     // Step 3: Fetch full message details from Firestore
     console.log('🔄 Step 3: Fetching message details from Firestore...');
     const firestoreStartTime = Date.now();

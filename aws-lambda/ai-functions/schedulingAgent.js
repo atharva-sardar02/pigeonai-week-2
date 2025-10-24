@@ -65,49 +65,33 @@ async function handleSchedulingAgent(body) {
 
     console.log(`[Scheduling Agent] Fetched ${messages.length} messages`);
 
-    // Step 2: Detect scheduling intent
-    console.log('[Scheduling Agent] Step 2: Detecting scheduling intent...');
-    const hasSchedulingIntent = await detectSchedulingIntent(messages);
+    // Step 2: Detect ALL scheduling threads (not just one!)
+    console.log('[Scheduling Agent] Step 2: Detecting all scheduling threads...');
+    const threads = await detectAllSchedulingThreads(messages, userId);
     
-    if (!hasSchedulingIntent.detected) {
+    if (threads.length === 0) {
       return responseUtils.success({
         hasSchedulingIntent: false,
-        confidence: hasSchedulingIntent.confidence,
-        message: 'No scheduling intent detected in conversation',
+        threads: [],
+        totalThreads: 0,
+        message: 'No scheduling requests detected in conversation',
         duration: Date.now() - startTime
       });
     }
 
-    console.log('[Scheduling Agent] Scheduling intent detected:', hasSchedulingIntent);
+    console.log(`[Scheduling Agent] Detected ${threads.length} scheduling thread(s)`);
+    threads.forEach((t, i) => {
+      console.log(`  Thread ${i + 1}: "${t.triggerMessage.substring(0, 50)}..."`);
+    });
 
-    // Step 3: Extract meeting details
-    console.log('[Scheduling Agent] Step 3: Extracting meeting details...');
-    const meetingDetails = await extractMeetingDetails(messages, hasSchedulingIntent.triggerMessage);
-    console.log('[Scheduling Agent] Meeting details:', meetingDetails);
-
-    // Step 4: Check availability (simulated for MVP)
-    console.log('[Scheduling Agent] Step 4: Checking availability...');
-    const availability = await checkAvailability(meetingDetails);
-    console.log('[Scheduling Agent] Availability:', availability);
-
-    // Step 5: Suggest optimal times
-    console.log('[Scheduling Agent] Step 5: Suggesting optimal times...');
-    const suggestedTimes = await suggestOptimalTimes(meetingDetails, availability);
-    console.log('[Scheduling Agent] Suggested times:', suggestedTimes.length);
-
-    // Step 6: Generate meeting proposal
-    console.log('[Scheduling Agent] Step 6: Generating meeting proposal...');
-    const proposal = await generateMeetingProposal(meetingDetails, suggestedTimes);
-    console.log('[Scheduling Agent] Proposal generated');
-
+    // Return all threads with their time suggestions
     const result = {
       hasSchedulingIntent: true,
-      confidence: hasSchedulingIntent.confidence,
-      triggerMessage: hasSchedulingIntent.triggerMessage,
-      meetingDetails,
-      suggestedTimes,
-      proposal,
-      participants: meetingDetails.participants,
+      threads: threads, // ✅ Array of all detected threads
+      totalThreads: threads.length,
+      needsAction: threads.filter(t => t.status !== 'ready').length,
+      conversationId,
+      messageCount: messages.length,
       duration: Date.now() - startTime
     };
 
@@ -124,71 +108,348 @@ async function handleSchedulingAgent(body) {
 }
 
 /**
- * Step 1: Detect if conversation contains scheduling intent
- * @param {Array} messages - Conversation messages
- * @returns {Promise<Object>} { detected: boolean, confidence: number, triggerMessage: string }
+ * Detect ALL scheduling threads in conversation
+ * @param {Array} messages - All messages
+ * @param {string} userId - Current user ID
+ * @returns {Promise<Array>} Array of scheduling threads
  */
-async function detectSchedulingIntent(messages) {
-  // Keywords that indicate scheduling intent
+async function detectAllSchedulingThreads(messages, userId) {
+  const schedulingKeywords = [
+    'meeting', 'schedule', 'sync', 'call', 'meet', 'catch up',
+    'get together', 'touch base', 'video call', 'zoom',
+    'when can we', 'let\'s meet', 'let\'s schedule',
+    'have a meeting', 'let\'s have', 'let\'s catch'
+  ];
+
+  const threads = [];
+  const processedIndices = new Set();
+
+  // Scan all messages for scheduling keywords
+  for (let i = 0; i < messages.length; i++) {
+    if (processedIndices.has(i)) continue;
+
+    const msg = messages[i];
+    const content = msg.content.toLowerCase();
+
+    // Check if message contains scheduling keywords
+    const hasKeyword = schedulingKeywords.some(keyword => content.includes(keyword));
+    
+    if (hasKeyword) {
+      console.log(`[Thread Detection] Found scheduling hint at message ${i}: "${msg.content.substring(0, 50)}..."`);
+      
+      // Extract date and time info
+      const dateInfo = extractDateInfo(msg.content);
+      const timeInfo = extractTimeInfo(msg.content);
+      
+      // Determine status
+      let status = 'needs_both';
+      if (dateInfo.specified && timeInfo.specified) {
+        status = 'ready';
+      } else if (dateInfo.specified) {
+        status = 'needs_time';
+      } else if (timeInfo.specified) {
+        status = 'needs_date';
+      }
+
+      // Look for availability hints in nearby messages
+      const nearbyHints = [];
+      for (let j = Math.max(0, i - 3); j < Math.min(messages.length, i + 4); j++) {
+        if (j !== i) {
+          const hint = messages[j].content.toLowerCase();
+          if (hint.includes('available') || hint.includes('free') || hint.includes('works for me')) {
+            const hintTime = extractTimeInfo(messages[j].content);
+            const hintDate = extractDateInfo(messages[j].content);
+            if (hintTime.specified || hintDate.specified) {
+              nearbyHints.push({
+                message: messages[j].content,
+                time: hintTime,
+                date: hintDate
+              });
+            }
+          }
+        }
+      }
+
+      // Generate time suggestions for this thread
+      const suggestedTimes = generateTimeSuggestionsForThread(dateInfo, timeInfo, nearbyHints);
+
+      const thread = {
+        id: `thread_${i}`,
+        topic: extractThreadTopic(msg.content),
+        triggerMessage: msg.content,
+        messageIndex: i,
+        confidence: 0.9,
+        dateInfo,
+        timeInfo,
+        availabilityHints: nearbyHints,
+        status,
+        suggestedTimes,
+        createdAt: new Date().toISOString()
+      };
+
+      threads.push(thread);
+      
+      // Mark nearby messages as processed to avoid duplicates
+      for (let j = i - 2; j <= i + 2; j++) {
+        if (j >= 0 && j < messages.length) {
+          processedIndices.add(j);
+        }
+      }
+    }
+  }
+
+  return threads;
+}
+
+/**
+ * Extract topic from scheduling message
+ */
+function extractThreadTopic(content) {
+  // Remove scheduling keywords to get topic
+  const cleaned = content
+    .replace(/schedule|meeting|call|catch up|let's|have a/gi, '')
+    .trim();
+  
+  if (cleaned.length > 50) {
+    return cleaned.substring(0, 47) + '...';
+  }
+  
+  return cleaned || 'Meeting';
+}
+
+/**
+ * Generate time suggestions for a specific thread
+ */
+function generateTimeSuggestionsForThread(dateInfo, timeInfo, availabilityHints) {
+  const suggestions = [];
+  const now = new Date();
+
+  // Strategy 1: Use availability hints if found
+  if (availabilityHints.length > 0) {
+    for (let i = 0; i < Math.min(3, availabilityHints.length); i++) {
+      const hint = availabilityHints[i];
+      const baseDate = hint.date.specified ? new Date(hint.date.value) : new Date();
+      baseDate.setDate(baseDate.getDate() + (hint.date.specified ? 0 : i + 1));
+      
+      const time = hint.time.specified ? hint.time.value : '10:00 AM';
+      
+      suggestions.push({
+        id: `time_${i}`,
+        date: baseDate.toISOString().split('T')[0],
+        time: time,
+        endTime: '11:30 AM', // Simplified
+        quality: i === 0 ? 'best' : (i === 1 ? 'good' : 'acceptable'),
+        reason: `Based on "${hint.message.substring(0, 30)}..."`
+      });
+    }
+  }
+  // Strategy 2: Use detected date/time
+  else if (dateInfo.specified || timeInfo.specified) {
+    const baseDate = dateInfo.specified ? new Date(dateInfo.value) : new Date();
+    baseDate.setDate(baseDate.getDate() + (dateInfo.specified ? 0 : 3));
+    
+    const baseTime = timeInfo.specified ? timeInfo.value : '10:00 AM';
+    
+    suggestions.push({
+      id: 'time_0',
+      date: baseDate.toISOString().split('T')[0],
+      time: baseTime,
+      endTime: adjustTime(baseTime, 0.5),
+      quality: 'best',
+      reason: 'Matches your request'
+    });
+    
+    suggestions.push({
+      id: 'time_1',
+      date: baseDate.toISOString().split('T')[0],
+      time: adjustTime(baseTime, 2),
+      endTime: adjustTime(baseTime, 2.5),
+      quality: 'good',
+      reason: '2 hours later'
+    });
+    
+    suggestions.push({
+      id: 'time_2',
+      date: baseDate.toISOString().split('T')[0],
+      time: adjustTime(baseTime, -2),
+      endTime: adjustTime(baseTime, -1.5),
+      quality: 'acceptable',
+      reason: '2 hours earlier'
+    });
+  }
+  // Strategy 3: Defaults
+  else {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    suggestions.push({
+      id: 'time_0',
+      date: tomorrow.toISOString().split('T')[0],
+      time: '10:00 AM',
+      endTime: '10:30 AM',
+      quality: 'best',
+      reason: 'Morning slot'
+    });
+    
+    suggestions.push({
+      id: 'time_1',
+      date: tomorrow.toISOString().split('T')[0],
+      time: '2:00 PM',
+      endTime: '2:30 PM',
+      quality: 'good',
+      reason: 'Afternoon slot'
+    });
+    
+    suggestions.push({
+      id: 'time_2',
+      date: tomorrow.toISOString().split('T')[0],
+      time: '4:00 PM',
+      endTime: '4:30 PM',
+      quality: 'acceptable',
+      reason: 'Late afternoon'
+    });
+  }
+
+  return suggestions;
+}
+
+/**
+ * OLD: Detect if conversation contains scheduling intent (DEPRECATED - using detectAllSchedulingThreads now)
+ */
+async function detectSchedulingIntent_OLD(messages) {
+  // ✅ ENHANCED: More comprehensive keywords
   const schedulingKeywords = [
     'meeting', 'schedule', 'sync', 'call', 'meet', 'catch up',
     'get together', 'touch base', 'video call', 'zoom', 'teams',
     'when can we', 'let\'s meet', 'let\'s schedule', 'what time',
-    'available for', 'free to', 'calendar', 'appointment'
+    'available for', 'free to', 'calendar', 'appointment',
+    'have a meeting', 'let\'s have', 'let\'s catch', 'when are you',
+    'are you free', 'can we meet', 'shall we', 'how about'
   ];
 
-  // Check last 10 messages for scheduling keywords
-  const recentMessages = messages.slice(-10);
+  // ✅ ENHANCED: Scan ALL messages (not just last 10)
   let triggerMessage = null;
   let keywordCount = 0;
+  let bestMatch = null;
+  let highestScore = 0;
 
-  for (const msg of recentMessages) {
+  for (const msg of messages) {
     const content = msg.content.toLowerCase();
     const matches = schedulingKeywords.filter(keyword => content.includes(keyword));
+    
     if (matches.length > 0) {
-      triggerMessage = msg.content;
+      const score = matches.length;
+      if (score > highestScore) {
+        highestScore = score;
+        triggerMessage = msg.content;
+        bestMatch = msg;
+      }
       keywordCount += matches.length;
     }
   }
 
   if (keywordCount === 0) {
-    return { detected: false, confidence: 0, triggerMessage: null };
-  }
-
-  // Use GPT to validate scheduling intent
-  try {
-    const prompt = schedulingPrompt.getIntentDetectionPrompt(recentMessages.map(m => m.content).join('\n'));
-    
-    const response = await openaiClient.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'You are an AI assistant that detects scheduling intent in conversations.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.3,
-      max_tokens: 100
-    });
-
-    const aiResponse = response.choices[0].message.content.toLowerCase();
-    const detected = aiResponse.includes('yes') || aiResponse.includes('scheduling intent detected');
-    const confidence = detected ? 0.85 : 0.3;
-
-    return {
-      detected,
-      confidence,
-      triggerMessage: triggerMessage || recentMessages[recentMessages.length - 1].content
-    };
-
-  } catch (error) {
-    console.error('[Scheduling Agent] Intent detection fallback to keyword-based');
-    // Fallback: Use keyword count as confidence
-    const confidence = Math.min(0.9, keywordCount * 0.3);
-    return {
-      detected: keywordCount >= 2,
-      confidence,
-      triggerMessage: triggerMessage || recentMessages[recentMessages.length - 1].content
+    console.log('[Scheduling] No scheduling keywords found');
+    return { 
+      detected: false, 
+      confidence: 0, 
+      triggerMessage: null,
+      dateInfo: null,
+      timeInfo: null
     };
   }
+
+  console.log(`[Scheduling] Found ${keywordCount} keyword matches in conversation`);
+  console.log(`[Scheduling] Best trigger message: "${triggerMessage}"`);
+
+  // ✅ SIMPLIFIED: Use keyword-based detection (skip GPT validation for speed)
+  // If we found keywords, we have scheduling intent
+  const dateInfo = extractDateInfo(triggerMessage);
+  const timeInfo = extractTimeInfo(triggerMessage);
+  
+  const confidence = Math.min(0.95, keywordCount * 0.2 + 0.5); // At least 50% confidence
+
+  return {
+    detected: true, // If keywords found, intent detected
+    confidence,
+    triggerMessage,
+    dateInfo,
+    timeInfo
+  };
+}
+
+/**
+ * Extract date information from text
+ */
+function extractDateInfo(text) {
+  if (!text) return { specified: false, original: null, vague: true, description: 'not mentioned' };
+  
+  const lower = text.toLowerCase();
+  
+  // Specific dates
+  if (/tomorrow/i.test(text)) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return { specified: true, original: 'tomorrow', vague: false, value: tomorrow.toISOString().split('T')[0] };
+  }
+  
+  if (/today/i.test(text)) {
+    return { specified: true, original: 'today', vague: false, value: new Date().toISOString().split('T')[0] };
+  }
+  
+  // Month + day (e.g., "Dec 2", "Nov 15")
+  const monthDayMatch = text.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*(\d{1,2})/i);
+  if (monthDayMatch) {
+    const months = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+    const month = months[monthDayMatch[1].toLowerCase().substring(0, 3)];
+    const day = parseInt(monthDayMatch[2]);
+    const date = new Date(2025, month, day);
+    return { specified: true, original: monthDayMatch[0], vague: false, value: date.toISOString().split('T')[0] };
+  }
+  
+  // Vague dates
+  if (/next week/i.test(lower)) {
+    return { specified: false, original: 'next week', vague: true, description: 'next week' };
+  }
+  if (/this week/i.test(lower)) {
+    return { specified: false, original: 'this week', vague: true, description: 'this week' };
+  }
+  
+  return { specified: false, original: null, vague: true, description: 'not mentioned' };
+}
+
+/**
+ * Extract time information from text
+ */
+function extractTimeInfo(text) {
+  if (!text) return { specified: false, original: null, vague: true, description: 'not mentioned' };
+  
+  const lower = text.toLowerCase();
+  
+  // Specific times (e.g., "2 PM", "14:00", "2:30 PM")
+  const timeMatch = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+  if (timeMatch) {
+    return { specified: true, original: timeMatch[0], vague: false, value: timeMatch[0] };
+  }
+  
+  // 24-hour format
+  const time24Match = text.match(/(\d{1,2}):(\d{2})/);
+  if (time24Match) {
+    return { specified: true, original: time24Match[0], vague: false, value: time24Match[0] };
+  }
+  
+  // Vague times
+  if (/morning/i.test(lower)) {
+    return { specified: false, original: 'morning', vague: true, description: 'morning', suggestedValue: '10:00 AM' };
+  }
+  if (/afternoon/i.test(lower)) {
+    return { specified: false, original: 'afternoon', vague: true, description: 'afternoon', suggestedValue: '2:00 PM' };
+  }
+  if (/evening/i.test(lower)) {
+    return { specified: false, original: 'evening', vague: true, description: 'evening', suggestedValue: '6:00 PM' };
+  }
+  
+  return { specified: false, original: null, vague: true, description: 'not mentioned' };
 }
 
 /**
@@ -286,43 +547,194 @@ async function checkAvailability(meetingDetails) {
 }
 
 /**
+ * Scan messages for availability hints
+ * @param {Array} messages - All messages
+ * @returns {Array} Availability hints with times
+ */
+function scanForAvailability(messages) {
+  const availabilityKeywords = [
+    'available', 'free', 'works for me', 'i can do', 'i\'m available',
+    'i\'m free', 'how about', 'what about', 'prefer', 'better for me'
+  ];
+
+  const hints = [];
+
+  for (const msg of messages) {
+    const content = msg.content.toLowerCase();
+    
+    // Check if message mentions availability
+    const hasAvailability = availabilityKeywords.some(keyword => content.includes(keyword));
+    
+    if (hasAvailability) {
+      // Extract time from this availability message
+      const timeInfo = extractTimeInfo(msg.content);
+      const dateInfo = extractDateInfo(msg.content);
+      
+      if (timeInfo.specified || dateInfo.specified) {
+        hints.push({
+          message: msg.content,
+          time: timeInfo,
+          date: dateInfo,
+          sender: msg.senderId
+        });
+      }
+    }
+  }
+
+  return hints;
+}
+
+/**
  * Step 4: Suggest 3 optimal times across timezones
  * @param {Object} meetingDetails - Meeting details
  * @param {Object} availability - Availability information
+ * @param {Array} availabilityHints - Detected availability from messages
+ * @param {Object} dateInfo - Extracted date from trigger
+ * @param {Object} timeInfo - Extracted time from trigger
  * @returns {Promise<Array>} Suggested time slots
  */
-async function suggestOptimalTimes(meetingDetails, availability) {
-  const { duration, timeframe, preferredTime } = meetingDetails;
-  const { workingHours, participants } = availability;
-
-  // Calculate optimal times (varied based on current time)
+async function suggestOptimalTimes(meetingDetails, availability, availabilityHints = [], dateInfo, timeInfo) {
+  const { duration, participants } = meetingDetails;
   const now = new Date();
-  
-  // Use different days based on current day to add variety
-  const currentDay = now.getDay(); // 0-6
-  const currentHour = now.getHours();
   
   const suggestedTimes = [];
 
-  // Option 1: Tomorrow at 10 AM or 2 days from now at 9 AM
+  // ✅ Strategy 1: If availability hints found, use those times
+  if (availabilityHints.length > 0) {
+    console.log('[Scheduling] Using availability hints from conversation');
+    
+    for (let i = 0; i < Math.min(3, availabilityHints.length); i++) {
+      const hint = availabilityHints[i];
+      const baseDate = hint.date.specified ? new Date(hint.date.value) : new Date();
+      baseDate.setDate(baseDate.getDate() + (hint.date.specified ? 0 : i + 1));
+      
+      const time = hint.time.specified ? hint.time.value : hint.time.suggestedValue || '10:00 AM';
+      
+      suggestedTimes.push({
+        date: baseDate.toISOString().split('T')[0],
+        time: time,
+        endTime: addMinutes(time, duration),
+        quality: i === 0 ? 'best' : (i === 1 ? 'good' : 'acceptable'),
+        reason: `Based on "${hint.message.substring(0, 40)}..."`
+      });
+    }
+    
+    return suggestedTimes;
+  }
+
+  // ✅ Strategy 2: If specific date/time detected in trigger, use that
+  if (dateInfo && timeInfo && (dateInfo.specified || timeInfo.specified)) {
+    console.log('[Scheduling] Using detected date/time from trigger message');
+    
+    const baseDate = dateInfo.specified ? new Date(dateInfo.value) : new Date();
+    baseDate.setDate(baseDate.getDate() + (dateInfo.specified ? 0 : 3));
+    
+    const baseTime = timeInfo.specified ? timeInfo.value : (timeInfo.suggestedValue || '10:00 AM');
+    
+    // Suggest the requested time + 2 alternatives
+    suggestedTimes.push({
+      date: baseDate.toISOString().split('T')[0],
+      time: baseTime,
+      endTime: addMinutes(baseTime, duration),
+      quality: 'best',
+      reason: 'Matches your request'
+    });
+    
+    suggestedTimes.push({
+      date: baseDate.toISOString().split('T')[0],
+      time: adjustTime(baseTime, 2), // 2 hours later
+      endTime: addMinutes(adjustTime(baseTime, 2), duration),
+      quality: 'good',
+      reason: '2 hours after requested time'
+    });
+    
+    suggestedTimes.push({
+      date: baseDate.toISOString().split('T')[0],
+      time: adjustTime(baseTime, -2), // 2 hours earlier
+      endTime: addMinutes(adjustTime(baseTime, -2), duration),
+      quality: 'acceptable',
+      reason: '2 hours before requested time'
+    });
+    
+    return suggestedTimes;
+  }
+
+  // ✅ Strategy 3: No availability or specific time - use smart defaults
+  console.log('[Scheduling] No specific availability found - using smart defaults');
+  
+  const currentDay = now.getDay();
+  const currentHour = now.getHours();
+
+  // Option 1: Tomorrow at good time
   const option1 = new Date(now);
-  option1.setDate(option1.getDate() + (currentHour > 15 ? 2 : 1));
-  option1.setHours(currentHour > 12 ? 10 : 14, 0, 0, 0);
+  option1.setDate(option1.getDate() + 1);
+  option1.setHours(10, 0, 0, 0);
   suggestedTimes.push(createTimeSlot(option1, duration, participants, 'best'));
 
-  // Option 2: 3 days from now at different time
+  // Option 2: 3 days from now
   const option2 = new Date(now);
   option2.setDate(option2.getDate() + 3);
-  option2.setHours(currentDay % 2 === 0 ? 11 : 15, 0, 0, 0);
+  option2.setHours(14, 0, 0, 0);
   suggestedTimes.push(createTimeSlot(option2, duration, participants, 'good'));
 
-  // Option 3: 5 days from now at another time
+  // Option 3: 5 days from now
   const option3 = new Date(now);
   option3.setDate(option3.getDate() + 5);
-  option3.setHours(currentDay % 2 === 0 ? 13 : 9, 30, 0, 0);
+  option3.setHours(16, 0, 0, 0);
   suggestedTimes.push(createTimeSlot(option3, duration, participants, 'acceptable'));
 
   return suggestedTimes;
+}
+
+/**
+ * Helper: Add minutes to time string
+ */
+function addMinutes(timeStr, minutes) {
+  // Simple implementation - just return endTime
+  // In production, parse time and add duration
+  const match = timeStr.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM)/i);
+  if (match) {
+    let hour = parseInt(match[1]);
+    const min = parseInt(match[2] || '0');
+    const period = match[3].toUpperCase();
+    
+    // Add minutes
+    let totalMin = hour * 60 + min + minutes;
+    let newHour = Math.floor(totalMin / 60);
+    let newMin = totalMin % 60;
+    
+    // Handle AM/PM
+    if (newHour >= 12) {
+      return `${newHour}:${newMin.toString().padStart(2, '0')} PM`;
+    } else {
+      return `${newHour}:${newMin.toString().padStart(2, '0')} AM`;
+    }
+  }
+  
+  return timeStr; // Fallback
+}
+
+/**
+ * Helper: Adjust time by hours
+ */
+function adjustTime(timeStr, hours) {
+  const match = timeStr.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM)/i);
+  if (match) {
+    let hour = parseInt(match[1]);
+    const min = match[2] || '00';
+    let period = match[3].toUpperCase();
+    
+    // Adjust hours
+    hour += hours;
+    
+    // Handle wraparound
+    while (hour < 1) hour += 12;
+    while (hour > 12) hour -= 12;
+    
+    return `${hour}:${min} ${period}`;
+  }
+  
+  return timeStr;
 }
 
 /**
@@ -380,12 +792,7 @@ async function generateMeetingProposal(meetingDetails, suggestedTimes) {
 
   const participantNames = participants.map(p => p.name).join(', ');
   
-  // Generate calendar URLs for each suggested time
-  const timesWithCalendar = suggestedTimes.map(time => ({
-    ...time,
-    calendarUrl: generateGoogleCalendarUrl(topic, purpose, time.dateTime, duration, participantNames)
-  }));
-
+  // ✅ SIMPLIFIED: No Google Calendar URLs (we removed that feature)
   const proposal = {
     title: topic,
     purpose,
@@ -393,7 +800,7 @@ async function generateMeetingProposal(meetingDetails, suggestedTimes) {
     participants: participants.length,
     participantNames,
     location,
-    suggestedTimes: timesWithCalendar,
+    suggestedTimes: suggestedTimes, // Return as-is, no calendar URLs
     createdAt: new Date().toISOString()
   };
 
@@ -447,10 +854,6 @@ module.exports = {
     return await handleSchedulingAgent(body);
   },
   handleSchedulingAgent,
-  detectSchedulingIntent,
-  extractMeetingDetails,
-  checkAvailability,
-  suggestOptimalTimes,
-  generateMeetingProposal
+  detectAllSchedulingThreads, // ✅ Export new multi-thread function
 };
 

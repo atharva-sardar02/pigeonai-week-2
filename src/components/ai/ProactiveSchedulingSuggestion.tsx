@@ -41,7 +41,7 @@ export const ProactiveSchedulingSuggestion: React.FC<ProactiveSchedulingSuggesti
 
       <View style={styles.contentContainer}>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>🤖 AI Assistant</Text>
+          <Text style={styles.title}>✨ Proactive Assistant</Text>
           {confidence >= 0.85 && (
             <View style={styles.confidenceBadge}>
               <Text style={styles.confidenceText}>{Math.round(confidence * 100)}%</Text>
@@ -96,7 +96,7 @@ export const ProactiveSchedulingSuggestion: React.FC<ProactiveSchedulingSuggesti
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#F0F9FF', // Light blue background
+    backgroundColor: COLORS.backgroundSecondary, // Dark theme
     borderRadius: 12,
     padding: 12,
     marginHorizontal: 16,
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: COLORS.primary,
   },
   iconContainer: {
     marginRight: 12,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   confidenceText: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.white,
+    color: COLORS.buttonPrimaryText,
   },
   message: {
     fontSize: 14,
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   triggerMessageContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E0F2FE',
+    backgroundColor: COLORS.inputBackground, // Dark theme
     borderRadius: 6,
     padding: 6,
     marginBottom: 12,
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.white,
+    color: COLORS.buttonPrimaryText,
   },
   secondaryButtonText: {
     fontSize: 14,
