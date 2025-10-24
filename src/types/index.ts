@@ -87,6 +87,7 @@ export interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  updateProfile: (displayName?: string, photoURL?: string) => Promise<void>;
 }
 
 // Chat Context Types
@@ -130,5 +131,10 @@ export type MainStackParamList = {
   CreateGroup: undefined;
   NotificationTest: undefined; // Temporary test screen
   ProactiveAssistant: { conversationId: string; userId: string };
+  AboutAIFeatures: undefined;
+  AccountSettings: undefined;
+  PrivacySecurity: undefined;
+  NotificationSettings: undefined;
+  HelpSupport: undefined;
 };
 

@@ -10,6 +10,11 @@ import { CreateGroupScreen } from '../screens/group/CreateGroupScreen';
 import { GroupDetailsScreen } from '../screens/group/GroupDetailsScreen';
 import { ProactiveAssistantScreen } from '../screens/ai/ProactiveAssistantScreen';
 import { NotificationTestScreen } from '../screens/test/NotificationTestScreen';
+import { AboutAIFeaturesScreen } from '../screens/main/AboutAIFeaturesScreen';
+import { AccountSettingsScreen } from '../screens/main/AccountSettingsScreen';
+import { PrivacySecurityScreen } from '../screens/main/PrivacySecurityScreen';
+import { NotificationSettingsScreen } from '../screens/main/NotificationSettingsScreen';
+import { HelpSupportScreen } from '../screens/main/HelpSupportScreen';
 import { COLORS } from '../utils/constants';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -120,6 +125,56 @@ export const MainNavigator: React.FC = () => {
         component={NotificationTestScreen}
         options={{
           title: 'Test Notifications',
+          animation: 'slide_from_right',
+        }}
+      />
+
+      {/* About AI Features Screen */}
+      <Stack.Screen
+        name="AboutAIFeatures"
+        component={AboutAIFeaturesScreen}
+        options={{
+          title: 'About AI Features',
+          animation: 'slide_from_right',
+        }}
+      />
+
+      {/* Account Settings Screen */}
+      <Stack.Screen
+        name="AccountSettings"
+        component={AccountSettingsScreen}
+        options={{
+          title: 'Account Settings',
+          animation: 'slide_from_right',
+        }}
+      />
+
+      {/* Privacy & Security Screen */}
+      <Stack.Screen
+        name="PrivacySecurity"
+        component={PrivacySecurityScreen}
+        options={{
+          title: 'Privacy & Security',
+          animation: 'slide_from_right',
+        }}
+      />
+
+      {/* Notification Settings Screen */}
+      <Stack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+        options={{
+          title: 'Notifications',
+          animation: 'slide_from_right',
+        }}
+      />
+
+      {/* Help & Support Screen */}
+      <Stack.Screen
+        name="HelpSupport"
+        component={HelpSupportScreen}
+        options={{
+          title: 'Help & Support',
           animation: 'slide_from_right',
         }}
       />

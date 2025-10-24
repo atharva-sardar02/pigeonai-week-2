@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Pressable,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES } from '../../utils/constants';
@@ -19,11 +20,20 @@ interface AIFeaturesMenuProps {
 
 const AI_FEATURES = [
   {
+    id: 'scheduling',
+    icon: 'rocket-outline',
+    label: 'Proactive Agent',
+    description: 'Multi-step AI scheduling assistant',
+    color: COLORS.primary,
+    featured: true,
+  },
+  {
     id: 'summarize',
     icon: 'sparkles-outline',
     label: 'Thread Summarization',
     description: 'Get key points from conversation',
     color: COLORS.primary,
+    featured: false,
   },
   {
     id: 'actionItems',
@@ -31,6 +41,7 @@ const AI_FEATURES = [
     label: 'Action Items',
     description: 'Extract tasks and deadlines',
     color: COLORS.success,
+    featured: false,
   },
   {
     id: 'search',
@@ -38,6 +49,7 @@ const AI_FEATURES = [
     label: 'Semantic Search',
     description: 'Find messages by meaning',
     color: COLORS.info,
+    featured: false,
   },
   {
     id: 'priority',
@@ -45,6 +57,7 @@ const AI_FEATURES = [
     label: 'Priority Detection',
     description: 'Filter urgent messages',
     color: COLORS.warning,
+    featured: false,
   },
   {
     id: 'decisions',
@@ -52,13 +65,7 @@ const AI_FEATURES = [
     label: 'Decision Tracking',
     description: 'View decisions timeline',
     color: COLORS.secondary,
-  },
-  {
-    id: 'scheduling',
-    icon: 'calendar-outline',
-    label: 'Schedule Meeting',
-    description: 'AI-powered scheduling',
-    color: COLORS.primaryDark,
+    featured: false,
   },
 ];
 
@@ -76,7 +83,7 @@ export default function AIFeaturesMenu({
       onRequestClose={onClose}
     >
       <Pressable style={styles.backdrop} onPress={onClose}>
-        <View style={[styles.menuContainer, { top: position.y, right: 16 }]}>
+        <View style={styles.menuContainer}>
           <View style={styles.menu}>
             {/* Header */}
             <View style={styles.header}>
@@ -84,28 +91,49 @@ export default function AIFeaturesMenu({
               <Text style={styles.headerText}>AI Features</Text>
             </View>
 
-            {/* Features List */}
-            {AI_FEATURES.map((feature, index) => (
-              <TouchableOpacity
-                key={feature.id}
-                style={[
-                  styles.menuItem,
-                  index === AI_FEATURES.length - 1 && styles.lastMenuItem,
-                ]}
-                onPress={() => {
-                  onSelectFeature(feature.id);
-                  onClose();
-                }}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: feature.color + '20' }]}>
-                  <Ionicons name={feature.icon as any} size={20} color={feature.color} />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={styles.featureLabel}>{feature.label}</Text>
-                  <Text style={styles.featureDescription}>{feature.description}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+            {/* Scrollable Features List */}
+            <ScrollView 
+              style={styles.scrollView}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
+              {AI_FEATURES.map((feature, index) => (
+                <TouchableOpacity
+                  key={feature.id}
+                  style={[
+                    styles.menuItem,
+                    feature.featured && styles.featuredMenuItem,
+                    index === AI_FEATURES.length - 1 && styles.lastMenuItem,
+                  ]}
+                  onPress={() => {
+                    onSelectFeature(feature.id);
+                    onClose();
+                  }}
+                >
+                  <View style={[
+                    styles.iconContainer, 
+                    { backgroundColor: feature.color + '20' },
+                    feature.featured && styles.featuredIconContainer,
+                  ]}>
+                    <Ionicons name={feature.icon as any} size={20} color={feature.color} />
+                  </View>
+                  <View style={styles.textContainer}>
+                    <Text style={[
+                      styles.featureLabel,
+                      feature.featured && styles.featuredLabel,
+                    ]}>
+                      {feature.label}
+                    </Text>
+                    <Text style={styles.featureDescription}>{feature.description}</Text>
+                  </View>
+                  {feature.featured && (
+                    <View style={styles.featuredBadge}>
+                      <Text style={styles.featuredBadgeText}>ADV</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Pressable>
@@ -117,9 +145,12 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: COLORS.overlay,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 60,
+    paddingRight: 16,
   },
   menuContainer: {
-    position: 'absolute',
     width: 280,
   },
   menu: {
@@ -133,6 +164,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  scrollView: {
+    maxHeight: 500,
   },
   header: {
     flexDirection: 'row',
@@ -155,6 +189,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
+  featuredMenuItem: {
+    backgroundColor: COLORS.primary + '08',
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.primary,
+  },
   lastMenuItem: {
     borderBottomWidth: 0,
   },
@@ -164,6 +203,10 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  featuredIconContainer: {
+    borderWidth: 1.5,
+    borderColor: COLORS.primary + '40',
   },
   textContainer: {
     flex: 1,
@@ -175,9 +218,24 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: 2,
   },
+  featuredLabel: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '700',
+  },
   featureDescription: {
     fontSize: FONT_SIZES.xs,
     color: COLORS.textSecondary,
+  },
+  featuredBadge: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.xs,
+    paddingVertical: 2,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+  featuredBadgeText: {
+    fontSize: FONT_SIZES.xs - 2,
+    fontWeight: '700',
+    color: COLORS.buttonPrimaryText,
   },
 });
 

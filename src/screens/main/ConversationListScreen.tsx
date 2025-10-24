@@ -162,14 +162,32 @@ export function ConversationListScreen({
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.headerTitle}>Pigeon</Text>
+          <Text style={styles.headerTitle}>PigeonAi</Text>
         </View>
         <TouchableOpacity
           style={styles.profileButton}
           onPress={handleProfile}
           activeOpacity={0.7}
         >
-          <Ionicons name="person-circle-outline" size={32} color={COLORS.text} />
+          {user?.photoURL ? (
+            <Image 
+              source={{ uri: user.photoURL }} 
+              style={styles.profileImage}
+            />
+          ) : (
+            <View style={styles.profilePlaceholder}>
+              <Text style={styles.profileInitials}>
+                {user?.displayName
+                  ? user.displayName
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2)
+                  : user?.email?.[0]?.toUpperCase() || '?'}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -279,6 +297,31 @@ const styles = StyleSheet.create({
   profileButton: {
     padding: SPACING.xs,
   } as ViewStyle,
+
+  profileImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  } as ViewStyle,
+
+  profilePlaceholder: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  } as ViewStyle,
+
+  profileInitials: {
+    fontSize: TYPOGRAPHY.fontSize.md,
+    fontWeight: TYPOGRAPHY.fontWeight.bold as TextStyle['fontWeight'],
+    color: COLORS.buttonPrimaryText,
+  } as TextStyle,
 
   emptyListContainer: {
     flex: 1,
