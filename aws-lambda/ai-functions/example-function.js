@@ -62,7 +62,7 @@ exports.handler = async (event) => {
       ];
 
       const summary = await chatCompletion(messages, {
-        model: 'gpt-4-turbo',
+        model: 'gpt-4o-mini',
         temperature: 0.7,
         maxTokens: 500,
       });

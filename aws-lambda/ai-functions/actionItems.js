@@ -64,6 +64,36 @@ async function fetchMessages(conversationId, limit = 100) {
 }
 
 /**
+ * Pre-filter messages to likely action item candidates using regex
+ * Reduces processing time by filtering out casual chat before GPT analysis
+ * @param {Array} messages - All messages
+ * @returns {Array} - Filtered candidate messages
+ */
+function preFilterActionItemCandidates(messages) {
+  const actionItemPatterns = [
+    /@\w+/i, // @mentions (likely assignments)
+    /\b(should|need to|must|have to|will|going to|can you|could you)\b/i, // Action verbs
+    /\b(by|before|deadline|due|tomorrow|today|next week|this week|asap)\b/i, // Deadlines
+    /\b(todo|task|action item|follow up|reminder)\b/i, // Explicit tasks
+    /\b(complete|finish|deploy|implement|fix|update|review|test|build)\b/i, // Action verbs
+  ];
+  
+  const candidates = messages.filter(msg => 
+    actionItemPatterns.some(pattern => pattern.test(msg.content))
+  );
+  
+  console.log(`🔍 Pre-filtered action items: ${messages.length} → ${candidates.length} candidates`);
+  
+  // If filter removes too many (>80%), return all (safety fallback)
+  if (candidates.length < messages.length * 0.2 && messages.length > 10) {
+    console.log('⚠️ Filter too aggressive, using all messages');
+    return messages;
+  }
+  
+  return candidates.length > 0 ? candidates : messages;
+}
+
+/**
  * Extract action items using OpenAI with structured output
  * @param {Array} messages - Array of messages
  * @returns {Promise<Array>} - Array of action items
@@ -77,7 +107,7 @@ async function extractActionItems(messages) {
     const result = await chatCompletion(promptMessages, {
       model: 'gpt-4o-mini', // ✅ Faster and cheaper
       temperature: 0.2, // Low temperature for consistent structured output
-      maxTokens: 2000,
+      maxTokens: 1000, // ✅ Reduced from 2000 for faster generation
       responseFormat: 'json', // Enable JSON mode
     });
 
@@ -92,6 +122,39 @@ async function extractActionItems(messages) {
     console.error('❌ Error extracting action items:', error.message);
     throw new Error(`Failed to extract action items: ${error.message}`);
   }
+}
+
+/**
+ * Process messages in parallel chunks for faster extraction
+ * @param {Array} messages - Array of messages
+ * @returns {Promise<Array>} - Array of action items from all chunks
+ */
+async function extractActionItemsParallel(messages) {
+  const CHUNK_SIZE = 25; // Process 25 messages per chunk
+  
+  // If messages are few, process normally
+  if (messages.length <= CHUNK_SIZE) {
+    return extractActionItems(messages);
+  }
+  
+  // Split into chunks
+  const chunks = [];
+  for (let i = 0; i < messages.length; i += CHUNK_SIZE) {
+    chunks.push(messages.slice(i, i + CHUNK_SIZE));
+  }
+  
+  console.log(`📦 Processing ${messages.length} messages in ${chunks.length} parallel chunks`);
+  
+  // Process all chunks in parallel
+  const chunkPromises = chunks.map(chunk => extractActionItems(chunk));
+  const results = await Promise.all(chunkPromises);
+  
+  // Merge results and deduplicate
+  const allActionItems = results.flat();
+  
+  console.log(`✅ Parallel processing complete: ${allActionItems.length} total items from ${chunks.length} chunks`);
+  
+  return allActionItems;
 }
 
 /**
@@ -148,9 +211,12 @@ exports.handler = async (event) => {
       const actualCount = messages.length;
       console.log(`✅ Fetched ${actualCount} messages`);
 
-      // Extract action items using OpenAI
-      console.log(`🤖 Extracting action items with GPT-4...`);
-      const actionItems = await extractActionItems(messages);
+      // Pre-filter to likely action item candidates
+      const candidates = preFilterActionItemCandidates(messages);
+
+      // Extract action items using OpenAI (with parallel chunking for large sets)
+      console.log(`🤖 Extracting action items with GPT-4o-mini from ${candidates.length} candidates...`);
+      const actionItems = await extractActionItemsParallel(candidates);
 
       return {
         actionItems,

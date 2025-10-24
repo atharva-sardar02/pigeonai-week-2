@@ -2,7 +2,7 @@
  * Scheduling Agent Lambda Function (PR #21)
  * Multi-step AI agent for proactive meeting scheduling across timezones
  * 
- * Architecture: LangChain + OpenAI GPT-4 + Function Calling
+ * Architecture: LangChain + OpenAI GPT-4o-mini + Function Calling
  * Features:
  * - Detect scheduling intent in conversation
  * - Extract meeting details (topic, participants, duration, timeframe)

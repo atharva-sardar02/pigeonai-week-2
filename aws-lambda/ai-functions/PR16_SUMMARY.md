@@ -273,7 +273,7 @@ Future optimization: Auto-invalidate when new messages are sent
 
 **Temperature**: 0.3 (lower for factual accuracy)  
 **Max Tokens**: 1000 (enough for detailed summaries)  
-**Model**: gpt-4-turbo (best accuracy, worth the cost)
+**Model**: gpt-4o-mini (fast and accurate, optimized for production)
 
 **Prompt structure**:
 1. System message: Role definition + focus areas

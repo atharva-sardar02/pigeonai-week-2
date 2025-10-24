@@ -9,17 +9,23 @@
 
 const { Client } = require('@opensearch-project/opensearch');
 
-// Initialize OpenSearch client
-const client = new Client({
-  node: process.env.OPENSEARCH_ENDPOINT,
-  auth: {
-    username: process.env.OPENSEARCH_USERNAME,
-    password: process.env.OPENSEARCH_PASSWORD,
-  },
-  ssl: {
-    rejectUnauthorized: false, // For self-signed certs
-  },
-});
+// Lazy initialization - only create client when first needed
+let client = null;
+function getOpenSearchClient() {
+  if (!client) {
+    client = new Client({
+      node: process.env.OPENSEARCH_ENDPOINT,
+      auth: {
+        username: process.env.OPENSEARCH_USERNAME,
+        password: process.env.OPENSEARCH_PASSWORD,
+      },
+      ssl: {
+        rejectUnauthorized: false, // For self-signed certs
+      },
+    });
+  }
+  return client;
+}
 
 const INDEX_NAME = 'message_embeddings';
 
@@ -43,7 +49,7 @@ async function insertEmbedding(messageId, conversationId, text, embedding, metad
       ...metadata,
     };
 
-    const response = await client.index({
+    const response = await getOpenSearchClient().index({
       index: INDEX_NAME,
       id: messageId,
       body: document,
@@ -87,7 +93,7 @@ async function searchSimilar(queryEmbedding, options = {}) {
       { term: { conversationId } },
     ] : [];
 
-    const response = await client.search({
+    const response = await getOpenSearchClient().search({
       index: INDEX_NAME,
       body: {
         size: k,
@@ -127,7 +133,7 @@ async function searchSimilar(queryEmbedding, options = {}) {
  */
 async function deleteEmbedding(messageId) {
   try {
-    const response = await client.delete({
+    const response = await getOpenSearchClient().delete({
       index: INDEX_NAME,
       id: messageId,
     });
@@ -151,7 +157,7 @@ async function deleteEmbedding(messageId) {
  */
 async function deleteConversationEmbeddings(conversationId) {
   try {
-    const response = await client.deleteByQuery({
+    const response = await getOpenSearchClient().deleteByQuery({
       index: INDEX_NAME,
       body: {
         query: {
@@ -175,7 +181,7 @@ async function deleteConversationEmbeddings(conversationId) {
  */
 async function indexExists() {
   try {
-    const response = await client.indices.exists({ index: INDEX_NAME });
+    const response = await getOpenSearchClient().indices.exists({ index: INDEX_NAME });
     return response.body;
   } catch (error) {
     console.error('❌ Index exists check error:', error.message);
@@ -189,7 +195,7 @@ async function indexExists() {
  */
 async function getIndexStats() {
   try {
-    const response = await client.indices.stats({ index: INDEX_NAME });
+    const response = await getOpenSearchClient().indices.stats({ index: INDEX_NAME });
     const stats = response.body.indices[INDEX_NAME];
     
     return {

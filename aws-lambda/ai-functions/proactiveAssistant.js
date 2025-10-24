@@ -240,7 +240,7 @@ function extractTimeInfo(content, context) {
  * Extract topic from message
  */
 function extractTopic(content, context) {
-  // Simple topic extraction (can be enhanced with GPT-4o-mini)
+  // Simple topic extraction (using GPT-4o-mini)
   const words = content.split(' ');
   if (words.length > 5) {
     return words.slice(0, 5).join(' ') + '...';

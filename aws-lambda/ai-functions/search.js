@@ -115,7 +115,7 @@ exports.handler = async (event) => {
       
       try {
         const { batchGenerateEmbeddings } = require('./generateEmbedding');
-        await batchGenerateEmbeddings(conversationId);
+        await batchGenerateEmbeddings(conversationId, 100);
         console.log('✅ Batch embeddings generated - try searching again in a few seconds');
         
         return success({
@@ -129,7 +129,16 @@ exports.handler = async (event) => {
         });
       } catch (embeddingError) {
         console.error('❌ Failed to generate embeddings:', embeddingError);
-        // Continue with empty results
+        
+        // Return helpful error message
+        return success({
+          results: [],
+          query,
+          conversationId,
+          resultCount: 0,
+          message: 'No results found. Embedding generation failed - please try again or contact support.',
+          duration: Date.now() - startTime
+        });
       }
     }
 

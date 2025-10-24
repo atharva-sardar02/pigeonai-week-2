@@ -2,12 +2,12 @@
  * Priority Detection Lambda Function
  * 
  * Automatically detects and classifies message urgency/priority for distributed teams.
- * Uses GPT-3.5-turbo for speed (real-time classification).
+ * Uses GPT-4o-mini for speed and accuracy (real-time classification).
  * 
  * Features:
  * - Real-time priority classification (high/medium/low)
  * - Context-aware analysis (considers recent messages)
- * - Fast response (<1s with GPT-3.5)
+ * - Fast response (<1s with GPT-4o-mini)
  * - No caching (priorities depend on real-time context)
  * 
  * Endpoint: POST /ai/detect-priority
@@ -37,7 +37,7 @@
  * }
  */
 
-const { openai, chatCompletion } = require('./utils/openaiClient'); // Fixed: Import correct exports
+const { getOpenAIClient, chatCompletion } = require('./utils/openaiClient'); // ✅ Use lazy loader
 const { firestoreClient } = require('./utils/firestoreClient');
 const responseUtils = require('./utils/responseUtils'); // Fixed: Import directly, not destructured
 const {
@@ -108,11 +108,11 @@ async function detectPriority(event) {
     const userPrompt = generatePriorityPrompt(messageContent, context);
     const systemPrompt = getSystemPrompt();
     
-    console.log(`🤖 Calling OpenAI GPT-4-turbo for priority detection...`);
+    console.log(`🤖 Calling OpenAI GPT-4o-mini for priority detection...`);
     
-    // Call OpenAI with GPT-4-turbo (more accurate for nuanced priority classification)
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+    // Call OpenAI with GPT-4o-mini (fast and accurate for priority classification)
+    const completion = await getOpenAIClient().chat.completions.create({
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -135,7 +135,7 @@ async function detectPriority(event) {
     const metadata = getPriorityMetadata(priority);
     
     // Calculate confidence (based on token probability if available)
-    const confidence = 0.95; // Placeholder - GPT-3.5 doesn't return probabilities
+    const confidence = 0.95; // Placeholder - GPT-4o-mini doesn't expose probabilities
     
     const processingTime = Date.now() - startTime;
     console.log(`⏱️ Processing time: ${processingTime}ms`);

@@ -1,7 +1,7 @@
 /**
  * Decision Tracking Prompt for Remote Team Professional Persona
  * 
- * This prompt instructs GPT-4 to identify and extract finalized decisions
+ * This prompt instructs GPT-4o-mini to identify and extract finalized decisions
  * from technical/architectural discussions in distributed software teams.
  * 
  * Context:

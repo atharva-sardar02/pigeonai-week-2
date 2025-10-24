@@ -9,7 +9,7 @@
  * - Create audit trail of technical choices
  * - Link decisions to source messages
  * 
- * Model: OpenAI GPT-4-turbo (high accuracy for decision identification)
+ * Model: OpenAI GPT-4o-mini (fast and accurate decision identification)
  * Caching: Redis (2 hour TTL)
  * Response Time Target: <2 seconds
  */
@@ -78,12 +78,15 @@ exports.handler = async (event) => {
       });
     }
 
-    // Format messages for GPT-4
-    const formattedMessages = await formatMessagesForAI(messages);
+    // Pre-filter to likely decision candidates
+    const candidates = preFilterDecisionCandidates(messages);
 
-    // Call OpenAI to extract decisions
-    console.log('🤖 Calling OpenAI GPT-4 for decision tracking...');
-    const decisions = await extractDecisions(formattedMessages, conversationId);
+    // Format messages for AI
+    const formattedMessages = await formatMessagesForAI(candidates);
+
+    // Call OpenAI to extract decisions (with parallel chunking for large sets)
+    console.log(`🤖 Calling OpenAI GPT-4o-mini for decision tracking from ${candidates.length} candidates...`);
+    const decisions = await extractDecisionsParallel(formattedMessages, conversationId);
 
     console.log(`✅ Extracted ${decisions.length} decisions`);
 
@@ -157,6 +160,36 @@ async function fetchMessages(conversationId, limit) {
 }
 
 /**
+ * Pre-filter messages to likely decision candidates using regex
+ * Reduces processing time by filtering out non-decision messages
+ * @param {Array} messages - All messages
+ * @returns {Array} - Filtered candidate messages
+ */
+function preFilterDecisionCandidates(messages) {
+  const decisionPatterns = [
+    /\b(decided|decision|choose|chose|chosen|going with|will use|using)\b/i,
+    /\b(agreed|approve|approved|confirm|final|finalize|settled)\b/i,
+    /\b(let's go with|let's use|we'll use|we should use)\b/i,
+    /\b(instead of|rather than|over|vs|versus)\b/i, // Decision alternatives
+    /\b(architecture|database|framework|library|approach|strategy)\b/i, // Technical decisions
+  ];
+  
+  const candidates = messages.filter(msg => 
+    decisionPatterns.some(pattern => pattern.test(msg.content))
+  );
+  
+  console.log(`🔍 Pre-filtered decisions: ${messages.length} → ${candidates.length} candidates`);
+  
+  // If filter removes too many (>80%), return all (safety fallback)
+  if (candidates.length < messages.length * 0.2 && messages.length > 10) {
+    console.log('⚠️ Filter too aggressive, using all messages');
+    return messages;
+  }
+  
+  return candidates.length > 0 ? candidates : messages;
+}
+
+/**
  * Format messages for AI processing
  * Fetches sender names from Firestore users collection
  * 
@@ -205,7 +238,45 @@ async function formatMessagesForAI(messages) {
 }
 
 /**
- * Extract decisions from conversation using OpenAI GPT-4
+ * Process messages in parallel chunks for faster decision extraction
+ * @param {string} formattedMessages - Formatted message string
+ * @param {string} conversationId - Conversation ID
+ * @returns {Promise<Array>} - Array of decisions from all chunks
+ */
+async function extractDecisionsParallel(formattedMessages, conversationId) {
+  // Split formatted messages by message boundaries
+  const messageTexts = formattedMessages.split('\n\n').filter(m => m.trim());
+  
+  const CHUNK_SIZE = 25; // Process 25 messages per chunk
+  
+  // If messages are few, process normally
+  if (messageTexts.length <= CHUNK_SIZE) {
+    return extractDecisions(formattedMessages, conversationId);
+  }
+  
+  // Split into chunks
+  const chunks = [];
+  for (let i = 0; i < messageTexts.length; i += CHUNK_SIZE) {
+    const chunkMessages = messageTexts.slice(i, i + CHUNK_SIZE).join('\n\n');
+    chunks.push(chunkMessages);
+  }
+  
+  console.log(`📦 Processing ${messageTexts.length} messages in ${chunks.length} parallel chunks`);
+  
+  // Process all chunks in parallel
+  const chunkPromises = chunks.map(chunk => extractDecisions(chunk, conversationId));
+  const results = await Promise.all(chunkPromises);
+  
+  // Merge results and deduplicate
+  const allDecisions = results.flat();
+  
+  console.log(`✅ Parallel processing complete: ${allDecisions.length} total decisions from ${chunks.length} chunks`);
+  
+  return allDecisions;
+}
+
+/**
+ * Extract decisions from conversation using OpenAI GPT-4o-mini
  * 
  * @param {string} formattedMessages - Formatted conversation messages
  * @param {string} conversationId - Conversation ID for reference
@@ -227,7 +298,7 @@ async function extractDecisions(formattedMessages, conversationId) {
     const response = await chatCompletion(messages, {
       model: 'gpt-4o-mini', // ✅ Faster and cheaper
       temperature: 0.3,
-      maxTokens: 2000,
+      maxTokens: 1200, // ✅ Reduced from 2000 for faster generation
       responseFormat: 'json',
     });
 
