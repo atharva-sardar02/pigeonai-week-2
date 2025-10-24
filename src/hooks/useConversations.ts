@@ -79,6 +79,7 @@ export function useConversations(): UseConversationsReturn {
 
   /**
    * Load conversations from Firestore with real-time updates
+   * OFFLINE-FIRST: Always loads from cache immediately, then syncs with Firestore
    */
   const loadConversations = useCallback(async () => {
     if (!user) return;
@@ -86,96 +87,103 @@ export function useConversations(): UseConversationsReturn {
     try {
       setError(null);
 
-      if (isOnline) {
-        // Load from cache first for instant display
-        // IMPORTANT: Filter by userId to ensure user only sees their conversations
-        const cachedConversations = await LocalDatabase.getConversations(user.uid);
-        if (cachedConversations.length > 0) {
-          setConversations(cachedConversations);
-          setLoading(false); // Stop loading immediately
-          
-          // Initialize our tracking ref with cached conversation IDs
-          conversationIdsRef.current = new Set(cachedConversations.map(c => c.id));
-          
-          // Pre-fetch user profiles for all participants
-          // This ensures names are cached before display
-          const participantIds = new Set<string>();
-          cachedConversations.forEach(conv => {
-            conv.participants.forEach(id => {
-              if (id !== user.uid) participantIds.add(id);
-            });
-          });
-          
-          // Fetch all user profiles in parallel
-          Promise.all(
-            Array.from(participantIds).map(id => AuthService.getUserProfile(id))
-          ).catch(err => console.warn('Error pre-fetching user profiles:', err));
-        } else {
-          setLoading(true); // Only show loading if no cache
-        }
-
-        // Then set up real-time listener for updates
-        const listener = FirestoreService.listenToConversations(
-          user.uid,
-          async (firestoreConversations) => {
-            // Pre-filter: Remove any conversations that already exist in our ref
-            const newFirestoreConversations = firestoreConversations.filter(conv => {
-              // If we've already seen this ID, skip it immediately
-              if (conversationIdsRef.current.has(conv.id)) {
-                return false;
-              }
-              return true;
-            });
-            
-            // Add new conversation IDs to our tracking ref
-            newFirestoreConversations.forEach(conv => conversationIdsRef.current.add(conv.id));
-            
-            // Update state with all conversations (cached + new from Firestore)
-            setConversations(firestoreConversations);
-            setLoading(false);
-
-            // Pre-fetch user profiles for all participants
-            const participantIds = new Set<string>();
-            firestoreConversations.forEach(conv => {
-              conv.participants.forEach(id => {
-                if (id !== user.uid) participantIds.add(id);
-              });
-            });
-            
-            // Fetch all user profiles in parallel
-            Promise.all(
-              Array.from(participantIds).map(id => AuthService.getUserProfile(id))
-            ).catch(err => console.warn('Error pre-fetching user profiles:', err));
-
-            // Cache conversations locally
-            for (const conversation of firestoreConversations) {
-              await LocalDatabase.insertConversation(conversation);
-            }
-          },
-          (err) => {
-            // Suppress permission errors during logout
-            if (err.message.includes('permission') || err.message.includes('permissions') || err.message.includes('Permission denied')) {
-              // Don't log anything - already logged as warning in service
-              setLoading(false);
-              return;
-            }
-            console.error('Error listening to conversations:', err);
-            setError(err.message);
-            setLoading(false);
-          }
-        );
-
-        setUnsubscribe(() => listener);
-      } else {
-        // Offline - load from cache
-        // IMPORTANT: Filter by userId to ensure user only sees their conversations
-        setLoading(true);
-        const cachedConversations = await LocalDatabase.getConversations(user.uid);
+      // STEP 1: ALWAYS load from cache first (offline-first)
+      console.log('📦 Loading conversations from cache...');
+      const cachedConversations = await LocalDatabase.getConversations(user.uid);
+      
+      if (cachedConversations.length > 0) {
+        console.log(`✅ Loaded ${cachedConversations.length} conversations from cache`);
         setConversations(cachedConversations);
+        setLoading(false); // Display immediately
+        
+        // Initialize our tracking ref with cached conversation IDs
+        conversationIdsRef.current = new Set(cachedConversations.map(c => c.id));
+        
+        // Pre-fetch user profiles for all participants (non-blocking)
+        const participantIds = new Set<string>();
+        cachedConversations.forEach(conv => {
+          conv.participants.forEach(id => {
+            if (id !== user.uid) participantIds.add(id);
+          });
+        });
+        
+        // Fetch all user profiles in parallel (fails silently if offline)
+        Promise.all(
+          Array.from(participantIds).map(id => AuthService.getUserProfile(id))
+        ).catch(err => console.warn('⚠️ Error pre-fetching user profiles (offline?):', err.message));
+      } else {
+        console.log('📦 No cached conversations, showing loading state');
+        setLoading(true);
+      }
+
+      // STEP 2: If online, set up real-time listener for updates (non-blocking)
+      if (isOnline) {
+        console.log('🌐 Setting up Firestore listener...');
+        try {
+          const listener = FirestoreService.listenToConversations(
+            user.uid,
+            async (firestoreConversations) => {
+              console.log(`🔄 Received ${firestoreConversations.length} conversations from Firestore`);
+              
+              // Pre-filter: Remove any conversations that already exist in our ref
+              const newFirestoreConversations = firestoreConversations.filter(conv => {
+                // If we've already seen this ID, skip it immediately
+                if (conversationIdsRef.current.has(conv.id)) {
+                  return false;
+                }
+                return true;
+              });
+              
+              // Add new conversation IDs to our tracking ref
+              newFirestoreConversations.forEach(conv => conversationIdsRef.current.add(conv.id));
+              
+              // Update state with all conversations (cached + new from Firestore)
+              setConversations(firestoreConversations);
+              setLoading(false);
+
+              // Pre-fetch user profiles for all participants
+              const participantIds = new Set<string>();
+              firestoreConversations.forEach(conv => {
+                conv.participants.forEach(id => {
+                  if (id !== user.uid) participantIds.add(id);
+                });
+              });
+              
+              // Fetch all user profiles in parallel
+              Promise.all(
+                Array.from(participantIds).map(id => AuthService.getUserProfile(id))
+              ).catch(err => console.warn('⚠️ Error pre-fetching user profiles:', err.message));
+
+              // Cache conversations locally
+              for (const conversation of firestoreConversations) {
+                await LocalDatabase.insertConversation(conversation);
+              }
+            },
+            (err) => {
+              // Suppress permission errors during logout
+              if (err.message.includes('permission') || err.message.includes('permissions') || err.message.includes('Permission denied')) {
+                console.warn('⚠️ Firestore listener permission error (expected during logout)');
+                setLoading(false);
+                return;
+              }
+              console.error('❌ Error listening to conversations:', err);
+              setError(err.message);
+              setLoading(false);
+            }
+          );
+
+          setUnsubscribe(() => listener);
+        } catch (err: any) {
+          // If Firestore listener fails (offline), just continue with cached data
+          console.warn('⚠️ Failed to setup Firestore listener (offline?):', err.message);
+          setLoading(false);
+        }
+      } else {
+        console.log('📴 Offline mode - using cached conversations only');
         setLoading(false);
       }
     } catch (err: any) {
-      console.error('Error loading conversations:', err);
+      console.error('❌ Error loading conversations:', err);
       setError(err.message || 'Failed to load conversations');
       setLoading(false);
     }
@@ -257,30 +265,56 @@ export function useConversations(): UseConversationsReturn {
 
   /**
    * Refresh conversations (force reload)
+   * OFFLINE-FIRST: Loads from cache first, then syncs with Firestore if online
    */
   const refreshConversations = useCallback(async () => {
     if (!user) return;
 
     try {
-      setLoading(true);
       setError(null);
 
-      if (isOnline) {
-        const firestoreConversations = await FirestoreService.getConversations(user.uid);
-        setConversations(firestoreConversations);
+      // STEP 1: Load from cache first
+      console.log('🔄 Refreshing conversations from cache...');
+      const cachedConversations = await LocalDatabase.getConversations(user.uid);
+      setConversations(cachedConversations);
+      
+      if (cachedConversations.length > 0) {
+        setLoading(false); // Display immediately
+      } else {
+        setLoading(true);
+      }
 
-        // Update cache
-        for (const conversation of firestoreConversations) {
-          await LocalDatabase.insertConversation(conversation);
+      // STEP 2: If online, sync with Firestore (non-blocking)
+      if (isOnline) {
+        console.log('🌐 Syncing conversations with Firestore...');
+        try {
+          const firestoreConversations = await Promise.race([
+            FirestoreService.getConversations(user.uid),
+            new Promise<Conversation[]>((resolve) => 
+              setTimeout(() => resolve([]), 5000) // 5s timeout
+            )
+          ]);
+          
+          if (firestoreConversations.length > 0) {
+            setConversations(firestoreConversations);
+
+            // Update cache
+            for (const conversation of firestoreConversations) {
+              await LocalDatabase.insertConversation(conversation);
+            }
+          }
+        } catch (err: any) {
+          console.warn('⚠️ Failed to sync with Firestore (offline?):', err.message);
+          // Continue with cached data
         }
       } else {
-        const cachedConversations = await LocalDatabase.getConversations();
-        setConversations(cachedConversations);
+        console.log('📴 Offline - using cached conversations only');
       }
+      
+      setLoading(false);
     } catch (err: any) {
-      console.error('Error refreshing conversations:', err);
+      console.error('❌ Error refreshing conversations:', err);
       setError(err.message || 'Failed to refresh conversations');
-    } finally {
       setLoading(false);
     }
   }, [user, isOnline]);
