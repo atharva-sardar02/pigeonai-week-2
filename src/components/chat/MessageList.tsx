@@ -20,6 +20,7 @@ interface MessageListProps {
   refreshing?: boolean;
   isGroupChat?: boolean; // New prop for group chat support
   participantCount?: number; // Total participants for group read status
+  onImagePress?: (imageUrl: string) => void; // New prop for image tap handler
 }
 
 /**
@@ -44,6 +45,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   refreshing = false,
   isGroupChat = false,
   participantCount = 2,
+  onImagePress,
 }) => {
   const flatListRef = useRef<FlatList>(null);
 
@@ -62,6 +64,7 @@ export const MessageList: React.FC<MessageListProps> = ({
         isOwnMessage={isOwnMessage}
         isGroupChat={isGroupChat}
         participantCount={participantCount}
+        onImagePress={onImagePress}
       />
     );
   };

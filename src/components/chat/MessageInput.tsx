@@ -8,16 +8,20 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   Keyboard,
+  Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../../utils/constants';
 
 interface MessageInputProps {
   onSend: (content: string) => void;
   onTypingChange?: (isTyping: boolean) => void; // New prop for typing indicator
-  onImagePick?: () => void;
+  onSendImage?: (uri: string) => void; // New prop for sending images
   placeholder?: string;
   disabled?: boolean;
   sending?: boolean;
+  uploadingImage?: boolean; // New prop for image upload state
 }
 
 /**
@@ -36,13 +40,52 @@ interface MessageInputProps {
 export const MessageInput: React.FC<MessageInputProps> = ({
   onSend,
   onTypingChange,
-  onImagePick,
+  onSendImage,
   placeholder = 'Type a message...',
   disabled = false,
   sending = false,
+  uploadingImage = false,
 }) => {
   const [text, setText] = useState('');
   const isTypingRef = useRef(false);
+
+  /**
+   * Handle image picker
+   */
+  const handleImagePick = async () => {
+    try {
+      // Request media library permissions
+      const { status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please allow access to your photos to send images.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      // Open image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7, // Compress to 70% to reduce file size
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const imageUri = result.assets[0].uri;
+        console.log('[MessageInput] Image selected:', imageUri);
+        
+        if (onSendImage) {
+          onSendImage(imageUri);
+        }
+      }
+    } catch (error) {
+      console.error('[MessageInput] Image picker error:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
 
   /**
    * Handle text change with typing indicator
@@ -128,18 +171,22 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <View style={styles.container}>
-        {/* Image Picker Button (optional) */}
-        {onImagePick && (
+        {/* Image Picker Button */}
+        {onSendImage && (
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={onImagePick}
-            disabled={disabled || sending}
+            onPress={handleImagePick}
+            disabled={disabled || sending || uploadingImage}
           >
-            <View style={styles.iconButtonInner}>
-              <View style={styles.imagePlaceholder}>
-                <View style={styles.imagePlaceholderInner} />
+            {uploadingImage ? (
+              <View style={styles.iconButtonInner}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
               </View>
-            </View>
+            ) : (
+              <View style={styles.iconButtonInner}>
+                <Ionicons name="image-outline" size={20} color={COLORS.primary} />
+              </View>
+            )}
           </TouchableOpacity>
         )}
 
@@ -206,23 +253,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.backgroundTertiary,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  imagePlaceholder: {
-    width: 20,
-    height: 18,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    borderRadius: 4,
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end',
-  },
-  imagePlaceholderInner: {
-    width: 6,
-    height: 6,
-    backgroundColor: COLORS.primary,
-    borderRadius: 3,
-    marginRight: 2,
-    marginBottom: 2,
   },
   inputContainer: {
     flex: 1,

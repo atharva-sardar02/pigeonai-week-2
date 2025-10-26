@@ -93,6 +93,38 @@ export async function getConversation(
 }
 
 /**
+ * Subscribe to conversation updates (supports offline cache)
+ */
+export function subscribeToConversation(
+  conversationId: string,
+  onUpdate: (conversation: Conversation | null) => void,
+  onError?: (error: Error) => void
+): () => void {
+  const conversationRef = doc(db, FIREBASE_COLLECTIONS.CONVERSATIONS, conversationId);
+  
+  const unsubscribe = onSnapshot(
+    conversationRef,
+    {
+      includeMetadataChanges: true, // Get updates from cache
+    },
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const conversation = ConversationModel.fromFirestore(snapshot);
+        onUpdate(conversation);
+      } else {
+        onUpdate(null);
+      }
+    },
+    (error) => {
+      console.error('[Firestore] Error in conversation subscription:', error);
+      onError?.(error);
+    }
+  );
+
+  return unsubscribe;
+}
+
+/**
  * Get all conversations for a user
  */
 export async function getConversations(userId: string): Promise<Conversation[]> {

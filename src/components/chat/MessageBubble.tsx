@@ -1,15 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Message } from '../../types';
 import { COLORS, SIZES, SPACING, TYPOGRAPHY } from '../../utils/constants';
 import * as MessageModel from '../../models/Message';
 import { useUserDisplayName } from '../../hooks/useUserProfile';
+import * as ImageCacheService from '../../services/cache/imageCacheService';
 
 interface MessageBubbleProps {
   message: Message;
   isOwnMessage: boolean;
   isGroupChat?: boolean; // New prop to indicate if this is a group chat
   participantCount?: number; // Total participants in conversation (for group read status)
+  onImagePress?: (imageUrl: string) => void; // Callback for image tap
 }
 
 /**
@@ -30,10 +32,32 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   isOwnMessage,
   isGroupChat = false,
   participantCount = 2,
+  onImagePress,
 }) => {
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+  const [cachedImageUri, setCachedImageUri] = useState<string | null>(null);
+  
   const bubbleStyle = isOwnMessage ? styles.sentBubble : styles.receivedBubble;
   const textStyle = isOwnMessage ? styles.sentText : styles.receivedText;
   const containerStyle = isOwnMessage ? styles.sentContainer : styles.receivedContainer;
+
+  // Cache image when message has an image
+  useEffect(() => {
+    if (message.type === 'image' && message.imageUrl) {
+      setImageLoading(true);
+      ImageCacheService.getCachedImage(message.imageUrl)
+        .then((uri) => {
+          setCachedImageUri(uri);
+          setImageLoading(false);
+        })
+        .catch((error) => {
+          console.error('[MessageBubble] Failed to cache image:', error);
+          setCachedImageUri(message.imageUrl!); // Fallback to original URL
+          setImageLoading(false);
+        });
+    }
+  }, [message.imageUrl, message.type]);
 
   // Get sender name for group chats (only for received messages)
   const senderDisplayName = useUserDisplayName(message.senderId);
@@ -124,11 +148,46 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </Text>
         )}
 
-        {/* TODO: Add image support in future task */}
+        {/* Image Message */}
         {message.type === 'image' && message.imageUrl && (
-          <Text style={[styles.messageText, textStyle]}>
-            [Image] {message.content}
-          </Text>
+          <TouchableOpacity
+            onPress={() => onImagePress?.(message.imageUrl!)}
+            activeOpacity={0.9}
+            disabled={imageError}
+          >
+            {/* Loading Indicator */}
+            {imageLoading && (
+              <View style={styles.imageLoading}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              </View>
+            )}
+
+            {/* Error State */}
+            {imageError && (
+              <View style={styles.imageError}>
+                <Text style={styles.imageErrorText}>Failed to load image</Text>
+              </View>
+            )}
+
+            {/* Image (using cached URI) */}
+            {!imageError && cachedImageUri && !imageLoading && (
+              <Image
+                source={{ uri: cachedImageUri }}
+                style={styles.messageImage}
+                resizeMode="cover"
+                onError={() => {
+                  setImageError(true);
+                }}
+              />
+            )}
+
+            {/* Optional Caption */}
+            {message.content && message.content !== '📷 Photo' && (
+              <Text style={[styles.imageCaption, textStyle]}>
+                {message.content}
+              </Text>
+            )}
+          </TouchableOpacity>
         )}
 
         {/* Timestamp and Status */}
@@ -257,6 +316,40 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
     textTransform: 'uppercase',
+  },
+  // Image Message Styles
+  messageImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: COLORS.backgroundTertiary,
+  },
+  imageLoading: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: COLORS.backgroundTertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageError: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: COLORS.backgroundTertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  imageErrorText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  imageCaption: {
+    fontSize: SIZES.fontMedium,
+    lineHeight: 20,
+    marginTop: 8,
   },
 });
 
