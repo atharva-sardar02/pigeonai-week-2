@@ -14,6 +14,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChatHeader } from '../../components/chat/ChatHeader';
 import { MessageList } from '../../components/chat/MessageList';
 import { MessageInput } from '../../components/chat/MessageInput';
+import { ImageViewer } from '../../components/chat/ImageViewer';
+import { ImagePreview } from '../../components/chat/ImagePreview';
 import AIFeaturesMenu from '../../components/ai/AIFeaturesMenu';
 import SummaryModal from '../../components/ai/SummaryModal';
 import ActionItemsList from '../../components/ai/ActionItemsList';
@@ -28,6 +30,7 @@ import { useUserDisplayName, userProfileCache } from '../../hooks/useUserProfile
 import { usePresence } from '../../hooks/usePresence';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import * as FirestoreService from '../../services/firebase/firestoreService';
+import * as S3Service from '../../services/aws/s3Service';
 import * as NotificationService from '../../services/notifications/notificationService';
 import { shouldUseLocalNotifications } from '../../services/notifications/localNotificationHelper';
 import { summarizeConversation, extractActionItems, searchMessages, trackDecisions, scheduleMeeting, batchDetectPriority } from '../../services/ai/aiService';
@@ -78,6 +81,11 @@ export const ChatScreen: React.FC = () => {
   } = useMessages(conversationId);
 
   const [sending, setSending] = useState(false);
+  
+  // Image upload state
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [pendingImageUri, setPendingImageUri] = useState<string | null>(null); // For preview before send
 
   // AI Summarization state
   const [summaryModalVisible, setSummaryModalVisible] = useState(false);
@@ -175,25 +183,29 @@ export const ChatScreen: React.FC = () => {
   // Get typing indicator status
   const { typingUsers, setTyping } = useTypingIndicator(conversationId);
 
-  // Fetch conversation if not provided
+  // Fetch conversation if not provided (use listener for offline support)
   useEffect(() => {
-    const fetchConversation = async () => {
-      if (!passedConversation && conversationId) {
-        try {
-          setLoadingConversation(true);
-          const fetchedConversation = await FirestoreService.getConversation(conversationId);
+    if (!passedConversation && conversationId) {
+      setLoadingConversation(true);
+      
+      // Use Firestore listener to get conversation (supports offline cache)
+      const unsubscribe = FirestoreService.subscribeToConversation(
+        conversationId,
+        (fetchedConversation) => {
           if (fetchedConversation) {
             setConversation(fetchedConversation);
+            setLoadingConversation(false);
           }
-        } catch (error) {
-          console.error('Error fetching conversation:', error);
-        } finally {
+        },
+        (error) => {
+          console.error('[ChatScreen] Error subscribing to conversation:', error);
+          // Don't show error, just keep loading - offline cache will work
           setLoadingConversation(false);
         }
-      }
-    };
+      );
 
-    fetchConversation();
+      return () => unsubscribe();
+    }
   }, [conversationId, passedConversation]);
 
   // Mark messages as read when user opens chat
@@ -271,10 +283,116 @@ export const ChatScreen: React.FC = () => {
     }
   };
 
-  // Handle image picker (placeholder for future)
-  const handleImagePick = () => {
-    console.log('Image picker will be implemented in PR #7');
-    // TODO: Implement in Task 7.x (Image Sharing)
+  /**
+   * Handle image selection (show preview, don't send yet)
+   */
+  const handleImageSelect = (imageUri: string) => {
+    console.log('[ChatScreen] Image selected for preview:', imageUri);
+    setPendingImageUri(imageUri);
+  };
+
+  /**
+   * Handle image upload and send (AWS S3) - called from preview modal
+   */
+  const handleSendImage = async () => {
+    if (!user || !pendingImageUri) {
+      console.error('[ChatScreen] Cannot send image: User not authenticated or no image selected');
+      return;
+    }
+
+    try {
+      console.log('[ChatScreen] Starting S3 image upload:', pendingImageUri);
+      setUploadingImage(true);
+
+      // Upload image to S3 using presigned URL
+      const imageUrl = await S3Service.uploadImage(
+        pendingImageUri,
+        conversationId,
+        (progress) => {
+          console.log(`[ChatScreen] Upload progress: ${progress}%`);
+        }
+      );
+
+      console.log('[ChatScreen] Image uploaded successfully to S3:', imageUrl);
+
+      // Send message with S3 image URL
+      await sendMessage('📷 Photo', 'image', imageUrl);
+
+      console.log('[ChatScreen] Image message sent successfully');
+      setUploadingImage(false);
+      setPendingImageUri(null); // Close preview modal
+
+      // Send push notifications to other participants (don't fail if this errors)
+      try {
+        if (conversation) {
+          const recipients = conversation.participants.filter(p => p !== user.uid);
+          
+          if (recipients.length > 0) {
+            const senderName = user.displayName || 'Someone';
+            let notificationTitle = senderName;
+            
+            if (conversation.type === 'group' && conversation.name) {
+              notificationTitle = conversation.name;
+            }
+
+            const messagePreview = '📷 Photo';
+
+            // Check if we should use local or server notifications
+            const useLocalNotifications = await shouldUseLocalNotifications();
+
+            if (useLocalNotifications) {
+              // Use local notification service
+              await NotificationService.sendNotification({
+                conversationId,
+                senderId: user.uid,
+                messageContent: messagePreview,
+                recipientIds: recipients,
+              });
+            } else {
+              // Use server-side Lambda notifications
+              await NotificationService.sendNotificationViaLambda({
+                conversationId,
+                recipientIds: recipients,
+                title: notificationTitle,
+                body: messagePreview,
+                data: {
+                  conversationId,
+                  senderId: user.uid,
+                  type: 'message',
+                },
+              });
+            }
+          }
+        }
+      } catch (notificationError) {
+        // Log notification error but don't fail the image send
+        console.warn('[ChatScreen] Failed to send notification for image:', notificationError);
+      }
+    } catch (error) {
+      console.error('[ChatScreen] Failed to send image:', error);
+      setUploadingImage(false);
+      Alert.alert(
+        'Upload Failed',
+        'Could not send image. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  // Handle image viewer
+  const handleImagePress = (imageUrl: string) => {
+    console.log('[ChatScreen] Opening image viewer:', imageUrl);
+    setSelectedImageUrl(imageUrl);
+  };
+
+  const handleImageViewerClose = () => {
+    setSelectedImageUrl(null);
+  };
+
+  // Handle image preview cancel
+  const handleImagePreviewCancel = () => {
+    console.log('[ChatScreen] Image preview cancelled');
+    setPendingImageUri(null);
   };
 
   // Handle back navigation
@@ -783,6 +901,7 @@ export const ChatScreen: React.FC = () => {
             refreshing={loading}
             isGroupChat={conversation.type === 'group'}
             participantCount={conversation.participants?.length || 2}
+            onImagePress={handleImagePress}
           />
         </View>
 
@@ -790,8 +909,25 @@ export const ChatScreen: React.FC = () => {
         <MessageInput
           onSend={handleSend}
           onTypingChange={setTyping}
-          onImagePick={handleImagePick}
+          onSendImage={handleImageSelect}
           sending={sending}
+          uploadingImage={uploadingImage}
+        />
+
+        {/* Image Preview Modal (before sending) */}
+        <ImagePreview
+          visible={pendingImageUri !== null}
+          imageUri={pendingImageUri}
+          onSend={handleSendImage}
+          onCancel={handleImagePreviewCancel}
+          uploading={uploadingImage}
+        />
+
+        {/* Image Viewer Modal (for viewing sent images) */}
+        <ImageViewer
+          visible={selectedImageUrl !== null}
+          imageUrl={selectedImageUrl}
+          onClose={handleImageViewerClose}
         />
 
         {/* AI Features Menu */}

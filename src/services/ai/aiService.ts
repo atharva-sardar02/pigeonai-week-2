@@ -14,7 +14,7 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = 'https://7ojwlcdavc.execute-api.us-east-1.amazonaws.com';
+export const API_BASE_URL = 'https://7ojwlcdavc.execute-api.us-east-1.amazonaws.com';
 
 /**
  * Summarize conversation thread

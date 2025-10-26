@@ -13,6 +13,7 @@ const embeddingHandler = require('./generateEmbedding');
 const priorityHandler = require('./priorityDetection');
 const decisionTrackingHandler = require('./decisionTracking');
 const schedulingAgentHandler = require('./schedulingAgent');
+const imageUploadHandler = require('./imageUpload');
 
 /**
  * Main Lambda Handler
@@ -81,6 +82,12 @@ exports.handler = async (event) => {
     if (path === '/ai/schedule-meeting' || path.endsWith('/ai/schedule-meeting')) {
       console.log('🤖 Routing to scheduling agent handler');
       return await schedulingAgentHandler.handler(event);
+    }
+    
+    // Image Upload - Generate S3 Presigned URL
+    if (path === '/ai/upload-image' || path.endsWith('/ai/upload-image')) {
+      console.log('📸 Routing to image upload handler');
+      return await imageUploadHandler.handler(event);
     }
     
     // Default: Push notification handler (backward compatibility)
