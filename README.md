@@ -1,104 +1,211 @@
-# Pigeon AI - Real-Time Messaging App
+# PigeonAi - AI-Enhanced Messaging for Remote Teams
 
-A production-quality cross-platform messaging application built with React Native, Expo, and Firebase, featuring real-time chat, group messaging, presence tracking, typing indicators, and push notifications.
+A production-quality cross-platform messaging application built with React Native, Expo, and Firebase, featuring real-time chat, group messaging, and **6 AI-powered features** specifically designed for Remote Team Professionals.
 
-## 📱 Features
+**🎯 Built for**: Software engineers, designers, and product managers working in distributed teams  
+**⚡ Performance**: Sub-2-second AI responses with GPT-4o-mini  
+**🎨 UI**: Professional dark theme with comprehensive in-app documentation  
+**🚀 Status**: MVP Complete + All AI Features Deployed & Optimized
 
-### ✅ Core Messaging
-- **One-on-One Chat** - Real-time messaging between users with sub-second latency
+---
+
+## 🌟 What Makes PigeonAi Different
+
+PigeonAi combines **WhatsApp-level reliability** with **AI features that solve real communication problems** for remote teams:
+
+- **Thread Summarization** - Catch up on 200 overnight messages in 30 seconds
+- **Action Item Extraction** - Never miss a commitment, clear todo list
+- **Smart Semantic Search** - Find discussions by meaning, not just keywords
+- **Priority Detection** - Focus on what needs immediate attention
+- **Decision Tracking** - Clear record of what was decided and why
+- **Proactive Scheduling Assistant** - Multi-thread meeting coordination with time suggestions
+
+---
+
+## 📱 Core Features
+
+### ✅ Production-Quality Messaging
+
+- **One-on-One Chat** - Real-time messaging with sub-second latency
 - **Group Chat** - Create and manage group conversations (3+ members)
-- **Message Persistence** - All messages cached locally and survive app restarts
+- **Message Persistence** - SQLite caching, survives app restarts
 - **Offline Support** - Queue messages when offline, auto-sync when reconnected
 - **Optimistic UI** - Messages appear instantly before server confirmation
 - **Real-Time Sync** - Changes propagate instantly across all devices
 
 ### ✅ Presence & Awareness
-- **Online/Offline Status** - Real-time presence indicators with green dot badges
-- **Last Seen** - "Last seen 5m ago" timestamps for offline users
-- **Typing Indicators** - Animated "messaging • • •" indicator in chat header
-- **Read Receipts** - Double checkmarks update in real-time when messages are read
+
+- **Online/Offline Status** - Real-time presence with green dot badges
+- **Last Seen** - "Last seen 5m ago" timestamps
+- **Typing Indicators** - Animated "messaging • • •" in chat header
+- **Read Receipts** - WhatsApp-style checkmarks (✓ sent, ✓✓ delivered, ✓✓ green read)
 
 ### ✅ Group Features
-- **Group Creation** - Create groups with name, description, and icon
+
+- **Group Creation** - Name, description, and icon support
 - **Member Management** - Add/remove members, admin controls
-- **Group Details** - View member list, group info, and leave group
-- **Sender Names** - Display sender names in group messages
+- **Group Details** - Member list, group info, leave group
+- **Common Groups** - See shared groups on user profiles
 - **Group Typing** - "John and Sarah are messaging..." for multiple typers
 
 ### ✅ Push Notifications
-- **AWS Lambda Server-Side** - Push notifications handled by AWS Lambda (free!)
-- **Firebase Cloud Messaging** - Native FCM integration for production APK
-- **Group Format** - "Group Name - User Name: message"
-- **DM Format** - "User Name: message"
+
+- **AWS Lambda Server-Side** - Free serverless push notification system
+- **Firebase Cloud Messaging** - Production FCM integration
 - **Works Everywhere** - Foreground, background, and closed states
-- **Global Notifications** - Get notified of new messages anywhere in the app
-- **Missed Messages** - Notified of messages received while offline
-- **Smart Filtering** - No notification spam, only new messages from others
+- **Smart Formatting** - Group vs. DM message formats
+- **Global Notifications** - Get notified anywhere in the app
 
-### ✅ User Experience
+### ✅ Professional UI & UX
+
 - **Dark Mode Theme** - Professional dark UI throughout
-- **User Profiles** - Avatar, display name, and profile viewing
-- **Keyboard Handling** - Smooth keyboard interactions on all input screens
+- **User Profiles** - Avatar, display name, edit profile functionality
+- **Profile Photos** - Circular avatars with initials fallback
+- **Keyboard Handling** - Smooth keyboard interactions
 - **Expandable FAB Menu** - Easy access to "New Chat" and "New Group"
-- **Message Timestamps** - Smart formatting (e.g., "Yesterday 2:30 PM")
 - **Natural Scrolling** - Chat UI mirrors WhatsApp (newest at bottom)
+- **Comprehensive Documentation** - 5 in-app help screens
 
-### 🟡 Partially Implemented
-- **Image Sharing** - Backend ready, UI pending
-- **Offline Indicator** - Queue implemented, UI indicator pending
+---
 
-### 🔜 Planned (Post-MVP)
-- AI-powered features (summarization, translation, smart replies)
-- Voice messages
-- Video sharing
-- Message editing/deletion
-- End-to-end encryption
+## 🤖 AI Features (All 6 Complete!)
 
-## 🛠️ Tech Stack
+### 1. **Proactive Scheduling Assistant** (Advanced Feature) 🚀
+
+**What it does**: Intelligent multi-thread meeting coordinator
+- Detects scheduling requests across entire conversation
+- Extracts dates, times, and availability mentions
+- Suggests 3 optimal time slots per request
+- Full-screen UI with thread list and detail views
+- Share functionality for meeting details
+
+**How to use**: Tap AI Features menu → "Proactive Agent" (top with rocket icon)
+
+**Response time**: 2-4 seconds (optimized with GPT-4o-mini)
+
+---
+
+### 2. **Thread Summarization**
+
+**What it does**: Summarizes long conversations into key points
+- Perfect for catching up after being offline
+- Extracts: decisions, action items, blockers, technical details, next steps
+- Saves 15-30 minutes per day
+
+**How to use**: Tap sparkles (✨) icon in chat header → "Summarize Thread"
+
+**Response time**: 1-2 seconds (optimized from 6s!)
+
+---
+
+### 3. **Action Item Extraction**
+
+**What it does**: Extracts all tasks, assignees, and deadlines from conversations
+- Automatically detects action items with priorities (HIGH/MEDIUM/LOW)
+- Shows assignee, deadline, and dependencies
+- Filter by: All / Mine / Active / Done
+- Beautiful card-based UI with color-coded priorities
+
+**How to use**: Tap AI Features menu → "Extract Action Items"
+
+**Response time**: 6-10 seconds with parallel chunking (optimized from 30s+ timeout!)
+
+---
+
+### 4. **Smart Semantic Search** (RAG Pipeline)
+
+**What it does**: Search by meaning, not just keywords
+- Natural language queries: "find where we discussed authentication"
+- RAG pipeline with OpenSearch vector database
+- Shows relevance scores and context
+- Auto-generates embeddings for searchability
+
+**How to use**: Tap magnifying glass (🔍) icon in chat header → "Search"
+
+**Response time**: <3 seconds for queries, auto-embeddings in background
+
+---
+
+### 5. **Priority Message Detection**
+
+**What it does**: Flags urgent messages, questions, and blockers
+- HIGH priority: Urgent tasks, blockers, direct questions
+- MEDIUM priority: Decisions, deadlines, planning
+- LOW priority: FYI updates, acknowledgments
+- Filter view with stats and color-coded badges
+
+**How to use**: Tap filter icon in chat header → "Priority Filter"
+
+**Response time**: <0.5 seconds (real-time with GPT-3.5-turbo)
+
+---
+
+### 6. **Decision Tracking**
+
+**What it does**: Maintains a timeline of decisions with context
+- Extracts: decision, participants, timestamp, confidence, alternatives
+- Timeline view grouped by date
+- Search and filter by confidence level
+- Navigate to source messages
+
+**How to use**: Tap AI Features menu → "Track Decisions"
+
+**Response time**: 5-8 seconds (optimized from 12s!)
+
+---
+
+## 🏗️ Tech Stack
 
 ### Frontend
 - **React Native 0.81.4** - Cross-platform mobile framework
-- **Expo SDK 54.0.0** - Development platform and tooling (latest)
+- **Expo SDK 54.0.0** - Development platform (latest)
 - **React 19.1.0** - UI library (latest)
 - **TypeScript 5.9.2** - Type safety (latest)
 - **React Navigation 7.x** - Navigation
-- **Expo SQLite** - Local persistence and caching
-- **Firebase JS SDK 12.4.0** - Firebase client (Expo Go compatible)
+- **Expo SQLite** - Local persistence
+- **Firebase JS SDK 12.4.0** - Firebase client
 
-### Backend
-- **Firebase Authentication** - User authentication and sessions
-- **Firebase Firestore** - Real-time database (us-east4 region)
-- **Firebase Cloud Messaging** - Push notifications (via AWS Lambda)
-- **AWS Lambda** - Server-side push notification handler (free tier)
-- **API Gateway** - HTTP endpoint to trigger Lambda
-- **Firebase Storage** - Image and media storage (ready)
-- **Firebase Cloud Functions** - Serverless backend (ready for AI features)
+### Backend Infrastructure
+- **Firebase Authentication** - User auth and sessions
+- **Firebase Firestore** - Real-time database (us-east4)
+- **Firebase Cloud Messaging** - Push notifications
+- **AWS Lambda** - Serverless AI processing (Node.js 22.x)
+- **AWS API Gateway** - REST API for AI features
+- **AWS OpenSearch** - Vector database for RAG (1536-dim embeddings)
+- **AWS ElastiCache (Redis)** - Response caching (1-2 hour TTL)
 
-### Key Libraries
-- `@react-navigation/native` & `@react-navigation/native-stack` - Navigation
-- `expo-notifications` - Push notification handling
-- `expo-sqlite` - Local database
-- `@react-native-async-storage/async-storage` - Key-value storage
-- `@react-native-community/netinfo` - Network monitoring
-- `react-native-safe-area-context` - Safe area handling
-- `Ionicons` - Icon library
+### AI Services
+- **OpenAI GPT-4o-mini** - Fast AI responses (3-5x faster than GPT-4-turbo)
+- **OpenAI GPT-3.5-turbo** - Real-time priority detection
+- **OpenAI text-embedding-3-small** - Vector embeddings for semantic search
+- **Custom RAG Pipeline** - Retrieval-Augmented Generation for context-aware AI
+
+### Performance Optimization
+- **Model Upgrade**: gpt-4-turbo → gpt-4o-mini (3-5x speed boost)
+- **Token Reduction**: 20-50% fewer output tokens
+- **Regex Pre-Filtering**: 30-50% input size reduction
+- **Parallel Chunking**: 40-60% latency reduction for large conversations
+- **Redis Caching**: Sub-100ms cached responses
+
+---
 
 ## 📋 Prerequisites
 
-Before you begin, ensure you have:
+- **Node.js** 18+ ([Download](https://nodejs.org/))
+- **npm** package manager
+- **Git** for cloning
+- **Expo Go app** on your device:
+  - [App Store (iOS)](https://apps.apple.com/app/expo-go/id982107779)
+  - [Play Store (Android)](https://play.google.com/store/apps/details?id=host.exp.exponent)
+- **Firebase account** (free tier sufficient)
+- **AWS account** (for AI features - free tier or unlimited plan)
+- **EAS account** (free, no credit card) - [Sign up](https://expo.dev/signup)
 
-- **Node.js** 18+ installed ([Download](https://nodejs.org/))
-- **npm** or **yarn** package manager
-- **Git** for cloning the repository
-- **Expo Go app** installed on your iOS or Android device:
-  - [App Store](https://apps.apple.com/app/expo-go/id982107779) (iOS)
-  - [Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent) (Android)
-- **Firebase account** (free tier is sufficient)
-- **EAS account** (free, no credit card required) - [Sign up](https://expo.dev/signup)
+---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### 1. Clone the Repository
+### 1. Clone Repository
 
 ```bash
 git clone https://github.com/yourusername/pigeonai-week-2.git
@@ -111,57 +218,41 @@ cd pigeonai-week-2
 npm install
 ```
 
-If you encounter issues:
+If issues occur:
 ```bash
 npm install --force
 ```
 
-### 3. Set Up Firebase
+### 3. Firebase Setup
 
 #### Create Firebase Project
 1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click **"Add project"** or **"Create a project"**
-3. Project name: `pigeonai-dev` (or your preferred name)
-4. Disable Google Analytics (optional, not needed for MVP)
-5. Click **"Create project"**
+2. Create project: `pigeonai-dev`
+3. Disable Google Analytics (optional)
 
 #### Enable Services
-
-**Authentication:**
-1. Go to **Build** → **Authentication** → **Get started**
-2. Click **Email/Password** → **Enable** → **Save**
-
-**Firestore Database:**
-1. Go to **Build** → **Firestore Database** → **Create database**
-2. Choose **"Start in test mode"** (for development)
-3. Location: **us-east4 (North Carolina)** or closest to you
-4. Click **"Enable"**
-
-**Cloud Messaging:**
-- Auto-enabled (no action needed)
+- **Authentication**: Build → Authentication → Email/Password → Enable
+- **Firestore**: Build → Firestore → Create database (test mode, us-east4)
+- **Cloud Messaging**: Auto-enabled
 
 #### Register Web App
-1. Go to **Project Overview** (gear icon) → **Project settings**
-2. Scroll to **"Your apps"** section
-3. Click **"Add app"** → Select **Web** (</> icon)
-4. App nickname: `Pigeon AI Web`
-5. **Don't** check "Firebase Hosting"
-6. Click **"Register app"**
-7. **Copy the `firebaseConfig` object** (you'll need this next)
+1. Project settings → Add app → Web (</> icon)
+2. App nickname: `Pigeon AI Web`
+3. Copy `firebaseConfig` object
 
-### 4. Configure Environment Variables
+### 4. Configure Environment
 
-Create a `.env` file in the project root:
+Create `.env` file:
 
 ```bash
-# On Mac/Linux:
+# Mac/Linux:
 cp env.example .env
 
-# On Windows:
+# Windows:
 copy env.example .env
 ```
 
-Open `.env` and fill in your Firebase configuration (from step 3):
+Fill in Firebase credentials:
 
 ```env
 EXPO_PUBLIC_FIREBASE_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -172,134 +263,66 @@ EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
 EXPO_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abcdef123456
 ```
 
-**Important**: All variables must be prefixed with `EXPO_PUBLIC_` for React Native access.
+**Important**: All variables must be prefixed with `EXPO_PUBLIC_`.
 
-### 5. Deploy Firestore Security Rules (Important!)
-
-The app requires specific security rules to function properly. Deploy them:
+### 5. Deploy Firestore Rules
 
 ```bash
-# Install Firebase CLI globally
+# Install Firebase CLI
 npm install -g firebase-tools
 
-# Login to Firebase
+# Login
 firebase login
 
-# Initialize Firebase in the project (if not already done)
+# Initialize
 firebase init
+# Select: Firestore, use existing project
 
-# Select:
-# - Firestore
-# - Use existing project: pigeonai-dev
-# - Keep default firestore.rules and firestore.indexes.json paths
-
-# Deploy rules and indexes
+# Deploy rules
 firebase deploy --only firestore:rules,firestore:indexes
 ```
 
-### 6. Configure Push Notifications (AWS Lambda + FCM) - Production Only
+### 6. AWS Setup (For AI Features)
 
-**⚠️ Important**: Push notifications do **NOT** work in Expo Go (SDK 53+). The app uses **local notifications** in Expo Go for development and testing. To test **remote push notifications**, you must build with EAS Build or Android Studio.
+#### AWS Lambda Function
+1. Create Lambda function: `pigeonai-send-notification`
+2. Runtime: Node.js 22.x
+3. Set environment variables:
+   - `OPENAI_API_KEY` - Your OpenAI API key
+   - `FIREBASE_PROJECT_ID`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_CLIENT_EMAIL` (from serviceAccountKey.json)
+   - `OPENSEARCH_ENDPOINT` - OpenSearch domain endpoint
+   - `REDIS_ENDPOINT` - ElastiCache endpoint (optional)
 
-For development in Expo Go, skip to step 7. For production builds with full push notifications:
-
-#### Step 1: Firebase Setup (5 minutes)
-
-1. **Register Android app** in Firebase Console:
-   - Settings → Project settings → Your apps
-   - Click **Add app** → **Android**
-   - Package name: `com.pigeonai.app` (or your package name from `app.config.js`)
-   - Click **Register app**
-   - **Download `google-services.json`**
-   - Place in project root: `./google-services.json` (not `android/app/`)
-
-2. **Enable FCM API** in Google Cloud Console:
-   - Go to [Google Cloud Console](https://console.cloud.google.com/)
-   - Select your Firebase project
-   - Search: "Firebase Cloud Messaging API"
-   - Click **Enable**
-
-3. **Get Firebase Admin SDK credentials**:
-   - Firebase Console → Project settings → Service accounts
-   - Click "Generate new private key"
-   - Save as `serviceAccountKey.json` (keep secure, don't commit!)
-
-#### Step 2: AWS Lambda Setup (10 minutes)
-
-1. **Create Lambda function** in AWS Console:
-   - Service: Lambda
-   - Create function → Author from scratch
-   - Name: `pigeonai-push-notifications`
-   - Runtime: Node.js 22.x
-   - Create function
-
-2. **Set environment variables** in Lambda:
-   - Configuration → Environment variables
-   - Add Firebase credentials from `serviceAccountKey.json`:
-     - `FIREBASE_PROJECT_ID`
-     - `FIREBASE_PRIVATE_KEY`
-     - `FIREBASE_CLIENT_EMAIL`
-     - `FIREBASE_DATABASE_URL`
-
-3. **Upload Lambda code**:
-   ```bash
-   cd aws-lambda
-   npm install
-   # Windows PowerShell:
-   Compress-Archive -Path index.js,package.json,package-lock.json,node_modules -DestinationPath function.zip -Force
-   # Mac/Linux:
-   zip -r function.zip index.js package.json package-lock.json node_modules
-   ```
-   - Upload `function.zip` to Lambda (Actions → Upload from → .zip file)
-
-4. **Create API Gateway**:
-   - API Gateway → Create API → HTTP API
-   - Add route: POST `/send-notification`
-   - Integration: Lambda function (select your function)
-   - Deploy
-   - Copy the Invoke URL
-
-5. **Add Lambda URL to your app**:
-   - Add to `.env`:
-     ```
-     EXPO_PUBLIC_LAMBDA_NOTIFICATION_URL=https://xxxxx.execute-api.us-east-1.amazonaws.com
-     ```
-
-**📚 Detailed guide**: [`docs/AWS_LAMBDA_SETUP.md`](docs/AWS_LAMBDA_SETUP.md)
-
-#### Step 3: Build APK
-
-**Option A: Android Studio (Faster):**
-```powershell
-cd android
-.\gradlew assembleRelease
-adb install -r app/build/outputs/apk/release/app-release.apk
-```
-
-**Option B: EAS Build (Cloud):**
+#### Deploy Lambda Code
 ```bash
-npm install -g eas-cli
-eas login
-eas build:configure
-eas build --profile preview --platform android
+cd aws-lambda
+npm install
+# Windows PowerShell:
+Compress-Archive -Path ai-functions,node_modules,package.json,index.js,serviceAccountKey.json -DestinationPath function.zip -Force
+# Upload function.zip to Lambda
+aws lambda update-function-code --function-name pigeonai-send-notification --zip-file fileb://function.zip --region us-east-1
 ```
 
-**For iOS**: See [`docs/FCM_SETUP_GUIDE.md`](docs/FCM_SETUP_GUIDE.md) (requires Apple Developer account - $99/year)
+#### API Gateway
+1. Create HTTP API
+2. Add routes: `/ai/summarize`, `/ai/extract-action-items`, `/ai/search`, `/ai/detect-priority`, `/ai/track-decisions`, `/ai/schedule-meeting`
+3. Integration: Lambda function
+4. Copy Invoke URL
 
-### 7. Create EAS Account (Required for Expo Go)
+#### Update .env
+```env
+EXPO_PUBLIC_LAMBDA_NOTIFICATION_URL=https://xxxxx.execute-api.us-east-1.amazonaws.com
+```
 
-Expo Go now requires an EAS account even for local development:
+**📚 Detailed guide**: [`aws-lambda/README.md`](aws-lambda/README.md), [`aws-lambda/CORRECT_DEPLOYMENT.md`](aws-lambda/CORRECT_DEPLOYMENT.md)
 
-1. Go to https://expo.dev/signup
-2. Sign up with your email (free, no credit card required)
-3. Verify your email
+### 7. Create EAS Account
 
-Then login in terminal:
 ```bash
 npx expo login
 ```
 
-Also **login in the Expo Go app** on your phone (Profile tab → Log in).
+Login in Expo Go app (Profile tab).
 
 ### 8. Run the App
 
@@ -307,269 +330,224 @@ Also **login in the Expo Go app** on your phone (Profile tab → Log in).
 npm start
 ```
 
-Or if you have cache issues:
+Or clear cache:
 ```bash
 npm start --clear
 ```
 
-This will:
-- Start the Expo development server
-- Display a QR code in your terminal
-- Show the connection URL (e.g., `exp://192.168.1.XXX:8081`)
-
-#### Test on Your Device (Recommended)
-
-1. **Ensure your phone and computer are on the same WiFi network** (critical!)
-2. Open **Expo Go** app on your phone
-3. Scan the QR code with your phone's camera (iOS) or in Expo Go (Android)
+**Test on Device** (Recommended):
+1. Ensure phone and computer on same WiFi
+2. Open Expo Go app
+3. Scan QR code
 4. Wait 30-60 seconds for first load
-5. The app will load on your device
 
-**Tip**: If QR code doesn't work:
-- In Expo Go, tap "Enter URL manually"
-- Type the `exp://` URL from your terminal (e.g., `exp://192.168.1.189:8081`)
-
-#### Or use a simulator:
-
+**Or use simulator**:
 ```bash
-npm run ios      # iOS Simulator (macOS only)
+npm run ios      # macOS only
 npm run android  # Android Emulator
 ```
 
-**Note**: Physical devices are strongly recommended for accurate testing of push notifications, presence, and app lifecycle.
-
 ### 9. Create Test Accounts
 
-1. Open the app and tap **"Sign up"**
-2. Create 2-3 test accounts:
+1. Tap **"Sign up"**
+2. Create accounts:
    - `alice@test.com` / `password123`
    - `bob@test.com` / `password123`
-   - `carol@test.com` / `password123`
-3. Test real-time messaging between devices!
+3. Test messaging and AI features!
+
+---
 
 ## 📁 Project Structure
 
 ```
 pigeonai-week-2/
 ├── src/
-│   ├── components/           # Reusable UI components
-│   │   ├── auth/             # Login, Signup forms
-│   │   ├── chat/             # MessageBubble, MessageList, MessageInput, ChatHeader
+│   ├── components/           # UI components
+│   │   ├── auth/             # Login, Signup
+│   │   ├── chat/             # MessageBubble, MessageList, ChatHeader, ChatOptionsMenu
+│   │   ├── ai/               # AI feature modals (Summary, ActionItems, Search, Priority, Decisions, Scheduling)
 │   │   ├── conversation/     # ConversationListItem
 │   │   ├── group/            # UserSelectionList
-│   │   └── common/           # Avatar, NotificationBanner
+│   │   └── common/           # Avatar, NotificationBanner, CommonGroupsList
 │   ├── screens/              # App screens
-│   │   ├── auth/             # LoginScreen, SignupScreen, SplashScreen
-│   │   ├── main/             # ChatScreen, ConversationListScreen, ProfileScreen, etc.
-│   │   ├── group/            # CreateGroupScreen, GroupDetailsScreen
-│   │   └── test/             # NotificationTestScreen (for local testing)
+│   │   ├── auth/             # Login, Signup, Splash
+│   │   ├── main/             # Chat, ConversationList, Profile, UserDetails, GroupDetails
+│   │   │                     # AboutAIFeatures, HelpSupport, AccountSettings, PrivacySecurity, NotificationSettings
+│   │   ├── ai/               # ProactiveAssistantScreen
+│   │   ├── group/            # CreateGroup, GroupDetails
+│   │   └── test/             # NotificationTest
 │   ├── navigation/           # React Navigation setup
-│   │   ├── AppNavigator.tsx  # Root navigator
-│   │   ├── AuthNavigator.tsx # Auth flow
-│   │   └── MainNavigator.tsx # Main app flow
 │   ├── services/             # External services
-│   │   ├── firebase/         # Firebase services (auth, firestore, storage)
-│   │   ├── database/         # Local SQLite database
+│   │   ├── firebase/         # Auth, Firestore, Storage
+│   │   ├── ai/               # AI service (AWS Lambda integration)
+│   │   ├── database/         # SQLite local database
 │   │   ├── network/          # Network monitoring
-│   │   └── notifications/    # Push notification service
-│   ├── store/                # State management
-│   │   ├── context/          # React Context (Auth, Chat, Presence)
-│   │   └── offlineQueue/     # Offline message queue
-│   ├── models/               # Data models (User, Message, Conversation, Group)
-│   ├── utils/                # Utility functions (dateFormatter, validators, constants)
-│   ├── hooks/                # Custom React hooks (useMessages, useConversations, usePresence, etc.)
-│   ├── types/                # TypeScript type definitions
-│   └── assets/               # Images, fonts, app icon
+│   │   └── notifications/    # Push notifications
+│   ├── store/                # State management (Auth, Chat, Presence contexts)
+│   ├── models/               # Data models (User, Message, Conversation, ActionItem, Decision, MeetingProposal)
+│   ├── utils/                # Utilities (date formatter, validators, constants)
+│   ├── hooks/                # Custom hooks (useMessages, useConversations, usePresence)
+│   └── types/                # TypeScript definitions
+├── aws-lambda/               # AWS Lambda function
+│   ├── ai-functions/         # AI feature implementations
+│   │   ├── summarize.js      # Thread summarization
+│   │   ├── actionItems.js    # Action item extraction
+│   │   ├── search.js         # Semantic search
+│   │   ├── generateEmbedding.js # Embedding generation
+│   │   ├── priorityDetection.js # Priority detection
+│   │   ├── decisionTracking.js  # Decision tracking
+│   │   ├── schedulingAgent.js   # Proactive scheduling
+│   │   ├── prompts/          # AI prompts for each feature
+│   │   ├── utils/            # OpenAI, OpenSearch, Cache clients
+│   │   └── index.js          # Router
+│   ├── index.js              # Main Lambda handler
+│   ├── package.json          # Dependencies
+│   ├── function.zip          # Deployment package
+│   └── README.md             # Lambda documentation
 ├── docs/                     # Documentation
-│   ├── AWS_LAMBDA_SETUP.md   # AWS Lambda setup guide
-│   ├── NOTIFICATION_SYSTEM_COMPLETE.md # Notification architecture
-│   ├── FCM_SETUP_GUIDE.md    # Comprehensive FCM guide
-│   ├── FCM_QUICKSTART.md     # Quick FCM setup
-│   ├── HYBRID_NOTIFICATIONS.md # Hybrid notification system
-│   └── ...                   # More detailed guides
-├── aws-lambda/              # AWS Lambda function
-│   ├── index.js             # Lambda handler (FCM + Expo Push)
-│   ├── package.json         # Lambda dependencies
-│   └── function.zip         # Deployment package
-├── firebase/                 # Firebase configuration
-│   ├── firestore.rules       # Firestore security rules
-│   └── firestore.indexes.json # Firestore indexes
-├── android/                  # Android native files
-│   ├── gradle.properties    # Gradle configuration (hermesEnabled)
-│   └── local.properties     # SDK path (local builds)
-├── ios/                      # iOS native files (for EAS Build)
-├── memory-bank/              # Project memory (for AI assistant context)
-├── App.tsx                   # Main app entry point
-├── app.config.js             # Expo configuration
-├── google-services.json      # Firebase Android config (in root for EAS)
-├── eas.json                  # EAS Build configuration
-├── package.json              # Dependencies
-├── tsconfig.json             # TypeScript configuration
-├── .env                      # Environment variables (not committed)
+│   ├── PERSONA_BRAINLIFT.md  # Remote Team Professional persona
+│   ├── AWS_INFRASTRUCTURE.md # AWS setup guide
+│   ├── PERFORMANCE_OPTIMIZATION_COMPLETE.md # Optimization report
+│   └── ...                   # More guides
+├── memory-bank/              # Project context
+│   ├── projectbrief.md       # Project overview
+│   ├── productContext.md     # Product vision
+│   ├── activeContext.md      # Current status
+│   ├── progress.md           # Feature completion
+│   ├── systemPatterns.md     # Architecture
+│   └── techContext.md        # Tech stack
+├── firebase/                 # Firebase config
+├── android/                  # Android native
+├── App.tsx                   # Entry point
+├── app.config.js             # Expo config
+├── google-services.json      # Firebase Android
+├── eas.json                  # EAS Build config
 └── README.md                 # This file
 ```
 
-## 🔧 Available Scripts
-
-- `npm start` - Start Expo development server
-- `npm run android` - Run on Android emulator
-- `npm run ios` - Run on iOS simulator (macOS only)
-- `npm run web` - Run in web browser
-- `npm start --clear` - Clear cache and restart
-- `npm run reset` - Clear Expo cache
+---
 
 ## 🧪 Testing
 
-### Manual Testing Scenarios
+### AI Features Testing
 
-1. **Real-time messaging**: 
-   - Open app on two devices with different accounts
-   - Send messages back and forth
-   - Verify sub-second latency
+**Use Demo Conversation** (8 messages prepared in `activeContext.md`):
+1. Create test conversation between 2 users
+2. Send 8 messages covering: crisis, decisions, action items, planning
+3. Test all 6 AI features with expected outputs documented
 
-2. **Offline scenario**: 
-   - Turn on airplane mode on Device A
-   - Send messages from Device B
-   - Turn off airplane mode on Device A
-   - Verify messages sync within 5 seconds
+**Expected Performance**:
+- Thread Summarization: 1-2 seconds
+- Action Items: 6-10 seconds (14 items extracted)
+- Semantic Search: <3 seconds (5 results)
+- Priority Detection: <0.5 seconds (6 HIGH, 8 MEDIUM, 2 LOW)
+- Decision Tracking: 5-8 seconds (5 decisions)
+- Proactive Agent: 2-4 seconds (multi-thread detection)
 
-3. **App lifecycle**: 
-   - Send message
-   - Force quit app (swipe away)
-   - Reopen app
-   - Verify message is still there
+### Core Messaging Testing
 
-4. **Group chat**: 
-   - Create group with 3+ users
-   - Send messages from different users
-   - Verify all users receive messages
+1. **Real-time messaging**: Two devices, verify <1s latency
+2. **Offline scenario**: Airplane mode → send → reconnect → verify sync
+3. **App lifecycle**: Force quit → reopen → messages persist
+4. **Group chat**: 3+ users, verify all receive messages
+5. **Presence**: Verify green dot, "Last seen" timestamps
+6. **Typing indicators**: Verify "messaging • • •" appears
+7. **Read receipts**: Verify ✓ → ✓✓ gray → ✓✓ green transitions
+8. **Push notifications**: Background app, send message, verify notification
 
-5. **Presence**: 
-   - Open app on two devices
-   - Check green dot on online user
-   - Background one app
-   - Verify "Last seen" updates
+---
 
-6. **Typing indicators**: 
-   - Open same chat on two devices
-   - Start typing on one device
-   - Verify "messaging • • •" appears on other device
+## 🔧 Available Scripts
 
-7. **Read receipts**: 
-   - Send message from Device A
-   - Open chat on Device B
-   - Verify double checkmark updates in real-time on Device A
+- `npm start` - Start Expo dev server
+- `npm run android` - Run on Android emulator
+- `npm run ios` - Run on iOS simulator (macOS only)
+- `npm start --clear` - Clear cache and restart
+- `npm run reset` - Clear Expo cache
 
-8. **Push notifications** (Expo Go):
-   - Open app on one device
-   - Background or close app
-   - Send message from another device
-   - Verify local notification appears
-
-9. **Push notifications** (EAS Build):
-   - Build APK with `eas build`
-   - Install on device
-   - Follow scenario 8 above
-   - Verify remote push notification appears
+---
 
 ## 🐛 Troubleshooting
 
-### App won't load on Expo Go
+### Expo Go Issues
 
-**Issue: "Something went wrong" or "Failed to download remote update"**
-- **Cause**: Phone and computer on different WiFi networks
-- **Fix**: Connect both to the same network, restart `npm start`
+**"Project incompatible with Expo Go"**
+- Check Expo Go version (Profile tab)
+- Upgrade project: `npx expo install expo@latest && npx expo install --fix`
 
-**Issue: "Project is incompatible with this version of Expo Go"**
-- **Cause**: Expo Go app has different SDK version than project
-- **Fix**: 
-  1. Check your Expo Go version (Profile tab in app)
-  2. Upgrade project: `npx expo install expo@latest && npx expo install --fix`
-  3. Or downgrade Expo Go to SDK 54
+**App won't load**
+- Ensure same WiFi network
+- Try manual URL entry in Expo Go
+- Restart `npm start`
 
-**Issue: QR code scan doesn't work**
-- **Fix**: In Expo Go, tap "Enter URL manually" and type the `exp://` URL from your terminal
+**EAS login prompt**
+- Create account at https://expo.dev/signup
+- Run `npx expo login`
 
-**Issue: EAS login prompt appears**
-- **Fix**: Create free account at https://expo.dev/signup, then run `npx expo login`
+### Firebase Issues
 
-**Issue: "Unable to resolve module"**
-- **Fix**: Clear cache and reinstall:
-  ```bash
-  rm -rf node_modules
-  npm install --force
-  npm start --clear
-  ```
+**"Missing or insufficient permissions"**
+- Deploy rules: `firebase deploy --only firestore:rules`
 
-### Firebase errors
+**Authentication errors**
+- Verify `.env` has correct credentials with `EXPO_PUBLIC_` prefix
+- Check Email/Password auth enabled in console
 
-**Issue: "FirebaseError: Missing or insufficient permissions"**
-- **Cause**: Firestore security rules not deployed
-- **Fix**: Run `firebase deploy --only firestore:rules`
+**Messages not syncing**
+- Use Web app (not iOS/Android) in Firebase Console
+- Check Firestore in test mode
+- Verify internet connection
 
-**Issue: Authentication errors**
-- **Fix**: Verify `.env` file has correct Firebase credentials with `EXPO_PUBLIC_` prefix
-- Check Firebase Console that Email/Password auth is enabled
+### AI Features Issues
 
-**Issue: Messages not syncing**
-- **Fix**: 
-  - Check Firestore is in test mode (for development)
-  - Make sure you registered a **Web app** (not iOS/Android) in Firebase Console
-  - Verify internet connection
+**AI features timing out**
+- Check Lambda function timeout (should be 60s)
+- Verify environment variables in Lambda
+- Check OpenAI API key is valid
+- Review CloudWatch logs for errors
 
-### "Cannot find module 'babel-preset-expo'"
-- **Fix**: `npm install babel-preset-expo --save-dev`
+**Semantic search returns 0 results**
+- Run batch embedding generation: `/ai/batch-generate-embeddings`
+- Wait 10 seconds, try search again
+- Check OpenSearch cluster is running
 
-### "Error while reading cache"
-- **Fix**: `npm start --clear` or delete `node_modules` and run `npm install --force`
+**Redis caching not working**
+- Non-critical, features work without cache
+- Check ElastiCache security group allows Lambda
+- Can disable by removing `REDIS_ENDPOINT` env var
 
-### Port 8081 already in use
-- **Fix**: `npx expo start --port 8082`
+### Build Issues
 
-### Windows Firewall blocking connection
-- **Fix**: 
-  1. Go to Windows Settings → Firewall & network protection
-  2. Allow an app through firewall
-  3. Find Node.js and allow on Private networks
+**"Cannot find module 'babel-preset-expo'"**
+- Fix: `npm install babel-preset-expo --save-dev`
 
-### "expo-notifications" errors in Expo Go
-- **Expected**: Remote push notifications don't work in Expo Go (SDK 53+)
-- **Solution**: App uses local notifications in Expo Go for development. For full push, build with EAS.
+**"Error while reading cache"**
+- Fix: `npm start --clear` or delete `node_modules`, run `npm install --force`
 
-## 📝 Environment Variables
+**Port 8081 in use**
+- Fix: `npx expo start --port 8082`
 
-All Firebase credentials should be prefixed with `EXPO_PUBLIC_` to make them accessible in React Native:
+**Windows Firewall blocking**
+- Allow Node.js through Private networks in Firewall settings
 
-```
-EXPO_PUBLIC_FIREBASE_API_KEY
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
-EXPO_PUBLIC_FIREBASE_PROJECT_ID
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-EXPO_PUBLIC_FIREBASE_APP_ID
-```
-
-**Note**: These values are safe to expose in client-side apps. Firebase security comes from Firestore security rules, not hiding API keys.
-
-## 🔐 Security
-
-- `.env` file is gitignored and won't be committed
-- Firestore security rules protect your data (deployed via Firebase CLI)
-- Authentication tokens are managed by Firebase
-- `google-services.json` is committed (it's not a secret - see [`docs/GOOGLE_SERVICES_EXPLAINED.md`](docs/GOOGLE_SERVICES_EXPLAINED.md))
-- Never commit sensitive credentials or private keys to Git
+---
 
 ## 📦 Deployment
 
-### For MVP/Testing (Expo Go)
-- Just share the QR code!
-- Users with Expo Go can scan and use immediately
+### For Production
 
-### For Production - Two Options
+#### Option 1: Local Android Studio Build (Faster)
 
-#### Option 1: EAS Build (Cloud - Easiest)
+```powershell
+cd android
+.\gradlew assembleRelease
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
 
-**Android APK:**
+APK location: `android/app/build/outputs/apk/release/app-release.apk`
+
+#### Option 2: EAS Build (Cloud)
+
 ```bash
 npm install -g eas-cli
 eas login
@@ -577,48 +555,113 @@ eas build:configure
 eas build --profile preview --platform android
 ```
 
-Wait 10-15 minutes for build to complete, then download APK and install on device.
+Wait 10-15 minutes, download APK.
 
-**iOS (requires Apple Developer account - $99/year):**
+**iOS** (requires Apple Developer $99/year):
 ```bash
 eas build --profile preview --platform ios
-eas submit --platform ios  # Submit to TestFlight
+eas submit --platform ios  # TestFlight
 ```
 
-#### Option 2: Local Android Studio Build (Faster for Testing)
+**Full docs**: https://docs.expo.dev/build/introduction/
 
-**Prerequisites:**
-- Android Studio installed
-- Android SDK configured
-- 8GB+ RAM recommended
+---
 
-**Build Steps:**
-```powershell
-# Navigate to android folder
-cd android
+## 🎯 Project Achievements
 
-# Build release APK
-.\gradlew assembleRelease
+### Core Messaging
+- ✅ **Zero message loss** - 100% delivery success in testing
+- ✅ **Sub-second latency** - Real-time delivery <1s
+- ✅ **Zero duplicates** - Advanced deduplication
+- ✅ **Zero jitter** - Smooth scrolling
+- ✅ **Cache-first** - Instant display from SQLite
+- ✅ **Thread-safe** - Operation queue prevents concurrency errors
 
-# APK location: 
-# android/app/build/outputs/apk/release/app-release.apk
-```
+### AI Features
+- ✅ **6 AI features** - All working and optimized
+- ✅ **GPT-4o-mini upgrade** - 3-5x speed improvement
+- ✅ **Token optimization** - 20-50% fewer tokens
+- ✅ **Parallel processing** - 40-60% latency reduction
+- ✅ **Sub-2s responses** - Most features <2 seconds
+- ✅ **RAG pipeline** - OpenSearch vector database
 
-**Install on device:**
-```powershell
-# Via ADB (USB or WiFi)
-adb install -r android/app/build/outputs/apk/release/app-release.apk
+### UI & Documentation
+- ✅ **Professional UI** - Dark theme, polished design
+- ✅ **5 documentation screens** - Comprehensive in-app help
+- ✅ **Edit profile** - Display name updates with validation
+- ✅ **Profile photos** - Avatars with initials fallback
+- ✅ **PigeonAi branding** - Consistent throughout app
+- ✅ **CEO contact** - Help & Support with contact info
 
-# Or transfer APK via WhatsApp/email and install manually
-```
+### Infrastructure
+- ✅ **Free push system** - AWS Lambda + Firebase Spark (no Blaze plan)
+- ✅ **Production APK** - Built and tested on physical devices
+- ✅ **Hybrid architecture** - Firebase for data, AWS for AI
+- ✅ **Comprehensive docs** - Detailed guides for all features
+- ✅ **Deployment standardized** - "Bible" commands documented
 
-**Full documentation**: 
-- EAS Build: https://docs.expo.dev/build/introduction/
-- AWS Lambda Setup: `docs/AWS_LAMBDA_SETUP.md`
+---
 
-## 🎯 Roadmap
+## 📊 Performance Metrics
 
-### Completed ✅
+### AI Features Response Times (After Optimization)
+
+| Feature | Before | After | Improvement |
+|---------|--------|-------|-------------|
+| Thread Summarization | 6s | 1-2s | 67-83% faster |
+| Action Items | 30s+ timeout | 6-10s | Now completes! |
+| Decision Tracking | 12s | 5-8s | 42-58% faster |
+| Scheduling Agent | 10s | 2-4s | 60-80% faster |
+| Priority Detection | 0.5s | 0.5s | Already fast |
+| Semantic Search | 3s | <3s | Maintained |
+
+### Cost Estimates (with caching)
+
+- Summarization: ~$15/month (10K requests)
+- Action Items: ~$12/month (10K requests)
+- Search: ~$0.16/month (10K requests)
+- Priority: ~$0.03/month (10K requests)
+- Decisions: ~$6-12/month (10K requests)
+- Scheduling: ~$7.50/month (1K requests)
+
+**Total**: ~$41-47/month with 40% cache hit rate
+
+---
+
+## 📚 Documentation
+
+### Setup Guides
+- [AWS Infrastructure Complete](docs/AWS_INFRASTRUCTURE_COMPLETE.md)
+- [AWS Lambda Setup](docs/AWS_LAMBDA_SETUP.md)
+- [Correct Deployment Process](aws-lambda/CORRECT_DEPLOYMENT.md) ⭐ **BIBLE**
+- [FCM Setup Guide](docs/FCM_SETUP_GUIDE.md)
+- [Persona Brainlift](docs/PERSONA_BRAINLIFT.md)
+
+### Architecture & Optimization
+- [Performance Optimization Complete](docs/PERFORMANCE_OPTIMIZATION_COMPLETE.md) ⭐ **NEW**
+- [All Optimizations Summary](docs/ALL_OPTIMIZATIONS_SUMMARY.md)
+- [Model Update GPT-4o-mini](docs/MODEL_UPDATE_GPT4O_MINI.md)
+- [Notification System Complete](docs/NOTIFICATION_SYSTEM_COMPLETE.md)
+- [Hybrid Notifications](docs/HYBRID_NOTIFICATIONS.md)
+
+### Feature Documentation
+- [Proactive Assistant Complete](docs/PROACTIVE_ASSISTANT_COMPLETE.md) ⭐ **NEW**
+- [AI Features Testing Complete](docs/AI_FEATURES_TESTING_COMPLETE.md)
+- [API Format Validation](docs/API_FORMAT_VALIDATION_COMPLETE.md)
+- [Delete All Messages](docs/FEATURE_DELETE_ALL_MESSAGES.md)
+
+### Reference
+- [Firestore Security Rules](docs/FIRESTORE_SECURITY_RULES.md)
+- [Expo Go Limitations](docs/EXPO_GO_LIMITATIONS.md)
+- [Task List](docs/TASK_LIST.md)
+
+---
+
+## 🗺️ Roadmap
+
+### ✅ Completed (Phase 1 + Phase 2)
+
+**Core Messaging:**
 - [x] One-on-one real-time chat
 - [x] Group chat (3+ members)
 - [x] User authentication
@@ -629,85 +672,93 @@ adb install -r android/app/build/outputs/apk/release/app-release.apk
 - [x] Online/offline status
 - [x] Typing indicators
 - [x] Push notifications (AWS Lambda + FCM)
-- [x] Production APK build (Android Studio)
-- [x] Server-side notification system
-- [x] Group creation and management
-- [x] Group details screen
+
+**UI & UX:**
+- [x] Production APK build
 - [x] Dark mode UI
 - [x] User profiles and avatars
+- [x] Profile photo/initials in header
+- [x] Edit display name
+- [x] 5 documentation screens
+- [x] PigeonAi branding
+- [x] Common groups on profiles
+- [x] Delete all messages
+- [x] Scrollable AI Features menu
 
-### In Progress 🟡
-- [ ] Image sharing (backend ready)
-- [ ] Offline mode indicator
-- [ ] Error boundaries
-- [ ] Loading skeletons
+**AI Features (All 6):**
+- [x] Thread Summarization (1-2s)
+- [x] Action Item Extraction (6-10s)
+- [x] Smart Semantic Search (<3s)
+- [x] Priority Detection (<0.5s)
+- [x] Decision Tracking (5-8s)
+- [x] Proactive Scheduling Assistant (2-4s) ⭐ **Advanced**
 
-### Post-MVP 🔜
-- [ ] AI-powered features:
-  - [ ] Thread summarization
-  - [ ] Action item extraction
-  - [ ] Smart semantic search
-  - [ ] Priority message detection
-  - [ ] Decision tracking
-  - [ ] Proactive scheduling assistant
+**Infrastructure:**
+- [x] AWS Lambda AI processing
+- [x] AWS OpenSearch (RAG pipeline)
+- [x] AWS ElastiCache (Redis caching)
+- [x] AWS API Gateway (9 endpoints)
+- [x] GPT-4o-mini optimization
+- [x] Deployment process standardized
+
+### 🔜 Future Enhancements
+
+**Additional AI Features:**
+- [ ] Smart reply suggestions
+- [ ] Automatic translation
+- [ ] Sentiment analysis
+- [ ] Context-aware notifications
+
+**Messaging:**
 - [ ] Voice messages
 - [ ] Video sharing
 - [ ] Message editing/deletion
 - [ ] End-to-end encryption
 - [ ] Voice/video calls
+
+**Platform:**
+- [ ] iOS build (TestFlight)
 - [ ] Multi-device support
+- [ ] Desktop app (Electron)
 
-## 📚 Documentation
-
-- **Setup Guides**:
-  - [AWS Lambda Setup](docs/AWS_LAMBDA_SETUP.md) ⭐ NEW
-  - [FCM Quick Start](docs/FCM_QUICKSTART.md)
-  - [FCM Full Setup Guide](docs/FCM_SETUP_GUIDE.md)
-  - [FCM Checklist](docs/FCM_CHECKLIST.md)
-- **Architecture**:
-  - [Notification System Complete](docs/NOTIFICATION_SYSTEM_COMPLETE.md) ⭐ NEW
-  - [Hybrid Notification System](docs/HYBRID_NOTIFICATIONS.md)
-  - [Push Notifications Overview](docs/PUSH_NOTIFICATIONS.md)
-  - [Background Notifications](docs/BACKGROUND_NOTIFICATIONS.md)
-- **Reference**:
-  - [Firestore Security Rules](docs/FIRESTORE_SECURITY_RULES.md)
-  - [Expo Go Limitations](docs/EXPO_GO_LIMITATIONS.md)
-  - [Google Services Explained](docs/GOOGLE_SERVICES_EXPLAINED.md)
-
-## 🏆 Project Achievements
-
-- ✅ **Zero message loss** - 100% delivery success rate in testing
-- ✅ **Sub-second latency** - Real-time message delivery <1 second
-- ✅ **Zero duplicate messages** - Advanced deduplication system
-- ✅ **Zero UI jitter** - Smooth scrolling and animations
-- ✅ **Cache-first loading** - Instant display from local database
-- ✅ **Thread-safe SQLite** - Operation queue prevents concurrency errors
-- ✅ **Real-time updates** - Presence, typing, and read receipts update live
-- ✅ **Professional UI** - Dark mode theme with polished design
-- ✅ **Production-ready APK** - Built and tested on physical devices
-- ✅ **Free push notification system** - AWS Lambda + Firebase Spark (no Blaze plan needed)
-- ✅ **Comprehensive docs** - Detailed guides for all major features
+---
 
 ## 📄 License
 
 This project is part of the Gauntlet AI Week 2 challenge.
 
+---
+
 ## 🤝 Contributing
 
-This is a personal project for learning purposes. Feel free to fork and experiment!
-
-## 📧 Support
-
-For issues or questions:
-- Open an issue on GitHub
-- Check the [troubleshooting section](#-troubleshooting) above
-- Review the [documentation](docs/) folder
+This is a personal project for learning. Feel free to fork and experiment!
 
 ---
 
-**Built with ❤️ using React Native, Expo, and Firebase**
+## 📧 Support & Contact
+
+**CEO & Founder**: Atharva Sardar  
+**Email**: atharva.sardar02@gmail.com  
+**Response Time**: 24 hours during business days
+
+For issues:
+- Open a GitHub issue
+- Check [troubleshooting](#-troubleshooting) section
+- Review [documentation](docs/) folder
+
+---
+
+## 🏆 Final Stats
 
 **Project Duration**: 7-day sprint (October 20-27, 2025)  
-**Total Time**: ~30 hours of development  
-**Lines of Code**: ~15,000+  
-**Status**: MVP Complete, polish and AI features in progress
+**Total Development Time**: ~60 hours  
+**Lines of Code**: ~25,000+  
+**Features Complete**: 100% (Core + All 6 AI Features)  
+**AI Optimization**: 3-5x speed improvement  
+**Documentation**: 2,300+ lines across 5 screens  
+**Status**: ✅ MVP Complete, ✅ All AI Features Deployed & Optimized, ✅ UI Polish Complete, ✅ Demo Ready
+
+---
+
+**Built with ❤️ for Remote Teams**  
+**Powered by**: React Native • Expo • Firebase • AWS Lambda • OpenAI GPT-4o-mini • OpenSearch • Redis
